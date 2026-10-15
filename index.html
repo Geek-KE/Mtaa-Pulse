@@ -163,15 +163,15 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .vidbox video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 .rectimer{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(7,31,42,.72);font-size:13px;font-weight:700;color:#fff}
 .rectimer i{width:10px;height:10px;border-radius:50%;background:#ff4d4d}
-.wheelwrap{position:relative;height:132px;border-radius:16px;background:rgba(232,244,250,.07);border:1px solid rgba(232,244,250,.2);overflow:hidden}
-.wheelwrap::after{content:'';position:absolute;left:8px;right:8px;top:43px;height:44px;border-radius:12px;border:2px solid var(--accent);pointer-events:none}
-.wheel{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;touch-action:pan-y;padding:44px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(transparent,#000 32%,#000 68%,transparent);mask-image:linear-gradient(transparent,#000 32%,#000 68%,transparent)}
+.wheelwrap{position:relative;height:132px;overflow:hidden}
+.wheel{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;touch-action:pan-y;padding:44px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(transparent,#000 38%,#000 62%,transparent);mask-image:linear-gradient(transparent,#000 38%,#000 62%,transparent)}
 .wheel::-webkit-scrollbar{display:none}
-.wi{display:flex;align-items:center;justify-content:center;width:100%;height:44px;padding:0 16px;scroll-snap-align:center;scroll-snap-stop:always;font-size:16px;font-weight:500;color:var(--muted);text-align:center}
-.wi[aria-selected="true"]{color:#fff;font-weight:700}
+.wi{display:flex;align-items:center;justify-content:center;width:100%;height:44px;padding:0 16px;scroll-snap-align:center;scroll-snap-stop:always;font-size:15px;font-weight:500;color:var(--muted);opacity:.7;text-align:center}
+.wi[aria-selected="true"]{color:#fff;font-weight:700;font-size:18px;opacity:1}
 .chk{display:flex;align-items:flex-start;gap:12px;margin-top:12px;min-height:44px;cursor:pointer;color:#fff}
 .chk input{flex:none;width:22px;height:22px;margin:2px 0 0;accent-color:var(--accent)}
 .vidbox canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+.countdown{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:110px;font-weight:700;color:#fff;background:rgba(7,31,42,.35)}
 .facewarn{position:absolute;left:10px;right:10px;bottom:10px;padding:8px 12px;border-radius:12px;background:rgba(255,155,138,.95);color:#071F2A;font-size:13px;font-weight:700;text-align:center}
 .facewarn[hidden]{display:none}
 .hrow{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -190,7 +190,7 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
 .where[hidden]{display:none}
 .where{display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px;color:var(--body)}
 .where svg{flex:none;stroke:var(--accent)}
-.who{padding:12px 14px;border-radius:14px;background:rgba(232,244,250,.07);font-size:14px;line-height:1.4;color:var(--body)}
+.who{padding:0;font-size:14px;line-height:1.4;color:var(--body)}
 .who b{color:#fff}
 .prog{height:8px;border-radius:4px;background:rgba(232,244,250,.14);overflow:hidden;margin:0 0 12px}
 .prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s linear}
@@ -1525,7 +1525,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     var h = { signup: 'Confirm it is you', anon: 'Confirm before you post', reset: 'Reset your password' };
     var p = {
       signup: 'We will send a 6-digit code by email or SMS to confirm your contact.',
-      anon: 'We send a 6-digit code to confirm you are real. ' + (CONFIG.ANON_LINK_MODE === 'none' ? 'We do not save your email or number with your story.' : 'Your story will not show your name, email or number.'),
+      anon: 'We send a 6-digit code to confirm you are real.',
       reset: 'Enter the email or number you signed up with and we will send a code.'
     };
     authTitle.textContent = t[flow.mode];
@@ -1537,8 +1537,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       '<p class="err" id="authErr" role="alert"></p>' +
       '<button class="btn" id="authGo" type="button" data-act="send" data-label="Send code">Send code</button>' +
       (flow.mode === 'signup' ? '<div class="center divider"><span class="muted">Already have an account?</span><button class="linkbtn" type="button" data-act="gologin">Log in</button></div>' : '') +
-      (flow.mode === 'anon' ? '<p class="note">Anonymous posting needs no account and no password. You verify again each time you post.</p>' +
-        '<p class="note">By continuing you accept the <button class="linkbtn" type="button" data-act="terms" style="min-height:24px;padding:0">Terms and conditions</button>.</p>' : '<p class="note">Standard SMS rates may apply.</p><p class="note">By continuing you accept the ' + termsLink() + '.</p>');
+      (flow.mode === 'anon' ? '<p class="note">By continuing you accept the <button class="linkbtn" type="button" data-act="terms" style="min-height:24px;padding:0">Terms and conditions</button>.</p>' : '<p class="note">Standard SMS rates may apply.</p><p class="note">By continuing you accept the ' + termsLink() + '.</p>');
   }
 
   /* --- one-time code --- */
@@ -1813,7 +1812,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     var after = flow && flow.after;
     closeAuth();
     toast(msg);
-    if (after === 'report') openReport();
+    if (after === 'report' || after === 'resume') openReport();
   }
 
   /* ---------- nav: Log in / Me ---------- */
@@ -1849,10 +1848,35 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   function openReport() {
     if (!hasValidSession()) { openAuth('choose', 'report'); return; }
     lastFocus = document.activeElement;
-    rep = newReport();
+    if (stashRep) { rep = stashRep; stashRep = null; } else rep = newReport();
     renderReport();
     reportPanel.classList.add('open');
+    restoreReport();
     warmFaceCheck();
+  }
+  // Posting without consent: keep everything they recorded and typed, and send them to create an account.
+  var stashRep = null;
+  function goSignup() {
+    if (!rep || rep.uploading) return;
+    stashRep = rep;
+    reportPanel.classList.remove('open');
+    toast('To post without consent, create an account.', 3200);
+    openAuth('contact', 'resume', 'signup');
+  }
+  function restoreReport() {
+    if (!rep) return;
+    var cap = $('cap'); if (cap) { cap.value = rep.caption || ''; $('capCount').textContent = cap.value.length + ' / ' + CONFIG.CAPTION_MAX; }
+    ['mood', 'category'].forEach(function (key) {
+      var w = reportBody.querySelector('.wheel[data-key="' + key + '"]');
+      if (!w || !rep[key]) return;
+      var items = w.querySelectorAll('.wi'), idx = -1;
+      items.forEach(function (n, k) { if (n.dataset.v === rep[key]) idx = k; });
+      if (idx < 0) return;
+      items.forEach(function (n, k) { n.setAttribute('aria-selected', String(k === idx)); });
+      w.scrollTop = idx * items[0].offsetHeight;
+      var lab = $(key + 'Val'); if (lab) lab.textContent = key === 'mood' ? moodText(rep[key]) : rep[key];
+    });
+    validateReport();
   }
   function closeReport() {
     if (rep && rep.uploading) { toast('Please wait, your story is uploading'); return; }
@@ -1868,7 +1892,6 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     reportBody.innerHTML =
       '<div class="vidbox" id="vidBox">' + videoBoxHtml() + '</div>' +
       '<div class="vidrow"><button class="btn" id="recBtn" type="button" data-r="record">' + recBtnHtml() + '</button></div>' +
-      '<p class="note">Mtaa Pulse is for nature and your surroundings. Faces in the background are blurred automatically, and a clip with a person up close is not kept.</p>' +
       '<div class="sec">Sound</div>' + soundHtml() +
       wheelHtml('mood', 'Current Feeling', MOODS) +
       wheelHtml('category', 'What is it about?', CATEGORIES) +
@@ -1888,14 +1911,13 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   }
   function soundHtml() {
     return '<label class="chk" style="margin-top:0"><input type="checkbox" id="voiceOn"' + (rep.voice ? ' checked' : '') + '><span>Record my voice, so I can talk about what I am showing</span></label>' +
-      '<div class="label" style="margin:12px 0 6px">Background sound (slide to see more)</div>' +
+      '<div class="label" style="margin:12px 0 6px">Background sound</div>' +
       '<div class="hrow" role="listbox" aria-label="Background sound">' +
       BG_TONES.map(function (t) { return '<button class="hi" type="button" role="option" aria-selected="' + (rep.bg === t.id) + '" data-r="bg" data-v="' + t.id + '">' + t.label + '</button>'; }).join('') +
       '<button class="hi" type="button" role="option" aria-selected="' + (rep.bg === 'file') + '" data-r="bgfile">' + (rep.bgName ? esc(rep.bgName.slice(0, 18)) : 'Attach my own') + '</button></div>' +
       '<input class="sr" id="bgFile" type="file" accept="audio/*" tabindex="-1">' +
       '<label class="label" for="bgVol" style="margin:12px 0 4px">Background volume</label>' +
-      '<input type="range" id="bgVol" min="0" max="100" value="' + rep.bgVol + '" style="width:100%;accent-color:var(--accent)">' +
-      '<p class="note">The sound is mixed into your video while you record. You will not hear it on your phone while recording.</p>';
+      '<input type="range" id="bgVol" min="0" max="100" value="' + rep.bgVol + '" style="width:100%;accent-color:var(--accent)">';
   }
   function wheelHtml(key, label, list) {
     return '<div class="sec" id="' + key + 'Lbl">' + label + ' <span class="muted" id="' + key + 'Val" style="font-weight:500">Slide up or down to choose</span></div>' +
@@ -1914,11 +1936,12 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     validateReport();
   }
   function videoBoxHtml() {
-    if (rep.url) return '<video src="' + esc(rep.url) + '" controls muted playsinline preload="metadata"></video>';
+    if (rep.url) return '<video src="' + esc(rep.url) + '" controls playsinline preload="metadata"></video>';
     return '<span class="muted" style="font-size:14px;text-align:center;padding:0 24px">Tap Record to open the camera</span>';
   }
   function recBtnHtml() {
     if (rep.opening) return 'Opening camera…';
+    if (rep.counting) return 'Get ready…';
     if (rep.recording) return icon('video', 20) + 'Stop recording';
     return icon('video', 20) + (rep.file ? 'Record again' : 'Record');
   }
@@ -1926,7 +1949,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     var b = $('recBtn');
     if (!b || !rep) return;
     b.innerHTML = recBtnHtml();
-    b.disabled = !!rep.opening;
+    b.disabled = !!(rep.opening || rep.counting);
     b.dataset.r = rep.recording ? 'stop' : 'record';
   }
   function repErr(msg) { var el = $('repErr'); if (el) el.textContent = msg || ''; }
@@ -2038,6 +2061,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   function teardown(r) {
     if (!r) return;
     clearInterval(r.timer); r.timer = 0;
+    clearInterval(r.cdTimer); r.cdTimer = 0; r.counting = false;
     r.loop = false; if (r.raf) { cancelAnimationFrame(r.raf); r.raf = 0; }
     if (r.tone) { r.tone.stop(); r.tone = null; }
     [r.stream, r.out, r.cs].forEach(function (st) { if (st) st.getTracks().forEach(function (t) { t.stop(); }); });
@@ -2096,14 +2120,14 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   // Opens the camera (live recording only, no gallery uploads), reads the phone's coordinates at the same moment,
   // blurs faces, and mixes voice and background sound into the recording.
   function startRecording() {
-    if (!rep || rep.uploading || rep.recording || rep.opening) return;
+    if (!rep || rep.uploading || rep.recording || rep.opening || rep.counting) return;
     var r = rep, md = navigator.mediaDevices;
     repErr('');
     if (!(md && md.getUserMedia && window.MediaRecorder && HTMLCanvasElement.prototype.captureStream)) { repErr('This browser cannot record video. Please open Mtaa Pulse in Chrome or Safari.'); return; }
     var AC = window.AudioContext || window.webkitAudioContext, ac = null;
     try { if (AC) { ac = new AC(); if (ac.resume) ac.resume(); } } catch (e) { ac = null; }   // created inside the tap so phones allow it
     r.opening = true; r.locState = 'busy'; renderWhere(); updateRecUI(); validateReport();
-    var vc = { facingMode: { ideal: 'environment' } };
+    var vc = { facingMode: { exact: 'environment' } };
     var cam = md.getUserMedia({ video: vc, audio: true })
       .catch(function () { return md.getUserMedia({ video: vc }); })     // microphone refused: still record video with background sound
       .then(function (s) { return { s: s }; }, function (e) { return { e: e }; });
@@ -2115,7 +2139,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       if (rep !== r) { dropCam(); return; }
       r.opening = false;
       if (locR.e) r.locState = 'fail'; else { r.lat = locR.c.latitude; r.lng = locR.c.longitude; }
-      if (camR.e) repErr('We could not open the camera. Allow camera access for this site, then tap Record again.');
+      if (camR.e) repErr('We could not open the back camera. Allow camera access for this site, then tap Record again.');
       if (locR.e || camR.e) { dropCam(); if (!locR.e) r.locState = 'idle'; renderWhere(); updateRecUI(); validateReport(); return; }
       resolveWard(r.lat, r.lng).then(function (w) {
         if (rep !== r) return;
@@ -2156,6 +2180,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
         box.insertAdjacentHTML('beforeend', '<div class="rectimer"><i></i><span id="recClock">0:00 / ' + fmtClock(CONFIG.VIDEO_MAX_SEC) + '</span></div><div class="facewarn" id="faceWarn" hidden>A person is in focus. Point the camera at nature and your surroundings.</div>');
         r.loop = true; drawLoop(r);
         decodeBgFile(r).then(function () { applyBg(r); });
+        r.counting = true; updateRecUI(); validateReport();
+        runCountdown(r, function () {
         r.mr.start(1000);
         r.recording = true; r.t0 = Date.now();
         r.timer = setInterval(function () {
@@ -2164,8 +2190,25 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
           if (el >= CONFIG.VIDEO_MAX_SEC) stopRecording(true);
         }, 250);
         updateRecUI(); validateReport();
+        });
       });
     });
+  }
+  function runCountdown(r, cb) {
+    var n = 3, el = document.createElement('div');
+    el.className = 'countdown'; el.textContent = n;
+    $('vidBox').appendChild(el);
+    r.cdTimer = setInterval(function () {
+      if (rep !== r || !r.src) { clearInterval(r.cdTimer); return; }
+      n--;
+      if (n > 0) { el.textContent = n; return; }
+      el.textContent = 0;
+      clearInterval(r.cdTimer);
+      r.cdTimer = setTimeout(function () {
+        if (rep !== r || !r.src) return;
+        el.remove(); r.counting = false; cb();
+      }, 700);
+    }, 1000);
   }
   function stopRecording(auto) {
     var r = rep;
@@ -2197,7 +2240,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   function validateReport() {
     var b = $('repGo');
     if (!b || !rep) return;
-    b.disabled = !(rep.file && rep.mood && rep.category && rep.caption.trim().length >= CONFIG.CAPTION_MIN && rep.locState === 'ok') || rep.uploading || rep.recording || rep.opening || (session && session.type !== 'account' && !rep.anonOk);
+    b.disabled = !(rep.file && rep.mood && rep.category && rep.caption.trim().length >= CONFIG.CAPTION_MIN && rep.locState === 'ok') || rep.uploading || rep.recording || rep.opening || rep.counting;
   }
 
   reportBody.addEventListener('click', function (e) {
@@ -2260,7 +2303,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   function submitReport() {
     if (!rep || rep.uploading) return;
     if (!hasValidSession()) { repErr('Your verification expired. Close this and verify again.'); return; }
-    if (session.type !== 'account' && !rep.anonOk) { repErr('Tick the box to confirm you are posting anonymously.'); return; }
+    if (session.type !== 'account' && !rep.anonOk) { goSignup(); return; }
     var pre = checkCaption(rep.caption, session.type !== 'account');
     if (pre.reject) { repErr(pre.reject); return; }
     rep.uploading = true;
@@ -2329,7 +2372,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     var hrs = Math.round(CONFIG.ANON_HASH_TTL_MS / 3600000);
     return '<div class="policy">' +
       '<p>Anonymous posting needs no account and no password. You verify again each time you post, and you can post up to ' + CONFIG.ANON_DAILY_LIMIT + ' anonymous stories a day.</p>' +
-      '<p>' + (CONFIG.ANON_LINK_MODE === 'none' ? 'We do not save your email or number with your story. ' : 'Your story shows no name. ') + 'To stop spam we keep a scrambled (hashed) copy for up to ' + hrs + ' hours, then delete it.</p>' +
+      '<p>' + (CONFIG.ANON_LINK_MODE === 'none' ? 'We do not save your email or number with your story. ' : 'Your story will not show your name, email or number. ') + 'To stop spam we keep a scrambled (hashed) copy for up to ' + hrs + ' hours, then delete it.</p>' +
       '<p>While a story waits for review we keep a scrambled copy of the contact for up to ' + Math.round(CONFIG.BAN_HASH_MAX_MS / 86400000) + ' days. If the story is removed for serious abuse we keep that copy so the contact cannot verify again. Otherwise it is deleted when we decide.</p>' +
       (CONFIG.ANON_LINK_MODE === 'none'
         ? '<p>Because nothing links a story to a person, we cannot identify an anonymous poster, even if asked. We can only act on the story itself.</p>'
@@ -2343,7 +2386,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   function openTerms() {
     termsFocus = document.activeElement;
     $('termsTitle').textContent = 'Terms and conditions';
-    $('termsBody').innerHTML = '<h2 class="sec">How anonymity works</h2>' + policyHtml();
+    $('termsBody').innerHTML = '<h2 class="sec">Videos and faces</h2><div class="policy"><p>Mtaa Pulse is for nature and your surroundings. Faces in the background are blurred automatically, and a clip with a person up close is not kept.</p></div>' +
+      '<h2 class="sec">How anonymity works</h2>' + policyHtml();
     termsPanel.classList.add('open');
   }
   function openConsent() {
