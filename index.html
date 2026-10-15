@@ -213,6 +213,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
 
 .round[aria-pressed="true"]{background:var(--accent);color:var(--ink)}
 .cmt-in{margin-top:10px}
+.cmt{padding:8px 0;font-size:14px;line-height:1.4;color:var(--body)}
+.cmt b{color:#fff}
 
 @media (prefers-reduced-motion:reduce){
   .toast,.prog i{transition:none}
@@ -2409,11 +2411,11 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     var hrs = Math.round(CONFIG.ANON_HASH_TTL_MS / 3600000);
     return '<div class="policy">' +
       '<p>Anonymous posting needs no account and no password. You verify again each time you post, and you can post up to ' + CONFIG.ANON_DAILY_LIMIT + ' anonymous stories a day.</p>' +
-      '<p>' + (CONFIG.ANON_LINK_MODE === 'none' ? 'We do not save your email or number with your story. ' : 'Your story will not show your name, email or number. ') + 'To stop spam we keep a scrambled (hashed) copy for up to ' + hrs + ' hours, then delete it.</p>' +
-      '<p>While a story waits for review we keep a scrambled copy of the contact for up to ' + Math.round(CONFIG.BAN_HASH_MAX_MS / 86400000) + ' days. If the story is removed for serious abuse we keep that copy so the contact cannot verify again. Otherwise it is deleted when we decide.</p>' +
+      '<p>' + (CONFIG.ANON_LINK_MODE === 'none' ? 'The Mtaa Pulse team does not save your email or number with your story. ' : 'Your story will not show your name, email or number. ') + 'To stop spam, the Mtaa Pulse team keeps a scrambled (hashed) copy for up to ' + hrs + ' hours, then delete it.</p>' +
+      '<p>While a story waits for review, the Mtaa Pulse team keeps a scrambled copy of the contact for up to ' + Math.round(CONFIG.BAN_HASH_MAX_MS / 86400000) + ' days. If the story is removed for serious abuse, the team keeps that copy so the contact cannot verify again. Otherwise, the copy is deleted when a decision is made.</p>' +
       (CONFIG.ANON_LINK_MODE === 'none'
-        ? '<p>Because nothing links a story to a person, we cannot identify an anonymous poster, even if asked. We can only act on the story itself.</p>'
-        : '<p>We also keep your contact, encrypted, with the story for ' + Math.round(CONFIG.SEALED_RETENTION_MS / 2592000000) + ' months. It is locked, can only be opened for a valid court order, and every opening is logged. Our moderators cannot read it.</p>') +
+        ? '<p>Because nothing links a story to a person, the Mtaa Pulse team cannot identify an anonymous poster, even if asked. The team can only act on the story itself.</p>'
+        : '<p>The Mtaa Pulse team also keeps your contact, encrypted, with the story for ' + Math.round(CONFIG.SEALED_RETENTION_MS / 2592000000) + ' months. It is locked, can only be opened for a valid court order, and every opening is logged. Mtaa Pulse moderators cannot read it.</p>') +
       '</div>';
   }
 
@@ -2430,10 +2432,10 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   function openConsent() {
     termsFocus = document.activeElement;
     $('termsTitle').textContent = 'Consent';
-    $('termsBody').innerHTML = '<p class="lede">No account is created, and ' + (CONFIG.ANON_LINK_MODE === 'none' ? 'nothing that links this post to you is kept after you post.' : 'your post shows no name.') +
-      ' Anonymous posts are checked by our team before they go public, and you can post up to ' + CONFIG.ANON_DAILY_LIMIT + ' a day.</p>' +
-      '<p class="lede">I confirm I am posting anonymously, and I understand our team must approve this post before it goes public.</p>' +
-      '<p class="note">Tick the Consent box on the New post screen to agree.</p>';
+    $('termsBody').innerHTML = '<p class="lede">No account is created, and ' + (CONFIG.ANON_LINK_MODE === 'none' ? 'nothing that links this post to you is kept after you post.' : 'your post will not show your name.') +
+      ' The Mtaa Pulse team checks anonymous posts before they go public. You can post up to ' + CONFIG.ANON_DAILY_LIMIT + ' anonymous stories a day.</p>' +
+      '<p class="lede">I confirm that I am posting anonymously. I understand that the Mtaa Pulse team must approve this post before it goes public.</p>' +
+      '<p class="lede" style="color:#fff;font-weight:700">I\'m ticking the consent box to agree to the above.</p>';
     termsPanel.classList.add('open');
   }
   function closeTerms() { termsPanel.classList.remove('open'); if (termsFocus && termsFocus.focus) termsFocus.focus(); }
@@ -2632,8 +2634,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   var cmtSheet = $('cmtSheet'), cmtId = null;
   function renderComments(list) {
     $('cmtList').innerHTML = list.length ? list.map(function (c) {
-      return '<div class="card"><b>' + esc(c.user) + '</b> <span class="muted">' + esc(c.when) + '</span><div>' + esc(c.text) + '</div></div>';
-    }).join('') : '<p class="note">No comments yet. Be the first.</p>';
+      return '<div class="cmt"><b>' + esc(c.user) + '</b> <span class="muted">' + esc(c.when) + '</span><div>' + esc(c.text) + '</div></div>';
+    }).join('') : '<p class="note cmt-empty">No comments yet. Be the first.</p>';
   }
   function openComments(id) {
     cmtId = id; $('cmtErr').textContent = ''; $('cmtInput').value = '';
