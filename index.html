@@ -183,7 +183,10 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 
   var COUNTIES = ['Baringo','Bomet','Bungoma','Busia','Elgeyo-Marakwet','Embu','Garissa','Homa Bay','Isiolo','Kajiado','Kakamega','Kericho','Kiambu','Kilifi','Kirinyaga','Kisii','Kisumu','Kitui','Kwale','Laikipia','Lamu','Machakos','Makueni','Mandera','Marsabit','Meru','Migori','Mombasa',"Murang'a",'Nairobi','Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri','Samburu','Siaya','Taita-Taveta','Tana River','Tharaka-Nithi','Trans-Nzoia','Turkana','Uasin Gishu','Vihiga','Wajir','West Pokot'].map(function (n) { return n + ' County'; });
 
-  var state = { scope: 'nearby', county: 'Kisii County' };
+  /* home = the county the person is browsing from. Replace it with the
+     county found from their location. county = the name shown on the
+     pill. Only scope 'county' filters to a single county. */
+  var state = { scope: 'nearby', home: 'Kisii County', county: 'Kisii County' };
 
   /* ---------- icons ---------- */
   var ICONS = {
@@ -374,7 +377,12 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
   }
 
   tabNearby.addEventListener('click', function () { setScope('nearby'); });
-  tabKenya.addEventListener('click', function () { setScope('kenya'); });
+  /* All Kenya: the pill goes back to the home county, but nothing is
+     filtered. County-only stories need a county picked from the pill. */
+  tabKenya.addEventListener('click', function () {
+    state.county = state.home;
+    setScope('kenya');
+  });
 
   /* ---------- county picker ---------- */
   var sheet = document.getElementById('sheet');
@@ -387,7 +395,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
     var items = COUNTIES.filter(function (c) { return c.toLowerCase().indexOf(q) !== -1; });
     countyList.innerHTML = items.length
       ? items.map(function (c) {
-          return '<li><button type="button" data-county="' + esc(c) + '"><span>' + esc(c) + '</span>' + (c === state.county ? icon('check', 22, 2.5) : '') + '</button></li>';
+          return '<li><button type="button" data-county="' + esc(c) + '"><span>' + esc(c) + '</span>' + (state.scope === 'county' && c === state.county ? icon('check', 22, 2.5) : '') + '</button></li>';
         }).join('')
       : '<li class="none">No county matches that name.</li>';
   }
