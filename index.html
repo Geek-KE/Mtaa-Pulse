@@ -189,6 +189,9 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
 details.policy{margin-top:14px;font-size:13px;line-height:1.45;color:var(--body)}
 details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(--accent)}
 
+.foot{padding:2px 20px calc(10px + env(safe-area-inset-bottom));text-align:center}
+.foot .linkbtn{font-weight:500;color:var(--muted)}
+
 @media (prefers-reduced-motion:reduce){
   .toast,.prog i{transition:none}
 }
@@ -244,6 +247,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       <button class="hbtn" id="authClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
     </div>
     <div class="panel-body" id="authBody"></div>
+    <div class="foot"><button class="linkbtn" id="termsBtn" type="button">Terms and conditions</button></div>
   </section>
 
   <!-- report panel -->
@@ -275,6 +279,16 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       <button class="hbtn" id="statusClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
     </div>
     <div class="panel-body" id="statusBody"></div>
+  </section>
+
+  <!-- Terms and conditions (holds the "How anonymity works" text). Opened from the footer and from Me > Terms and conditions -->
+  <section class="panel" id="termsPanel" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
+    <div class="panel-head">
+      <span class="hbtn" aria-hidden="true"></span>
+      <h2 id="termsTitle">Terms and conditions</h2>
+      <button class="hbtn" id="termsClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
+    </div>
+    <div class="panel-body" id="termsBody"></div>
   </section>
 
   <!-- Layer 6: moderator console (DEMO only, open with #mod in the address) -->
@@ -329,10 +343,15 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     // Layer 3 - community flags
     FLAG_HIDE_THRESHOLD: 3,                 // distinct reports that auto-hide a story until a human reviews it
     // Layer 5 - the hard question (a legal and ethical decision, decide BEFORE launch)
-    //   'none'   = true anonymity: nothing links a post to a person, so we cannot help police identify anyone. (chosen default)
+    //   'none'   = true anonymity: nothing links a post to a person, so we cannot help police identify anyone. 
     //   'sealed' = store an encrypted link to the contact that only a court order can unlock.
     // Have a lawyer check the Kenya Data Protection Act and the Computer Misuse and Cybercrimes Act, then write the policy down.
-    ANON_LINK_MODE: 'none',
+    //   In 'sealed' mode the contact is encrypted and kept for SEALED_RETENTION_MS so a court order a few months later can still be honoured.
+    //   PRODUCTION: use envelope encryption with a KMS key. Unsealing needs two authorised people plus a case reference, and is logged.
+    //   Moderators must NOT be able to read it; only a named legal officer. Delete it when the retention period ends (unless on legal hold).
+    ANON_LINK_MODE: 'sealed',
+    SEALED_RETENTION_MS: 365 * 86400000,    // how long the locked contact is kept (decide with your lawyer)
+    BAN_HASH_MAX_MS: 7 * 86400000,          // layer 4: a ban hash lives only while the story awaits a decision, never longer than this
     // Layer 6 - run moderation properly
     REVIEW_TARGET_HOURS: 4                  // reported or held stories should get a human decision within this time
   };
@@ -411,7 +430,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     return list;
   }
   var mock = { otps: {}, otpLog: {}, fails: {}, verified: {}, users: loadJSON('mp_mock_users', {}), stories: seedStories(),
-              rate: {}, dev: {}, banned: {}, anonTokens: {}, trust: {} };   // safety state, see section 2b
+              rate: {}, dev: {}, banned: {}, anonTokens: {}, trust: {}, sealed: {}, audit: [] };   // safety state, see section 2b
   function saveUsers() { saveJSON('mp_mock_users', mock.users); }
 
   /* ==================================================================
@@ -422,7 +441,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
        2. Stricter for anonymous: caption rules, auto checks, review queue before wide reach
        3. Community flags       : Report button, auto-hide at a threshold, human review, appeal
        4. Ban without identifying: keyed hash (HMAC) of the contact, nothing else kept
-       5. The hard question     : CONFIG.ANON_LINK_MODE (default: true anonymity)
+       5. The hard question     : CONFIG.ANON_LINK_MODE ('none' = true anonymity, 'sealed' = contact locked, opened only by court order)
        6. Run moderation        : response target, moderator tools, stats, status screen for posters
      Everything here must be re-implemented on your real server.
      The browser is never trusted: it only gives friendlier early messages.
@@ -442,6 +461,25 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       .then(function (b) { return Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); });
   }
 
+  // Layer 5 ('sealed' mode): AES-GCM encryption of the contact. The key comes from the server secret here;
+  // in production it lives in a KMS and decrypting is a separate, audited permission.
+  function sealKey() {
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(SERVER_SECRET + '|seal')).then(function (d) { return crypto.subtle.importKey('raw', d, 'AES-GCM', false, ['encrypt', 'decrypt']); });
+  }
+  function b64(buf) { return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))); }
+  function unb64(t) { return Uint8Array.from(atob(t), function (c) { return c.charCodeAt(0); }); }
+  function sealContact(contact) {
+    if (CONFIG.ANON_LINK_MODE !== 'sealed' || !(window.crypto && crypto.subtle)) return Promise.resolve(null);   // 'none' mode: nothing is kept
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    return sealKey().then(function (k) { return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, new TextEncoder().encode(contact)); })
+      .then(function (ct) { return b64(iv) + '.' + b64(ct); });
+  }
+  function unsealContact(blob) {
+    var part = blob.split('.');
+    return sealKey().then(function (k) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(part[0]) }, k, unb64(part[1])); })
+      .then(function (b) { return new TextDecoder().decode(b); });
+  }
+
   // Only live or approved stories reach the public feed. Anything in review, hidden, removed or escalated does not.
   function visible(s) { return !s.status || s.status === 'live' || s.status === 'approved'; }
 
@@ -452,6 +490,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       mock.rate[k] = mock.rate[k].filter(function (t) { return t > cut; });
       if (!mock.rate[k].length) delete mock.rate[k];
     });
+    // Layer 5: locked contacts expire after the retention period, unless the story is on legal hold.
+    Object.keys(mock.sealed).forEach(function (id) { var r = mock.sealed[id]; if (!r.hold && now > r.exp) delete mock.sealed[id]; });
     mock.stories.forEach(function (st) { if (st.banKey && now > st.banKeyExp) { delete st.banKey; delete st.banKeyExp; } });
   }
   // The three keys are: contact, device, IP (the IP is faked here). Hitting the daily limit on ANY of them blocks the post.
@@ -502,7 +542,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
 
   // Small helpers used by the flag, appeal and moderator functions below.
   function findStory(id) { return mock.stories.filter(function (x) { return String(x.id) === String(id); })[0]; }
-  function setStatus(st, status, reason) { st.status = status; st.verified = status === 'approved'; st.reason = reason || null; st.decidedAt = Date.now(); }
+  function setStatus(st, status, reason) { st.status = status; st.verified = status === 'approved'; st.reason = reason || null; st.decidedAt = Date.now();
+    delete st.banKey; delete st.banKeyExp; }   // decision made: the ban key is no longer needed ('ban' reads it first)
   function isQueued(st) { return st.status === 'review' || st.status === 'hidden' || st.status === 'appeal' || st.status === 'escalated' || st.status === 'live'; }
   var REMOVED_TEXT = 'It broke our community rules.';
   function hashPw(contact, pw) {
@@ -554,8 +595,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
         if (purpose === 'anon') {
           // No account, nothing stored about the contact itself. The single-use token carries two keyed hashes for a few minutes:
           // one for rate limits (layer 1) and one for banning if the story is later removed for serious abuse (layer 4).
-          return Promise.all([hmacHex('rate-contact', contact), hmacHex('ban', contact)]).then(function (h) {
-            mock.anonTokens[token] = { ck: h[0], bk: h[1], exp: Date.now() + CONFIG.ANON_TOKEN_MS };
+          return Promise.all([hmacHex('rate-contact', contact), hmacHex('ban', contact), sealContact(contact)]).then(function (h) {
+            mock.anonTokens[token] = { ck: h[0], bk: h[1], sl: h[2], exp: Date.now() + CONFIG.ANON_TOKEN_MS };
             return { token: token };
           });
         }
@@ -642,9 +683,11 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
             when: 'Just now', poster: p.posterName || null, avatar: p.posterAvatar || null, verified: status === 'approved',
             likes: 0, comments: 0, scene: 'bridge', video: p.localPreview || null,     // real server returns the CDN URL after transcoding
             status: status, anon: anon, owner: p.posterName || null, reasons: reasons, queuedAt: now, flaggers: [], appealed: false };
-          // Layer 4: a keyed hash of the contact is kept on the story ONLY for the retention window,
-          // so a moderator can still ban the contact if the story is removed for serious abuse. Then it is deleted.
-          if (info) { story.banKey = info.bk; story.banKeyExp = now + CONFIG.ANON_HASH_TTL_MS; }
+          // Layer 4: a keyed hash of the contact is kept on the story ONLY while the story waits for a decision (hard cap CONFIG.BAN_HASH_MAX_MS),
+          // so a moderator can still ban the contact if it is removed for serious abuse. Deleted at the decision unless it is a ban.
+          if (info) { story.banKey = info.bk; story.banKeyExp = now + CONFIG.BAN_HASH_MAX_MS; }
+          // Layer 5: in 'sealed' mode keep the locked contact against the story id, for the retention period only.
+          if (info && info.sl) mock.sealed[story.id] = { blob: info.sl, exp: now + CONFIG.SEALED_RETENTION_MS, hold: false };
           mock.stories.unshift(story);
           // DEMO only: stand-in for a moderator approving a clean anonymous story.
           if (CONFIG.DEMO && CONFIG.DEMO_AUTO_APPROVE_MS && status === 'review' && !reasons.length) {
@@ -703,6 +746,19 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
         return { anonTotal: anon.length, anonRemoved: removed, queue: q.length, overdue: late };
       });
     },
+    // Layer 5: legal requests. Needs a case reference, and EVERY use is logged.
+    //   hold   = legal hold: stops the locked contact and the story's video from being deleted while a case is open
+    //   unseal = decrypt the contact (court order only; production: two-person approval, legal officer only)
+    legalAction: function (id, op, ref) {
+      return wait(200).then(function () {
+        if (!ref || ref.length < 4) throw apiErr('legal_ref', 'Enter the court order or case reference.');
+        var rec = mock.sealed[id], st = findStory(id);
+        mock.audit.push({ at: Date.now(), id: id, op: op, ref: ref });
+        if (op === 'hold') { if (st) st.hold = true; if (rec) rec.hold = true; return { held: true, sealed: !!rec }; }
+        if (!rec) return { contact: null };
+        return unsealContact(rec.blob).then(function (c) { return { contact: c }; });
+      });
+    },
     modAction: function (id, action) {
       return wait(200).then(function () {
         var st = findStory(id), banned = false;
@@ -714,8 +770,9 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
           setStatus(st, 'removed', REMOVED_TEXT);
         } else if (action === 'ban') {
           // Layer 4: remove AND store only the keyed hash of the contact. Future verifications that match it are rejected.
+          var bk = st.banKey;                                   // grab it first: setStatus() deletes it
           setStatus(st, 'removed', REMOVED_TEXT);
-          if (st.banKey) { mock.banned[st.banKey] = true; delete st.banKey; banned = true; }
+          if (bk) { mock.banned[bk] = true; banned = true; }    // the ONLY hash kept permanently
         } else if (action === 'escalate') {
           st.status = 'escalated';                                                      // threats / child safety: senior reviewer
         }
@@ -1192,7 +1249,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   }, { passive: false });
 
   function anyPanelOpen() {
-    return sheet.classList.contains('open') || $('authPanel').classList.contains('open') || $('reportPanel').classList.contains('open') || $('statusPanel').classList.contains('open') || $('modPanel').classList.contains('open') || $('flagSheet').classList.contains('open');
+    return sheet.classList.contains('open') || $('authPanel').classList.contains('open') || $('reportPanel').classList.contains('open') || $('statusPanel').classList.contains('open') || $('modPanel').classList.contains('open') || $('flagSheet').classList.contains('open') || $('termsPanel').classList.contains('open');
   }
   document.addEventListener('keydown', function (e) {
     if (anyPanelOpen()) return;
@@ -1300,7 +1357,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       '<p class="lede">Create an account to post under your own name, or post once without an account.</p>' +
       '<div class="stack">' +
         '<button class="choice main" type="button" data-act="mode" data-mode="signup" data-focus><strong>Create an account</strong><span>Pick a username, a password and a photo. Your stories carry your name.</span></button>' +
-        '<button class="choice" type="button" data-act="mode" data-mode="anon"><strong>Post anonymously</strong><span>No account and no username. We confirm a code sent to your email or phone, and keep nothing that links the story to you.</span></button>' +
+        '<button class="choice" type="button" data-act="mode" data-mode="anon"><strong>Post anonymously</strong><span>No account and no username. We confirm a code sent to your email or phone, ' + (CONFIG.ANON_LINK_MODE === 'none' ? 'and keep nothing that links the story to you.' : 'and your story shows no name.') + '</span></button>' +
       '</div>' +
       '<div class="center divider"><span class="muted">Already have an account?</span><button class="linkbtn" type="button" data-act="gologin">Log in</button></div>' +
       '<div class="center"><button class="linkbtn" type="button" data-act="status">Check my story status</button></div>';
@@ -1326,7 +1383,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     var h = { signup: 'Confirm it is you', anon: 'Confirm before you post', reset: 'Reset your password' };
     var p = {
       signup: 'We will send a 6-digit code by email or SMS to confirm your contact.',
-      anon: 'We send a 6-digit code to confirm you are real. We do not save your email or number with your story.',
+      anon: 'We send a 6-digit code to confirm you are real. ' + (CONFIG.ANON_LINK_MODE === 'none' ? 'We do not save your email or number with your story.' : 'Your story will not show your name, email or number.'),
       reset: 'Enter the email or number you signed up with and we will send a code.'
     };
     authTitle.textContent = t[flow.mode];
@@ -1338,7 +1395,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       '<p class="err" id="authErr" role="alert"></p>' +
       '<button class="btn" id="authGo" type="button" data-act="send" data-label="Send code">Send code</button>' +
       (flow.mode === 'signup' ? '<div class="center divider"><span class="muted">Already have an account?</span><button class="linkbtn" type="button" data-act="gologin">Log in</button></div>' : '') +
-      (flow.mode === 'anon' ? '<p class="note">Anonymous posting needs no account and no password. You verify again each time you post. Up to ' + CONFIG.ANON_DAILY_LIMIT + ' anonymous stories a day.</p>' + policyHtml() : '<p class="note">Standard SMS rates may apply.</p>');
+      (flow.mode === 'anon' ? '<p class="note">Anonymous posting needs no account and no password. You verify again each time you post. Up to ' + CONFIG.ANON_DAILY_LIMIT + ' anonymous stories a day.</p>' +
+        '<p class="note">By continuing you accept the <button class="linkbtn" type="button" data-act="terms" style="min-height:24px;padding:0">Terms and conditions</button>.</p>' : '<p class="note">Standard SMS rates may apply.</p>');
   }
 
   /* --- one-time code --- */
@@ -1413,6 +1471,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       '</div><div class="avmeta"><b style="font-size:20px">@' + esc(session.username) + '</b><br>' + esc(session.contactMask || '') + '</div></div>' +
       '<div class="stack"><button class="btn" type="button" data-act="report-now" data-focus>Report a story</button>' +
       '<button class="btn ghost" type="button" data-act="status">My story status</button>' +
+      '<button class="btn ghost" type="button" data-act="terms">Terms and conditions</button>' +
       '<button class="btn ghost" type="button" data-act="logout">Log out</button></div>';
   }
 
@@ -1444,6 +1503,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     else if (act === 'logout') { setSession(null); closeAuth(); toast('You are logged out'); }
     else if (act === 'report-now') { closeAuth(); openReport(); }
     else if (act === 'status') { closeAuth(); openStatus(); }
+    else if (act === 'terms') openTerms();
   });
   authBody.addEventListener('input', function (e) {
     var t = e.target;
@@ -1685,7 +1745,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       '<div class="sec">Where</div><div class="where" id="where"></div>' +
       '<div class="sec">Posting as</div>' +
       '<div class="who">' + (anon
-        ? '<b>Anonymous reporter</b><br>No account is created, and nothing that links this story to you is kept after you post. Anonymous stories are checked by our team before they go public, and you can post up to ' + CONFIG.ANON_DAILY_LIMIT + ' a day.'
+        ? '<b>Anonymous reporter</b><br>No account is created, and ' + (CONFIG.ANON_LINK_MODE === 'none' ? 'nothing that links this story to you is kept after you post.' : 'your story shows no name.') + ' Anonymous stories are checked by our team before they go public, and you can post up to ' + CONFIG.ANON_DAILY_LIMIT + ' a day.'
         : '<b>@' + esc(session.username) + '</b>') + '</div>' +
       '<p class="err" id="repErr" role="alert" style="margin-top:14px"></p>' +
       '<div class="prog" id="prog" hidden role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="progBar"></i></div>' +
@@ -1823,7 +1883,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       }
       state.scope = 'county'; state.county = county;
       updateHeader(); resetFeed();
-      toast(isAnon ? 'Posted anonymously. We keep nothing that links it to you.' : 'Posted. We will check it before it is marked Verified.', 3400);
+      toast(isAnon ? 'Posted anonymously.' : 'Posted. We will check it before it is marked Verified.', 3400);
     }).catch(function (err) {
       rep.uploading = false;
       prog.hidden = true; go.textContent = 'Post story'; validateReport();
@@ -1837,7 +1897,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     if (e.key !== 'Escape') return;
     if (sheet.classList.contains('open')) closeSheet();
     else if (reportPanel.classList.contains('open')) closeReport();
-    else if (authPanel.classList.contains('open')) closeAuth();
+    else if (authPanel.classList.contains('open') && !termsPanel.classList.contains('open')) closeAuth();
   });
 
   /* ==================================================================
@@ -1848,14 +1908,26 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   // DRAFT: have a lawyer review it against the Kenya Data Protection Act and the Computer Misuse and Cybercrimes Act before launch.
   function policyHtml() {
     var hrs = Math.round(CONFIG.ANON_HASH_TTL_MS / 3600000);
-    return '<details class="policy"><summary>How anonymity works</summary>' +
-      '<p>We do not save your email or number with your story. To stop spam we keep a scrambled (hashed) copy for up to ' + hrs + ' hours, then delete it.</p>' +
-      '<p>If a story is removed for serious abuse, we keep a scrambled copy of that contact so it cannot verify again. Everyone else leaves nothing behind.</p>' +
+    return '<div class="policy">' +
+      '<p>' + (CONFIG.ANON_LINK_MODE === 'none' ? 'We do not save your email or number with your story. ' : 'Your story shows no name. ') + 'To stop spam we keep a scrambled (hashed) copy for up to ' + hrs + ' hours, then delete it.</p>' +
+      '<p>While a story waits for review we keep a scrambled copy of the contact for up to ' + Math.round(CONFIG.BAN_HASH_MAX_MS / 86400000) + ' days. If the story is removed for serious abuse we keep that copy so the contact cannot verify again. Otherwise it is deleted when we decide.</p>' +
       (CONFIG.ANON_LINK_MODE === 'none'
         ? '<p>Because nothing links a story to a person, we cannot identify an anonymous poster, even if asked. We can only act on the story itself.</p>'
-        : '<p>We keep an encrypted link to your contact that can only be opened by a court order.</p>') +
-      '</details>';
+        : '<p>We also keep your contact, encrypted, with the story for ' + Math.round(CONFIG.SEALED_RETENTION_MS / 2592000000) + ' months. It is locked, can only be opened for a valid court order, and every opening is logged. Our moderators cannot read it.</p>') +
+      '</div>';
   }
+
+  // Terms and conditions screen. The "How anonymity works" section sits here, not on the sign-in steps.
+  // DRAFT: add your other terms sections (acceptable use, takedowns, liability) and have a lawyer review the whole page.
+  var termsPanel = $('termsPanel'), termsFocus = null;
+  function openTerms() {
+    termsFocus = document.activeElement;
+    $('termsBody').innerHTML = '<h2 class="sec">How anonymity works</h2>' + policyHtml();
+    termsPanel.classList.add('open');
+  }
+  function closeTerms() { termsPanel.classList.remove('open'); if (termsFocus && termsFocus.focus) termsFocus.focus(); }
+  $('termsClose').addEventListener('click', closeTerms);
+  $('termsBtn').addEventListener('click', openTerms);
 
   /* ---------- Layer 3: report this story ---------- */
   var FLAG_REASONS = ['Nudity or sexual content', 'Graphic violence or threats', 'Abuse or hate', 'Names or exposes a private person', 'Scam, link or phone number', 'Child safety concern', 'False or misleading'];
@@ -1932,9 +2004,14 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
         'In queue: ' + st.queue + '. Past the ' + CONFIG.REVIEW_TARGET_HOURS + '-hour target: ' + st.overdue + '.<br>' +
         '<span class="muted">If this share climbs, tighten the limits. If it is near zero, check the filters are working.</span></div>' +
         '<div class="card"><b>Take care of yourself.</b> Take a break after each batch of disturbing material. Use Escalate for threats and child-safety content. Do not forward it.</div>' +
+        (CONFIG.ANON_LINK_MODE === 'sealed' ? '<div class="card"><b>Legal request</b><br>Court order or case only. Every use is logged.' +
+          '<div class="field" style="margin-top:8px"><input id="lgId" placeholder="Story id" autocomplete="off"></div>' +
+          '<div class="field" style="margin-top:8px"><input id="lgRef" placeholder="Court order or case reference" autocomplete="off"></div>' +
+          '<div class="row"><button class="btn ghost" type="button" data-m="hold">Preserve</button><button class="btn" type="button" data-m="unseal">Unseal contact</button></div>' +
+          '<p class="note" id="lgOut"></p></div>' : '') +
         (q.length ? q.map(function (it) {
           return '<div class="card' + (it.overdue ? ' late' : '') + '"><span class="badge' + (it.overdue ? ' bad' : '') + '">' + esc(it.status) + '</span>' +
-            (it.anon ? '<span class="badge">Anonymous</span>' : '') + '<span class="muted">waiting ' + ago(it.ageMs) + '</span><br>' +
+            (it.anon ? '<span class="badge">Anonymous</span>' : '') + '<span class="muted">waiting ' + ago(it.ageMs) + ' · id ' + esc(it.id) + '</span><br>' +
             '<b>' + esc(it.caption) + '</b>' +
             (it.reasons.length ? '<div>' + it.reasons.map(esc).join('. ') + '</div>' : '') +
             '<div class="row">' +
@@ -1950,12 +2027,19 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   modBody.addEventListener('click', function (e) {
     var b = e.target.closest('[data-m]');
     if (!b) return;
+    if (b.dataset.m === 'hold' || b.dataset.m === 'unseal') {            // Layer 5: legal request
+      api.legalAction($('lgId').value.trim(), b.dataset.m, $('lgRef').value.trim()).then(function (r) {
+        $('lgOut').textContent = r.held ? 'Preserved' + (r.sealed ? '.' : ' (no locked contact on file).') : (r.contact ? 'Contact: ' + r.contact : 'Nothing on file for that story.');
+      }).catch(function (err) { $('lgOut').textContent = err.message; });
+      return;
+    }
     api.modAction(b.dataset.id, b.dataset.m).then(function (r) { if (r.banned) toast('Removed. Contact blocked.'); openMod(); });
   });
   window.addEventListener('hashchange', function () { if (location.hash === '#mod') openMod(); });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
-    if (flagSheet.classList.contains('open')) closeFlag();
+    if (termsPanel.classList.contains('open')) closeTerms();
+    else if (flagSheet.classList.contains('open')) closeFlag();
     else if (statusPanel.classList.contains('open')) closeStatus();
     else if (modPanel.classList.contains('open')) modPanel.classList.remove('open');
   });
