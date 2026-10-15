@@ -1981,11 +1981,16 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     opts = opts || {}; if (ctl) opts.signal = ctl.signal;
     return fetch(url, opts).then(function (r) { clearTimeout(t); if (!r.ok) throw new Error('http ' + r.status); return r.json(); }, function (e) { clearTimeout(t); throw e; });
   }
-  function cleanCounty(n) {
-    n = String(n || '').replace(/\s*City County$/i, ' County').trim();
-    if (!n) return null;
-    if (!/county$/i.test(n)) n += ' County';
-    return n.replace(/^(.*)\s+county$/i, function (m, a) { return a + ' County'; });
+  // A county must be one of the 47 real counties. Map data also has sub-counties and constituencies
+  // ("Juja Sub County"), and some of them end in "County" too, so a name is only accepted if it matches the official list.
+  function countyKey(n) { return String(n || '').toLowerCase().replace(/\b(city|county)\b/g, ' ').replace(/[^a-z]/g, ''); }
+  function knownCounty(names) {
+    for (var i = 0; i < names.length; i++) {
+      var k = countyKey(names[i]);
+      if (!k) continue;
+      for (var j = 0; j < COUNTIES.length; j++) if (countyKey(COUNTIES[j]) === k) return COUNTIES[j];
+    }
+    return null;
   }
   function cleanWard(n) {
     n = String(n || '').trim();
@@ -1996,9 +2001,10 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     var q = '[out:json][timeout:10];is_in(' + lat + ',' + lng + ')->.a;area.a[boundary=administrative][name];out tags;';
     return fetchJson('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(q), 9000).then(function (d) {
       var areas = (d.elements || []).map(function (e) { return e.tags || {}; });
-      var county = areas.filter(function (t) { return /county$/i.test(t.name) || t.admin_level === '4'; })[0];
-      var ward = areas.filter(function (t) { return /\bward$/i.test(t.name); })[0];
-      return { ward: ward ? cleanWard(ward.name) : null, county: county ? cleanCounty(county.name) : null };
+      var level4 = areas.filter(function (t) { return t.admin_level === '4'; }).map(function (t) { return t.name; });
+      var county = knownCounty(level4) || knownCounty(areas.map(function (t) { return t.name; }));   // level 4 first, then any area that is a real county
+      var ward = areas.filter(function (t) { return /\bward$/i.test(t.name) && !/\bsub/i.test(t.name); })[0];
+      return { ward: ward ? cleanWard(ward.name) : null, county: county };
     });
   }
   function wardFromNominatim(lat, lng) {
@@ -2006,7 +2012,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     return fetchJson(url, 9000).then(function (d) {
       var a = d.address || {};
       var place = a.suburb || a.city_district || a.neighbourhood || a.quarter || a.village || a.town || a.city || a.municipality;
-      return { ward: place ? cleanWard(place) : null, county: cleanCounty(a.county || a.state_district || a.state) };
+      // In Kenya, Nominatim files the real county under "state" and the sub-county under "county", so check every field against the official list.
+      return { ward: place ? cleanWard(place) : null, county: knownCounty([a.state, a.county, a.state_district, a.region, a.city, a.municipality]) };
     });
   }
   function resolveWard(lat, lng) {
