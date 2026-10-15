@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#071F2A">
+<meta name="description" content="Mtaa Pulse: stories from your neighbourhood, verified at the source.">
+<title>Mtaa Pulse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#071F2A;
+  --trust:#0B4F6C;
+  --signal:#1E88A8;
+  --sky:#E8F4FA;
+  --muted:#9FC3D2;
+  --body:#CFE4EE;
+  --accent:#F2A33C;
+  --nav-h:76px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#02080C}
+body{font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--sky);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.app{position:relative;width:100%;max-width:430px;height:100vh;height:100dvh;margin:0 auto;overflow:hidden;background:var(--ink)}
+
+/* ---------- feed ---------- */
+.feed{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scroll-snap-type:y mandatory;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;will-change:scroll-position;scrollbar-width:none}
+.feed::-webkit-scrollbar{display:none}
+.slide{position:relative;height:100%;overflow:hidden;contain:layout paint style;scroll-snap-align:start;scroll-snap-stop:always}
+.scene{position:absolute;inset:0}
+.scene svg,.scene video{position:absolute;inset:0;width:100%;height:100%;display:block}
+.scene video{object-fit:cover}
+.slide-body{position:absolute;left:0;right:0;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom));display:flex;align-items:flex-end;gap:12px;padding:0 16px 16px}
+.info{flex:1;min-width:0}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.tag{padding:6px 14px;border-radius:999px;font-size:14px}
+.tag-mood{background:var(--accent);color:var(--ink);font-weight:700}
+.tag-cat{background:rgba(232,244,250,.16);color:var(--sky);font-weight:500}
+.caption{margin:0;font-size:20px;line-height:1.3;font-weight:700;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.caption.open{display:block}
+.more{display:flex;align-items:center;min-height:44px;font-size:14px;font-weight:700;color:var(--accent)}
+.more[hidden]{display:none}
+.chips{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.chiprow{display:flex;align-items:center;gap:10px;font-size:14px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px 6px 8px;border-radius:999px;background:rgba(7,31,42,.62);border:1px solid rgba(232,244,250,.28);font-size:13px;font-weight:500;color:var(--sky)}
+.chip svg{stroke:var(--accent)}
+.chip.verified{font-weight:700}
+.muted{color:var(--muted)}
+.poster{font-weight:500;color:var(--sky)}
+
+.rail{display:flex;flex-direction:column;align-items:center;gap:14px;width:56px;font-size:13px;color:var(--sky)}
+.rail-item{display:flex;flex-direction:column;align-items:center;gap:4px}
+.round{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;background:rgba(232,244,250,.14);color:var(--sky)}
+
+.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0 32px;text-align:center}
+.empty strong{font-size:22px;color:#fff}
+.empty span{font-size:15px;color:var(--muted)}
+
+/* ---------- top: name, county, scope ---------- */
+.top{position:absolute;left:0;right:0;top:0;z-index:5;padding-top:env(safe-area-inset-top)}
+.brand{padding:20px 20px 0;font-size:26px;font-weight:700;letter-spacing:-.01em;color:#fff}
+.brand span{color:var(--accent)}
+.bar{display:flex;align-items:center;gap:8px;padding:8px 16px 0}
+.pill{display:flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0;height:44px;padding:0 14px;border-radius:22px;background:rgba(7,31,42,.62);border:1px solid rgba(232,244,250,.22);font-size:15px;font-weight:500;color:var(--sky)}
+.pill svg{flex:none}
+.pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill.on{border-color:var(--accent)}
+.tabs{flex:1 0 auto;display:flex;justify-content:center;gap:12px}
+.tab{height:44px;font-size:15px;font-weight:500;color:var(--muted);border-bottom:3px solid transparent}
+.tab[aria-pressed="true"]{font-weight:700;color:#fff;border-bottom-color:var(--accent)}
+.iconbtn{display:flex;align-items:center;justify-content:center;flex:none;width:44px;height:44px;border-radius:22px;background:rgba(7,31,42,.62);border:1px solid rgba(232,244,250,.22);color:var(--sky)}
+.scope{padding:8px 20px 0;font-size:13px;color:var(--muted)}
+
+/* ---------- bottom navigation ---------- */
+.nav{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;align-items:center;justify-content:space-around;height:calc(var(--nav-h) + env(safe-area-inset-bottom));padding:0 8px calc(8px + env(safe-area-inset-bottom));background:rgba(7,31,42,.95);border-top:1px solid rgba(232,244,250,.12)}
+.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:64px;height:56px;font-size:12px;font-weight:500;color:var(--muted)}
+.nav-item[aria-current="page"]{font-weight:700;color:#fff}
+.report{display:flex;align-items:center;justify-content:center;width:64px;height:48px;border-radius:16px;background:var(--accent);color:var(--ink)}
+
+/* ---------- message ---------- */
+.toast{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 124px);z-index:15;transform:translateX(-50%);padding:10px 18px;border-radius:999px;background:rgba(7,31,42,.94);border:1px solid rgba(232,244,250,.28);font-size:14px;font-weight:500;color:#fff;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s ease}
+.toast.show{opacity:1}
+
+/* ---------- county picker ---------- */
+.sheet-wrap{position:absolute;inset:0;z-index:20;display:none}
+.sheet-wrap.open{display:block}
+.scrim{position:absolute;inset:0;width:100%;height:100%;background:rgba(0,0,0,.55)}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:85%;display:flex;flex-direction:column;padding:12px 20px calc(24px + env(safe-area-inset-bottom));background:#0B2F40;border-radius:24px 24px 0 0;border-top:1px solid rgba(232,244,250,.18)}
+.grab{align-self:center;width:40px;height:4px;border-radius:2px;background:#3F6A7E}
+.sheet h2{margin:16px 0 12px;font-size:22px;font-weight:700;color:#fff}
+.search{height:48px;padding:0 18px;border-radius:24px;border:1px solid rgba(232,244,250,.28);background:rgba(232,244,250,.08);color:#fff;font:inherit;font-size:16px}
+.search::placeholder{color:var(--muted)}
+.hint{margin:12px 0 8px;font-size:14px;line-height:1.4;color:var(--muted)}
+.list{margin:0;padding:0;list-style:none;overflow-y:auto}
+.list button{display:flex;align-items:center;justify-content:space-between;width:100%;height:52px;border-top:1px solid rgba(232,244,250,.12);font-size:17px;font-weight:500;text-align:left;color:var(--sky)}
+.list svg{stroke:var(--accent)}
+.list .none{padding:16px 0;font-size:15px;color:var(--muted)}
+
+@media (prefers-reduced-motion:reduce){
+  .toast{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <main class="feed" id="feed" aria-label="Stories"></main>
+
+  <header class="top">
+    <div class="brand">Mtaa <span>Pulse</span></div>
+    <div class="bar">
+      <button class="pill" id="countyBtn" type="button" aria-haspopup="dialog" aria-label="Choose county">
+        <span data-icon="pin" data-size="18"></span><span id="countyName"></span>
+      </button>
+      <div class="tabs">
+        <button class="tab" id="tabNearby" type="button" aria-pressed="true">Nearby</button>
+        <button class="tab" id="tabKenya" type="button" aria-pressed="false">All Kenya</button>
+      </div>
+      <button class="iconbtn" id="searchBtn" type="button" aria-label="Search" data-icon="search" data-size="22"></button>
+    </div>
+    <div class="scope" id="scopeLabel"></div>
+  </header>
+
+  <nav class="nav" aria-label="Main">
+    <button class="nav-item" id="homeBtn" type="button" aria-current="page"><span data-icon="home"></span>Home</button>
+    <button class="nav-item" id="mapBtn" type="button"><span data-icon="map"></span>Map</button>
+    <button class="report" id="reportBtn" type="button" aria-label="Report" data-icon="plus" data-size="28" data-stroke="2.5"></button>
+    <button class="nav-item" id="savedBtn" type="button"><span data-icon="bookmark"></span>Saved</button>
+    <button class="nav-item" id="loginBtn" type="button"><span data-icon="user"></span>Log in</button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="sheet-wrap" id="sheet">
+    <button class="scrim" id="scrim" type="button" aria-label="Close county picker"></button>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <div class="grab"></div>
+      <h2 id="sheetTitle">Choose a county</h2>
+      <input class="search" id="countySearch" type="text" placeholder="Type a county name" aria-label="Type a county name" autocomplete="off">
+      <p class="hint">You will see stories from that county only. Choose Nearby to include areas around it.</p>
+      <ul class="list" id="countyList"></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ------------------------------------------------------------------
+     SAMPLE DATA. Replace with your backend.
+     Each story needs: county, ward (stamped from the phone's location
+     when the video is recorded), mood, category (both chosen at
+     recording), caption, when, poster (null = anonymous), counts, and
+     optionally video (a URL). Without a video the illustration is shown.
+     ------------------------------------------------------------------ */
+  var STORIES = [
+    { id: 1, county: 'Kisii County', ward: 'Nyanchwa Ward', mood: 'Hooray!', category: 'Roads and bridges',
+      caption: 'Children can now cross to school even when the river is full. Work finished last week.',
+      when: '2 days ago', poster: null, verified: true, likes: 248, comments: 31, scene: 'bridge', video: null },
+    { id: 2, county: 'Nyamira County', ward: 'Township Ward', mood: 'Relief!', category: 'Water',
+      caption: 'The borehole near the market is pumping again after the repair. Queues are much shorter this morning.',
+      when: '5 hours ago', poster: null, verified: true, likes: 96, comments: 12, scene: 'tower', video: null },
+    { id: 3, county: 'Nyeri County', ward: 'Mweiga Ward', mood: 'Proud!', category: 'Farms',
+      caption: 'Soil now stays on the slope after heavy rain. Beans and maize look strong this season. The terraces were built together over two weekends.',
+      when: '1 day ago', poster: null, verified: true, likes: 180, comments: 24, scene: 'terraces', video: null }
+  ];
+
+  /* Which counties count as "nearby". Replace with data from your backend. */
+  var NEARBY = {
+    'Kisii County': ['Nyamira County', 'Migori County', 'Homa Bay County', 'Kericho County', 'Narok County'],
+    'Nyamira County': ['Kisii County', 'Kericho County', 'Homa Bay County', 'Bomet County'],
+    'Nyeri County': ['Kirinyaga County', "Murang'a County", 'Laikipia County', 'Nyandarua County', 'Meru County']
+  };
+
+  var COUNTIES = ['Baringo','Bomet','Bungoma','Busia','Elgeyo-Marakwet','Embu','Garissa','Homa Bay','Isiolo','Kajiado','Kakamega','Kericho','Kiambu','Kilifi','Kirinyaga','Kisii','Kisumu','Kitui','Kwale','Laikipia','Lamu','Machakos','Makueni','Mandera','Marsabit','Meru','Migori','Mombasa',"Murang'a",'Nairobi','Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri','Samburu','Siaya','Taita-Taveta','Tana River','Tharaka-Nithi','Trans-Nzoia','Turkana','Uasin Gishu','Vihiga','Wajir','West Pokot'].map(function (n) { return n + ' County'; });
+
+  var state = { scope: 'nearby', county: 'Kisii County' };
+
+  /* ---------- icons ---------- */
+  var ICONS = {
+    pin: '<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+    thumb: '<path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3zm0 0 4-7a2 2 0 0 1 3.7 1.2L14 9h5.3a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 18.1 20H7"/>',
+    comment: '<path d="M21 12a8 8 0 0 1-11.7 7.1L4 20l1-4.3A8 8 0 1 1 21 12z"/>',
+    share: '<path d="M12 15V3m0 0L8 7m4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>',
+    bookmark: '<path d="M6 3h12v18l-6-4-6 4z"/>',
+    home: '<path d="M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+    map: '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14m6-12v14"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    shield: '<path d="M12 3 20 6v6c0 4.5-3.3 7.8-8 9-4.7-1.2-8-4.5-8-9V6z"/><path d="m8.5 12 2.5 2.5L16 9.5"/>',
+    check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>'
+  };
+  function icon(name, size, stroke) {
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (stroke || 2) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[name] + '</svg>';
+  }
+  function hydrateIcons() {
+    document.querySelectorAll('[data-icon]').forEach(function (el) {
+      el.innerHTML = icon(el.dataset.icon, el.dataset.size || 26, el.dataset.stroke);
+    });
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* Every mood or feeling word ends with an exclamation mark. */
+  function moodText(m) {
+    m = String(m).trim();
+    return /!$/.test(m) ? m : m + '!';
+  }
+
+  /* ---------- illustrations (stand in for video) ---------- */
+  function scene(i, label, extra) {
+    return '<svg viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" role="img" aria-label="' + label + '">' +
+      '<defs>' +
+      '<linearGradient id="sky' + i + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#05161F"/><stop offset="0.42" stop-color="#0B4F6C"/><stop offset="1" stop-color="#0E3A4E"/></linearGradient>' +
+      '<linearGradient id="fade' + i + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#071F2A" stop-opacity="0"/><stop offset="1" stop-color="#071F2A" stop-opacity="0.96"/></linearGradient>' +
+      '</defs>' +
+      '<rect width="390" height="844" fill="url(#sky' + i + ')"/>' +
+      '<circle cx="275" cy="190" r="46" fill="#F2A33C"/>' +
+      '<path d="M0 380 C100 320 240 310 390 370 L390 844 L0 844Z" fill="#0F4A62"/>' +
+      '<path d="M110 470 C200 400 320 400 390 430 L390 844 L110 844Z" fill="#0A3447"/>' +
+      extra +
+      '<rect x="0" y="400" width="390" height="444" fill="url(#fade' + i + ')"/></svg>';
+  }
+  var SCENES = {
+    bridge: function (i) {
+      return scene(i, 'Illustration of a footbridge over a river at dusk',
+        '<path d="M0 450 C110 430 230 480 390 450 L390 510 C230 540 110 490 0 510Z" fill="#1E88A8" opacity="0.8"/>' +
+        '<polygon points="30,455 318,432 318,446 30,469" fill="#D9B98A"/>' +
+        '<rect x="58" y="462" width="14" height="70" fill="#A8845A"/>' +
+        '<rect x="280" y="440" width="14" height="70" fill="#A8845A"/>');
+    },
+    tower: function (i) {
+      return scene(i, 'Illustration of a water tower and tap at dusk',
+        '<rect x="258" y="330" width="76" height="62" rx="8" fill="#5EC2DE"/>' +
+        '<rect x="266" y="392" width="8" height="100" fill="#A8845A"/>' +
+        '<rect x="318" y="392" width="8" height="100" fill="#A8845A"/>' +
+        '<path d="M296 392 C296 430 276 450 276 500" stroke="#5EC2DE" stroke-width="5" fill="none" stroke-linecap="round"/>' +
+        '<ellipse cx="276" cy="512" rx="40" ry="10" fill="#1E88A8" opacity="0.8"/>');
+    },
+    terraces: function (i) {
+      return scene(i, 'Illustration of terraced hills with a farmhouse at dusk',
+        '<path d="M150 470 C230 440 320 440 390 460" stroke="#1E88A8" stroke-width="5" fill="none" opacity="0.7" stroke-linecap="round"/>' +
+        '<path d="M130 510 C220 478 320 478 390 500" stroke="#1E88A8" stroke-width="5" fill="none" opacity="0.7" stroke-linecap="round"/>' +
+        '<path d="M110 550 C210 518 320 520 390 540" stroke="#1E88A8" stroke-width="5" fill="none" opacity="0.7" stroke-linecap="round"/>' +
+        '<rect x="60" y="420" width="86" height="56" rx="4" fill="#D9B98A"/>' +
+        '<polygon points="50,422 103,388 156,422" fill="#A8845A"/>');
+    }
+  };
+
+  /* ---------- feed ---------- */
+  var feed = document.getElementById('feed');
+
+  function visibleStories() {
+    return STORIES.filter(function (s) {
+      if (state.scope === 'kenya') return true;
+      if (s.county === state.county) return true;
+      if (state.scope === 'nearby') return (NEARBY[state.county] || []).indexOf(s.county) !== -1;
+      return false;
+    });
+  }
+
+  function slideHtml(s, i) {
+    var media = s.video
+      ? '<video src="' + esc(s.video) + '" muted loop playsinline preload="metadata"></video>'
+      : (SCENES[s.scene] || SCENES.bridge)(i);
+    return '<article class="slide" aria-label="Story ' + (i + 1) + '">' +
+      '<div class="scene">' + media + '</div>' +
+      '<div class="slide-body">' +
+        '<div class="info">' +
+          '<div class="tags"><span class="tag tag-mood">' + esc(moodText(s.mood)) + '</span><span class="tag tag-cat">' + esc(s.category) + '</span></div>' +
+          '<p class="caption" id="cap-' + s.id + '">' + esc(s.caption) + '</p>' +
+          '<button class="more" type="button" aria-expanded="false" aria-controls="cap-' + s.id + '">Show more</button>' +
+          '<div class="chips">' +
+            '<div class="chiprow"><span class="chip">' + icon('pin', 16, 2.2) + esc(s.ward) + '</span><span class="muted">' + esc(s.when) + '</span></div>' +
+            '<div class="chiprow">' +
+              (s.verified ? '<span class="chip verified">' + icon('shield', 16, 2.2) + 'Verified</span>' : '') +
+              '<span class="poster">' + esc(s.poster || 'Anonymous reporter') + '</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="rail">' +
+          '<div class="rail-item"><button class="round" type="button" aria-label="Like">' + icon('thumb', 26) + '</button><span>' + s.likes + '</span></div>' +
+          '<div class="rail-item"><button class="round" type="button" aria-label="Comments">' + icon('comment', 26) + '</button><span>' + s.comments + '</span></div>' +
+          '<div class="rail-item"><button class="round" type="button" aria-label="Share">' + icon('share', 26) + '</button><span>Share</span></div>' +
+          '<div class="rail-item"><button class="round" type="button" aria-label="Save">' + icon('bookmark', 26) + '</button><span>Save</span></div>' +
+        '</div>' +
+      '</div>' +
+    '</article>';
+  }
+
+  function emptyHtml() {
+    var where = state.scope === 'county' ? state.county : state.county + ' or nearby';
+    return '<article class="slide"><div class="empty"><strong>No stories yet</strong><span>Nothing has been posted from ' + esc(where) + '. Try All Kenya.</span></div></article>';
+  }
+
+  function updateMoreButtons() {
+    feed.querySelectorAll('.slide').forEach(function (slide) {
+      var cap = slide.querySelector('.caption');
+      var btn = slide.querySelector('.more');
+      if (!cap || !btn || cap.classList.contains('open')) return;
+      btn.hidden = cap.scrollHeight <= cap.clientHeight + 1;
+    });
+  }
+
+  var observer = null;
+  function watchVideos() {
+    if (observer) observer.disconnect();
+    if (!('IntersectionObserver' in window)) return;
+    observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        var v = e.target.querySelector('video');
+        if (!v) return;
+        if (e.isIntersecting) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+        else { v.pause(); v.currentTime = 0; }
+      });
+    }, { root: feed, threshold: 0.6 });
+    feed.querySelectorAll('.slide').forEach(function (s) { observer.observe(s); });
+  }
+
+  function renderFeed() {
+    stopGlide();
+    var list = visibleStories();
+    feed.innerHTML = list.length ? list.map(slideHtml).join('') : emptyHtml();
+    feed.scrollTop = 0;
+    updateMoreButtons();
+    watchVideos();
+  }
+
+  feed.addEventListener('click', function (e) {
+    var btn = e.target.closest('.more');
+    if (!btn) return;
+    var cap = document.getElementById(btn.getAttribute('aria-controls'));
+    var open = cap.classList.toggle('open');
+    btn.textContent = open ? 'Show less' : 'Show more';
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  /* ---------- header: county and scope ---------- */
+  var countyName = document.getElementById('countyName');
+  var countyBtn = document.getElementById('countyBtn');
+  var tabNearby = document.getElementById('tabNearby');
+  var tabKenya = document.getElementById('tabKenya');
+  var scopeLabel = document.getElementById('scopeLabel');
+
+  function updateHeader() {
+    countyName.textContent = state.county;
+    countyBtn.classList.toggle('on', state.scope === 'county');
+    tabNearby.setAttribute('aria-pressed', String(state.scope === 'nearby'));
+    tabKenya.setAttribute('aria-pressed', String(state.scope === 'kenya'));
+    scopeLabel.textContent =
+      state.scope === 'county' ? 'Showing ' + state.county + ' only' :
+      state.scope === 'kenya' ? 'Showing stories from all of Kenya' :
+      'Showing ' + state.county + ' and nearby areas';
+  }
+
+  function setScope(scope) {
+    state.scope = scope;
+    updateHeader();
+    renderFeed();
+  }
+
+  tabNearby.addEventListener('click', function () { setScope('nearby'); });
+  tabKenya.addEventListener('click', function () { setScope('kenya'); });
+
+  /* ---------- county picker ---------- */
+  var sheet = document.getElementById('sheet');
+  var scrim = document.getElementById('scrim');
+  var countySearch = document.getElementById('countySearch');
+  var countyList = document.getElementById('countyList');
+
+  function renderCounties() {
+    var q = countySearch.value.trim().toLowerCase();
+    var items = COUNTIES.filter(function (c) { return c.toLowerCase().indexOf(q) !== -1; });
+    countyList.innerHTML = items.length
+      ? items.map(function (c) {
+          return '<li><button type="button" data-county="' + esc(c) + '"><span>' + esc(c) + '</span>' + (c === state.county ? icon('check', 22, 2.5) : '') + '</button></li>';
+        }).join('')
+      : '<li class="none">No county matches that name.</li>';
+  }
+
+  function openSheet() {
+    countySearch.value = '';
+    renderCounties();
+    sheet.classList.add('open');
+    countySearch.focus();
+  }
+  function closeSheet() {
+    sheet.classList.remove('open');
+    countyBtn.focus();
+  }
+
+  countyBtn.addEventListener('click', openSheet);
+  scrim.addEventListener('click', closeSheet);
+  countySearch.addEventListener('input', renderCounties);
+  countyList.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-county]');
+    if (!b) return;
+    state.county = b.dataset.county;
+    state.scope = 'county';
+    sheet.classList.remove('open');
+    updateHeader();
+    renderFeed();
+    countyBtn.focus();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && sheet.classList.contains('open')) closeSheet();
+  });
+
+  /* ---------- toast ---------- */
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+  function toast(msg) {
+    clearTimeout(toastTimer);
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 1800);
+  }
+
+  /* ---------- smooth, one-video-at-a-time scrolling ----------
+     Touch uses the browser's own snapping. Mouse wheel, trackpad,
+     keyboard and the Home button glide with an eased animation, so
+     every device moves exactly one video per gesture. */
+  var animRaf = 0;
+  var wheelLock = false;
+  var lastWheel = 0;
+
+  function slideSize() { return feed.clientHeight || 1; }
+  function currentIndex() { return Math.round(feed.scrollTop / slideSize()); }
+
+  function stopGlide() {
+    if (animRaf) { cancelAnimationFrame(animRaf); animRaf = 0; feed.style.scrollSnapType = ''; }
+  }
+
+  function animateTo(target) {
+    stopGlide();
+    var start = feed.scrollTop;
+    var delta = target - start;
+    if (Math.abs(delta) < 1) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      feed.scrollTop = target;
+      return;
+    }
+    var duration = Math.min(700, 380 + (Math.abs(delta) / slideSize()) * 70);
+    var t0 = null;
+    feed.style.scrollSnapType = 'none';
+    function step(ts) {
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / duration);
+      var eased = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      feed.scrollTop = start + delta * eased;
+      if (p < 1) {
+        animRaf = requestAnimationFrame(step);
+      } else {
+        animRaf = 0;
+        feed.style.scrollSnapType = '';
+      }
+    }
+    animRaf = requestAnimationFrame(step);
+  }
+
+  function goToIndex(i) {
+    var count = feed.querySelectorAll('.slide').length;
+    i = Math.max(0, Math.min(count - 1, i));
+    animateTo(i * slideSize());
+  }
+
+  /* A finger on the screen always wins over a running glide. */
+  feed.addEventListener('touchstart', stopGlide, { passive: true });
+
+  feed.addEventListener('wheel', function (e) {
+    if (e.ctrlKey) return;
+    e.preventDefault();
+    lastWheel = Date.now();
+    if (wheelLock || Math.abs(e.deltaY) < 6) return;
+    wheelLock = true;
+    goToIndex(currentIndex() + (e.deltaY > 0 ? 1 : -1));
+    (function release() {
+      setTimeout(function () {
+        if (Date.now() - lastWheel < 140) { release(); } else { wheelLock = false; }
+      }, 720);
+    })();
+  }, { passive: false });
+
+  document.addEventListener('keydown', function (e) {
+    if (sheet.classList.contains('open')) return;
+    if (e.target && /^(input|textarea)$/i.test(e.target.tagName)) return;
+    var d = 0;
+    if (e.key === 'ArrowDown' || e.key === 'PageDown') d = 1;
+    if (e.key === 'ArrowUp' || e.key === 'PageUp') d = -1;
+    if (!d) return;
+    e.preventDefault();
+    goToIndex(currentIndex() + d);
+  });
+
+  /* ---------- Home: one tap = first video, two taps = refresh ---------- */
+  var homeTimer = null;
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Replace with a real request, for example fetch('/api/stories?...'). */
+  function refreshFeed() {
+    renderFeed();
+    toast('Feed refreshed');
+  }
+  function goToFirst() {
+    animateTo(0);
+    toast('Back to the first video');
+  }
+
+  document.getElementById('homeBtn').addEventListener('click', function () {
+    if (homeTimer) {
+      clearTimeout(homeTimer);
+      homeTimer = null;
+      refreshFeed();
+      return;
+    }
+    homeTimer = setTimeout(function () {
+      homeTimer = null;
+      goToFirst();
+    }, 350);
+  });
+
+  /* ---------- start ---------- */
+  hydrateIcons();
+  updateHeader();
+  renderFeed();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(updateMoreButtons);
+  var resizeRaf = 0;
+  window.addEventListener('resize', function () {
+    cancelAnimationFrame(resizeRaf);
+    resizeRaf = requestAnimationFrame(updateMoreButtons);
+  });
+})();
+</script>
+</body>
+</html>
