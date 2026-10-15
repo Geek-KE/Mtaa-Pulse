@@ -189,8 +189,6 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
 details.policy{margin-top:14px;font-size:13px;line-height:1.45;color:var(--body)}
 details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(--accent)}
 
-.foot{padding:2px 20px calc(10px + env(safe-area-inset-bottom));text-align:center}
-.foot .linkbtn{font-weight:500;color:var(--muted)}
 
 @media (prefers-reduced-motion:reduce){
   .toast,.prog i{transition:none}
@@ -247,7 +245,6 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       <button class="hbtn" id="authClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
     </div>
     <div class="panel-body" id="authBody"></div>
-    <div class="foot"><button class="linkbtn" id="termsBtn" type="button">Terms and conditions</button></div>
   </section>
 
   <!-- report panel -->
@@ -1351,16 +1348,17 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
 
   /* --- choose: + button lands here --- */
   function renderChoose() {
-    authTitle.textContent = 'Post a story';
+    // Orange check mark after the title (other steps reset the title with textContent, which removes it)
+    authTitle.innerHTML = 'Create a post <span role="img" aria-label="Verified" style="display:inline-flex;vertical-align:-5px;margin-left:6px;color:var(--accent)">' +
+      // Bold hand-drawn style tick with a long flick, inside a faint ring. Uses the same orange as the links.
+      '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10.5" stroke="currentColor" stroke-width="1.5" opacity=".35"/><path d="M5.5 12.8c1.6.9 2.9 2.2 3.9 4.1C11.4 11.6 15 7.4 20.5 4.6" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
     authBody.innerHTML =
-      '<h1 class="h1">Share what is happening</h1>' +
-      '<p class="lede">Create an account to post under your own name, or post once without an account.</p>' +
       '<div class="stack">' +
-        '<button class="choice main" type="button" data-act="mode" data-mode="signup" data-focus><strong>Create an account</strong><span>Pick a username, a password and a photo. Your stories carry your name.</span></button>' +
-        '<button class="choice" type="button" data-act="mode" data-mode="anon"><strong>Post anonymously</strong><span>No account and no username. We confirm a code sent to your email or phone, ' + (CONFIG.ANON_LINK_MODE === 'none' ? 'and keep nothing that links the story to you.' : 'and your story shows no name.') + '</span></button>' +
+        '<button class="choice main" type="button" data-act="mode" data-mode="signup" data-focus><strong>Create an account</strong></button>' +
+        '<button class="choice" type="button" data-act="mode" data-mode="anon"><strong>Post anonymously</strong></button>' +
       '</div>' +
-      '<div class="center divider"><span class="muted">Already have an account?</span><button class="linkbtn" type="button" data-act="gologin">Log in</button></div>' +
-      '<div class="center"><button class="linkbtn" type="button" data-act="status">Check my story status</button></div>';
+      '<div class="center divider" style="margin-bottom:0"><span class="muted">Already have an account?</span><button class="linkbtn" type="button" data-act="gologin" style="min-height:32px">Log in</button></div>' +
+      '<div class="center" style="margin-top:0"><button class="linkbtn" type="button" data-act="status" style="min-height:32px">Check my story status</button></div>';
   }
 
   /* --- login: contact + password --- */
@@ -1395,7 +1393,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       '<p class="err" id="authErr" role="alert"></p>' +
       '<button class="btn" id="authGo" type="button" data-act="send" data-label="Send code">Send code</button>' +
       (flow.mode === 'signup' ? '<div class="center divider"><span class="muted">Already have an account?</span><button class="linkbtn" type="button" data-act="gologin">Log in</button></div>' : '') +
-      (flow.mode === 'anon' ? '<p class="note">Anonymous posting needs no account and no password. You verify again each time you post. Up to ' + CONFIG.ANON_DAILY_LIMIT + ' anonymous stories a day.</p>' +
+      (flow.mode === 'anon' ? '<p class="note">Anonymous posting needs no account and no password. You verify again each time you post.</p>' +
         '<p class="note">By continuing you accept the <button class="linkbtn" type="button" data-act="terms" style="min-height:24px;padding:0">Terms and conditions</button>.</p>' : '<p class="note">Standard SMS rates may apply.</p>');
   }
 
@@ -1909,6 +1907,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   function policyHtml() {
     var hrs = Math.round(CONFIG.ANON_HASH_TTL_MS / 3600000);
     return '<div class="policy">' +
+      '<p>Anonymous posting needs no account and no password. You verify again each time you post, and you can post up to ' + CONFIG.ANON_DAILY_LIMIT + ' anonymous stories a day.</p>' +
       '<p>' + (CONFIG.ANON_LINK_MODE === 'none' ? 'We do not save your email or number with your story. ' : 'Your story shows no name. ') + 'To stop spam we keep a scrambled (hashed) copy for up to ' + hrs + ' hours, then delete it.</p>' +
       '<p>While a story waits for review we keep a scrambled copy of the contact for up to ' + Math.round(CONFIG.BAN_HASH_MAX_MS / 86400000) + ' days. If the story is removed for serious abuse we keep that copy so the contact cannot verify again. Otherwise it is deleted when we decide.</p>' +
       (CONFIG.ANON_LINK_MODE === 'none'
@@ -1927,7 +1926,6 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   }
   function closeTerms() { termsPanel.classList.remove('open'); if (termsFocus && termsFocus.focus) termsFocus.focus(); }
   $('termsClose').addEventListener('click', closeTerms);
-  $('termsBtn').addEventListener('click', openTerms);
 
   /* ---------- Layer 3: report this story ---------- */
   var FLAG_REASONS = ['Nudity or sexual content', 'Graphic violence or threats', 'Abuse or hate', 'Names or exposes a private person', 'Scam, link or phone number', 'Child safety concern', 'False or misleading'];
