@@ -190,6 +190,9 @@ details.policy{margin-top:14px;font-size:13px;line-height:1.45;color:var(--body)
 details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(--accent)}
 
 
+.round[aria-pressed="true"]{background:var(--accent);color:var(--ink)}
+.cmt-in{margin-top:10px}
+
 @media (prefers-reduced-motion:reduce){
   .toast,.prog i{transition:none}
 }
@@ -276,6 +279,51 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       <button class="hbtn" id="statusClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
     </div>
     <div class="panel-body" id="statusBody"></div>
+  </section>
+
+  <!-- Comments sheet (opened from the comment button on a story) -->
+  <div class="sheet-wrap" id="cmtSheet">
+    <button class="scrim" id="cmtScrim" type="button" aria-label="Close comments"></button>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cmtTitle">
+      <div class="grab"></div>
+      <h2 id="cmtTitle">Comments</h2>
+      <div id="cmtList" style="flex:1;overflow-y:auto"></div>
+      <div class="field cmt-in"><input id="cmtInput" type="text" maxlength="200" placeholder="Add a comment" autocomplete="off" aria-label="Add a comment"><button class="tgl" id="cmtPost" type="button">Post</button></div>
+      <p class="err" id="cmtErr" role="alert" style="margin:6px 0 0"></p>
+    </div>
+  </div>
+
+  <!-- Search sheet -->
+  <div class="sheet-wrap" id="searchSheet">
+    <button class="scrim" id="searchScrim" type="button" aria-label="Close search"></button>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="searchTitle">
+      <div class="grab"></div>
+      <h2 id="searchTitle">Search stories</h2>
+      <input class="search" id="searchInput" type="search" placeholder="Place, topic or word" aria-label="Search stories" autocomplete="off">
+      <div class="gap"></div>
+      <button class="btn" id="searchGo" type="button">Search</button>
+      <div class="center"><button class="linkbtn" id="searchClear" type="button">Clear search</button></div>
+    </div>
+  </div>
+
+  <!-- Map tab: stories by county -->
+  <section class="panel" id="mapPanel" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
+    <div class="panel-head">
+      <span class="hbtn" aria-hidden="true"></span>
+      <h2 id="mapTitle">Map</h2>
+      <button class="hbtn" id="mapClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
+    </div>
+    <div class="panel-body" id="mapBody"></div>
+  </section>
+
+  <!-- Saved tab -->
+  <section class="panel" id="savedPanel" role="dialog" aria-modal="true" aria-labelledby="savedTitle">
+    <div class="panel-head">
+      <span class="hbtn" aria-hidden="true"></span>
+      <h2 id="savedTitle">Saved</h2>
+      <button class="hbtn" id="savedClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
+    </div>
+    <div class="panel-body" id="savedBody"></div>
   </section>
 
   <!-- Terms and conditions (holds the "How anonymity works" text). Opened from the footer and from Me > Terms and conditions -->
@@ -373,6 +421,12 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
        PUT  <uploadUrl>         (bytes straight to object storage)
        POST /v1/stories         { idempotencyKey, token, anonymous, ..., videoKey } -> { story }
        GET  /v1/stories?scope=&county=&cursor=&limit=                 -> { items, nextCursor }   (only live/approved stories)
+       POST /v1/stories/:id/like  { on }                              -> { likes }               (one like per account or device)
+       GET  /v1/stories/:id/comments, POST same { text }              -> [{ user, text, when }] / { comment, count }   (accounts only)
+       GET  /v1/stories?q=                                            -> search by place, topic or word
+       GET  /v1/stats/counties                                        -> { "Kisii County": 12, ... }   (Map tab)
+       GET  /v1/stories/geo?bbox=                                     -> [{ id, lat, lng, caption, ward, county, mood, category }]   (Map dots; cluster on the server when zoomed out)
+       Saved stories are kept on the device; later sync with GET/PUT /v1/me/saved for logged-in accounts.
        POST /v1/stories/status  { ids }                               -> [{ id, status, reason, canAppeal }]
        POST /v1/stories/:id/flag   { reason, deviceId }               -> { ok, hidden }          (layer 3)
        POST /v1/stories/:id/appeal                                    -> { ok }
@@ -426,8 +480,19 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     }
     return list;
   }
-  var mock = { otps: {}, otpLog: {}, fails: {}, verified: {}, users: loadJSON('mp_mock_users', {}), stories: seedStories(),
-              rate: {}, dev: {}, banned: {}, anonTokens: {}, trust: {}, sealed: {}, audit: [] };   // safety state, see section 2b
+  // Demo only: give the seed stories a map position near their county. Real stories use the poster's phone location.
+  function addSeedCoords(list) {
+    var C = { 'Kisii County': [-0.68, 34.78], 'Nyamira County': [-0.57, 34.95], 'Nyeri County': [-0.42, 36.95], 'Migori County': [-1.07, 34.47], 'Kericho County': [-0.37, 35.28] };
+    list.forEach(function (st, i) {
+      var c = C[st.county];
+      if (!c) return;
+      st.lat = Math.round((c[0] + (((i * 37) % 21) - 10) / 100) * 100) / 100;
+      st.lng = Math.round((c[1] + (((i * 53) % 21) - 10) / 100) * 100) / 100;
+    });
+    return list;
+  }
+  var mock = { otps: {}, otpLog: {}, fails: {}, verified: {}, users: loadJSON('mp_mock_users', {}), stories: addSeedCoords(seedStories()),
+              rate: {}, dev: {}, banned: {}, anonTokens: {}, trust: {}, sealed: {}, audit: [], comments: {} };   // safety state, see section 2b
   function saveUsers() { saveJSON('mp_mock_users', mock.users); }
 
   /* ==================================================================
@@ -541,6 +606,14 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   function findStory(id) { return mock.stories.filter(function (x) { return String(x.id) === String(id); })[0]; }
   function setStatus(st, status, reason) { st.status = status; st.verified = status === 'approved'; st.reason = reason || null; st.decidedAt = Date.now();
     delete st.banKey; delete st.banKeyExp; }   // decision made: the ban key is no longer needed ('ban' reads it first)
+  // Map privacy: a story's dot is only ever shown to about 1 km (2 decimal places), never the exact spot.
+  // This matters most for anonymous posters. Real server: round (and jitter) before saving, and never return exact coordinates.
+  function blurCoord(v) { return typeof v === 'number' ? Math.round(v * 100) / 100 : null; }
+  // Search: matches place, topic, mood or any word in the caption. Real server: a search index.
+  function matchQuery(st, q) {
+    if (!q) return true;
+    return [st.caption, st.ward, st.county, st.category, st.mood].join(' ').toLowerCase().indexOf(q.toLowerCase()) !== -1;
+  }
   function isQueued(st) { return st.status === 'review' || st.status === 'hidden' || st.status === 'appeal' || st.status === 'escalated' || st.status === 'live'; }
   var REMOVED_TEXT = 'It broke our community rules.';
   function hashPw(contact, pw) {
@@ -679,7 +752,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
           var story = { id: 's_' + uuid().slice(0, 8), county: p.county, ward: p.ward, mood: p.mood, category: p.category, caption: p.caption,
             when: 'Just now', poster: p.posterName || null, avatar: p.posterAvatar || null, verified: status === 'approved',
             likes: 0, comments: 0, scene: 'bridge', video: p.localPreview || null,     // real server returns the CDN URL after transcoding
-            status: status, anon: anon, owner: p.posterName || null, reasons: reasons, queuedAt: now, flaggers: [], appealed: false };
+            lat: blurCoord(p.lat), lng: blurCoord(p.lng), status: status, anon: anon, owner: p.posterName || null, reasons: reasons, queuedAt: now, flaggers: [], appealed: false };
           // Layer 4: a keyed hash of the contact is kept on the story ONLY while the story waits for a decision (hard cap CONFIG.BAN_HASH_MAX_MS),
           // so a moderator can still ban the contact if it is removed for serious abuse. Deleted at the decision unless it is a ban.
           if (info) { story.banKey = info.bk; story.banKeyExp = now + CONFIG.BAN_HASH_MAX_MS; }
@@ -722,6 +795,50 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
         if (!st || st.appealed) throw apiErr('appeal', 'This decision was already appealed.');
         st.appealed = true; st.status = 'appeal'; st.queuedAt = Date.now();
         return { ok: true };
+      });
+    },
+    // ---- everyday actions: likes, comments, map counts ----
+    likeStory: function (id, on) {
+      return wait(120).then(function () {
+        var st = findStory(id);
+        if (!st) throw apiErr('missing', 'Story not found.');
+        st.likes = Math.max(0, st.likes + (on ? 1 : -1));   // real server: one like per account/device, stored and de-duplicated
+        return { likes: st.likes };
+      });
+    },
+    listComments: function (id) {
+      return wait(200).then(function () {
+        var st = findStory(id);
+        if (!mock.comments[id]) {                           // demo only: make a few sample comments for the seed stories
+          var sample = [{ user: '@amina_k', text: 'Great to see this finally done.', when: '1 day ago' }, { user: '@otieno_m', text: 'Thanks for sharing. Is it open to motorbikes too?', when: '5 hours ago' }, { user: '@wanjiru', text: 'Please keep us updated.', when: '2 hours ago' }];
+          mock.comments[id] = sample.slice(0, Math.min(3, st ? st.comments : 0));
+        }
+        return mock.comments[id].slice();
+      });
+    },
+    addComment: function (id, text, user) {
+      return wait(250).then(function () {
+        var st = findStory(id), chk = checkCaption(text, true);       // same link / phone / abuse rules as stories
+        if (!st) throw apiErr('missing', 'Story not found.');
+        if (chk.reject || chk.hold.indexOf('Possible abusive language') !== -1) throw apiErr('comment_rule', 'Comments cannot include links, phone numbers or abusive language.');
+        var c = { user: user, text: text, when: 'Just now' };
+        (mock.comments[id] = mock.comments[id] || []).push(c);
+        st.comments++;
+        return { comment: c, count: st.comments };
+      });
+    },
+    mapPoints: function () {                                // only public stories appear on the map
+      return wait(150).then(function () {
+        return mock.stories.filter(function (st) { return visible(st) && typeof st.lat === 'number'; }).map(function (st) {
+          return { id: st.id, lat: st.lat, lng: st.lng, caption: st.caption.slice(0, 90), ward: st.ward, county: st.county, mood: st.mood, category: st.category };
+        });
+      });
+    },
+    countyCounts: function () {
+      return wait(150).then(function () {
+        var out = {};
+        mock.stories.filter(visible).forEach(function (st) { out[st.county] = (out[st.county] || 0) + 1; });
+        return out;
       });
     },
     // ---- moderator tools (production: a separate, authenticated console) ----
@@ -778,7 +895,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     },
     listStories: function (q) {
       return wait(250).then(function () {
-        var all = mock.stories.filter(function (s) { return visible(s) && inScope(s, q.scope, q.county); });
+        var all = mock.stories.filter(function (s) { return visible(s) && inScope(s, q.scope, q.county) && matchQuery(s, q.query); });
         var start = q.cursor ? parseInt(q.cursor, 10) : 0;
         var items = all.slice(start, start + q.limit);
         var next = start + q.limit < all.length ? String(start + q.limit) : null;
@@ -949,7 +1066,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   };
   var COUNTIES = ['Baringo','Bomet','Bungoma','Busia','Elgeyo-Marakwet','Embu','Garissa','Homa Bay','Isiolo','Kajiado','Kakamega','Kericho','Kiambu','Kilifi','Kirinyaga','Kisii','Kisumu','Kitui','Kwale','Laikipia','Lamu','Machakos','Makueni','Mandera','Marsabit','Meru','Migori','Mombasa',"Murang'a",'Nairobi','Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri','Samburu','Siaya','Taita-Taveta','Tana River','Tharaka-Nithi','Trans-Nzoia','Turkana','Uasin Gishu','Vihiga','Wajir','West Pokot'].map(function (n) { return n + ' County'; });
 
-  var state = { scope: 'nearby', home: 'Kisii County', county: 'Kisii County' };
+  var state = { scope: 'nearby', home: 'Kisii County', county: 'Kisii County', query: '' };
 
   /* session = { type:'account', token, username, avatar, contactMask }  (saved on device)
              | { type:'anon', token, exp }                                (memory only) */
@@ -1040,10 +1157,10 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
           '</div>' +
         '</div>' +
         '<div class="rail">' +
-          '<div class="rail-item"><button class="round" type="button" aria-label="Like">' + icon('thumb', 22) + '</button><span>' + s.likes + '</span></div>' +
-          '<div class="rail-item"><button class="round" type="button" aria-label="Comments">' + icon('comment', 22) + '</button><span>' + s.comments + '</span></div>' +
-          '<div class="rail-item"><button class="round" type="button" aria-label="Share">' + icon('share', 22) + '</button><span>Share</span></div>' +
-          '<div class="rail-item"><button class="round" type="button" aria-label="Save">' + icon('bookmark', 22) + '</button><span>Save</span></div>' +
+          '<div class="rail-item"><button class="round likebtn" type="button" data-id="' + esc(s.id) + '" aria-pressed="' + isLiked(s.id) + '" aria-label="Like">' + icon('thumb', 22) + '</button><span>' + s.likes + '</span></div>' +
+          '<div class="rail-item"><button class="round cmtbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Comments">' + icon('comment', 22) + '</button><span>' + s.comments + '</span></div>' +
+          '<div class="rail-item"><button class="round sharebtn" type="button" data-id="' + esc(s.id) + '" aria-label="Share">' + icon('share', 22) + '</button><span>Share</span></div>' +
+          '<div class="rail-item"><button class="round savebtn" type="button" data-id="' + esc(s.id) + '" aria-pressed="' + isSaved(s.id) + '" aria-label="Save">' + icon('bookmark', 22) + '</button><span>Save</span></div>' +
           // Layer 3: every story can be reported
           '<div class="rail-item"><button class="round flagbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Report this story">' + icon('flag', 22) + '</button><span>Report</span></div>' +
         '</div>' +
@@ -1052,6 +1169,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   }
   function loadingHtml() { return '<article class="slide"><div class="empty"><span>Loading stories…</span></div></article>'; }
   function emptyHtml() {
+    if (state.query) return '<article class="slide"><div class="empty"><strong>No matches</strong><span>Nothing matches "' + esc(state.query) + '". Try another word.</span></div></article>';
     var where = state.scope === 'county' ? state.county : state.county + ' or nearby';
     return '<article class="slide"><div class="empty"><strong>No stories yet</strong><span>Nothing has been posted from ' + esc(where) + '. Try All Kenya.</span></div></article>';
   }
@@ -1114,7 +1232,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     if (fs.loading || fs.done) return;
     fs.loading = true;
     var gen = fs.gen;
-    api.listStories({ scope: state.scope, county: state.county, cursor: fs.cursor, limit: CONFIG.PAGE_SIZE }).then(function (r) {
+    api.listStories({ scope: state.scope, county: state.county, query: state.query, cursor: fs.cursor, limit: CONFIG.PAGE_SIZE }).then(function (r) {
       if (gen !== fs.gen) return;
       fs.loading = false;
       var first = fs.items.length === 0;
@@ -1151,6 +1269,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     if (e.target.closest('.retry')) { feed.innerHTML = loadingHtml(); loadPage(); return; }
     var fb = e.target.closest('.flagbtn');
     if (fb) { openFlag(fb.dataset.id); return; }
+    var rb = e.target.closest('.likebtn,.savebtn,.sharebtn,.cmtbtn');
+    if (rb) { railAction(rb); return; }
     var btn = e.target.closest('.more');
     if (!btn) return;
     var cap = $(btn.getAttribute('aria-controls'));
@@ -1167,11 +1287,12 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     tabNearby.setAttribute('aria-pressed', String(state.scope === 'nearby'));
     tabKenya.setAttribute('aria-pressed', String(state.scope === 'kenya'));
     scopeLabel.textContent =
+      state.query ? 'Results for "' + state.query + '" in all of Kenya' :
       state.scope === 'county' ? 'Showing ' + state.county + ' only' :
       state.scope === 'kenya' ? 'Showing stories from all of Kenya' :
       'Showing ' + state.county + ' and nearby areas';
   }
-  function setScope(scope) { state.scope = scope; updateHeader(); resetFeed(); }
+  function setScope(scope) { state.scope = scope; state.query = ''; updateHeader(); resetFeed(); }
   tabNearby.addEventListener('click', function () { setScope('nearby'); });
   tabKenya.addEventListener('click', function () { state.county = state.home; setScope('kenya'); });
 
@@ -1194,7 +1315,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   countyList.addEventListener('click', function (e) {
     var b = e.target.closest('[data-county]');
     if (!b) return;
-    state.county = b.dataset.county; state.scope = 'county';
+    state.county = b.dataset.county; state.scope = 'county'; state.query = '';
     sheet.classList.remove('open');
     updateHeader(); resetFeed(); countyBtn.focus();
   });
@@ -1246,7 +1367,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   }, { passive: false });
 
   function anyPanelOpen() {
-    return sheet.classList.contains('open') || $('authPanel').classList.contains('open') || $('reportPanel').classList.contains('open') || $('statusPanel').classList.contains('open') || $('modPanel').classList.contains('open') || $('flagSheet').classList.contains('open') || $('termsPanel').classList.contains('open');
+    return sheet.classList.contains('open') || $('authPanel').classList.contains('open') || $('reportPanel').classList.contains('open') || $('statusPanel').classList.contains('open') || $('modPanel').classList.contains('open') || $('flagSheet').classList.contains('open') || $('termsPanel').classList.contains('open') || overlayOpen();
   }
   document.addEventListener('keydown', function (e) {
     if (anyPanelOpen()) return;
@@ -1371,6 +1492,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       '<p class="err" id="authErr" role="alert"></p>' +
       '<button class="btn" id="authGo" type="button" data-act="login" data-label="Log in">Log in</button>' +
       '<div class="center"><button class="linkbtn" type="button" data-act="forgot">Forgot password?</button></div>' +
+      '<p class="note">By continuing you accept the ' + termsLink() + '.</p>' +
       '<div class="center divider"><span class="muted">New here?</span><button class="linkbtn" type="button" data-act="mode" data-mode="signup">Create an account</button></div>' +
       '<div class="center"><button class="linkbtn" type="button" data-act="mode" data-mode="anon">Or post anonymously</button></div>';
   }
@@ -1394,7 +1516,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       '<button class="btn" id="authGo" type="button" data-act="send" data-label="Send code">Send code</button>' +
       (flow.mode === 'signup' ? '<div class="center divider"><span class="muted">Already have an account?</span><button class="linkbtn" type="button" data-act="gologin">Log in</button></div>' : '') +
       (flow.mode === 'anon' ? '<p class="note">Anonymous posting needs no account and no password. You verify again each time you post.</p>' +
-        '<p class="note">By continuing you accept the <button class="linkbtn" type="button" data-act="terms" style="min-height:24px;padding:0">Terms and conditions</button>.</p>' : '<p class="note">Standard SMS rates may apply.</p>');
+        '<p class="note">By continuing you accept the <button class="linkbtn" type="button" data-act="terms" style="min-height:24px;padding:0">Terms and conditions</button>.</p>' : '<p class="note">Standard SMS rates may apply.</p><p class="note">By continuing you accept the ' + termsLink() + '.</p>');
   }
 
   /* --- one-time code --- */
@@ -1775,6 +1897,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     if (!navigator.geolocation) { rep.locState = 'fail'; renderWhere(); return; }
     rep.locState = 'busy'; renderWhere();
     navigator.geolocation.getCurrentPosition(function (pos) {
+      if (rep) { rep.lat = pos.coords.latitude; rep.lng = pos.coords.longitude; }   // for the map dot (blurred on the server)
       resolveWard(pos.coords.latitude, pos.coords.longitude).then(function (r) {
         if (!rep) return;
         rep.ward = r.ward; rep.county = r.county; rep.locState = 'ok'; renderWhere(); validateReport();
@@ -1860,6 +1983,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
         idempotencyKey: rep.key,                                // a retry cannot create a second post
         token: session.token,                                   // single use for anonymous posters
         anonymous: isAnon,
+        lat: rep.lat, lng: rep.lng,                             // phone location for the map dot (the server blurs it)
         deviceId: deviceId,                                     // hashed on the server for rate limits, never shown to others
         mood: rep.mood, category: rep.category, caption: rep.caption.trim(),
         ward: rep.ward, county: rep.county, videoKey: videoKey, durationSec: Math.round(rep.dur),
@@ -2036,11 +2160,199 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   window.addEventListener('hashchange', function () { if (location.hash === '#mod') openMod(); });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
-    if (termsPanel.classList.contains('open')) closeTerms();
+    if (cmtSheet.classList.contains('open')) closeComments();
+    else if (searchSheet.classList.contains('open')) searchSheet.classList.remove('open');
+    else if (mapPanel.classList.contains('open')) mapPanel.classList.remove('open');
+    else if (savedPanel.classList.contains('open')) savedPanel.classList.remove('open');
+    else if (termsPanel.classList.contains('open')) closeTerms();
     else if (flagSheet.classList.contains('open')) closeFlag();
     else if (statusPanel.classList.contains('open')) closeStatus();
     else if (modPanel.classList.contains('open')) modPanel.classList.remove('open');
   });
+
+  /* ==================================================================
+     10c. EVERYDAY ACTIONS: like, comment, share, save, search, map, saved
+     Likes and saved stories are remembered on the phone, so they work without an account.
+     Comments need an account (anonymous comments are where abuse concentrates).
+     ================================================================== */
+  function termsLink() { return '<button class="linkbtn" type="button" data-act="terms" style="min-height:24px;padding:0">Terms and conditions</button>'; }
+  function isLiked(id) { return loadJSON('mp_likes', []).indexOf(String(id)) !== -1; }
+  function isSaved(id) { return loadJSON('mp_saved', []).some(function (x) { return String(x.id) === String(id); }); }
+  function findItem(id) { return fs.items.filter(function (x) { return String(x.id) === String(id); })[0]; }
+  function overlayOpen() { return cmtSheet.classList.contains('open') || searchSheet.classList.contains('open') || mapPanel.classList.contains('open') || savedPanel.classList.contains('open'); }
+
+  function railAction(b) {
+    var id = b.dataset.id;
+    if (b.classList.contains('likebtn')) toggleLike(b, id);
+    else if (b.classList.contains('savebtn')) toggleSave(b, id);
+    else if (b.classList.contains('sharebtn')) shareStory(id);
+    else openComments(id);
+  }
+
+  /* ---------- like ---------- */
+  function toggleLike(b, id) {
+    var l = loadJSON('mp_likes', []), i = l.indexOf(id), on = i === -1;
+    if (on) l.push(id); else l.splice(i, 1);
+    saveJSON('mp_likes', l);
+    b.setAttribute('aria-pressed', String(on));
+    api.likeStory(id, on).then(function (r) { b.parentNode.querySelector('span').textContent = r.likes; })
+      .catch(function () { toast('Could not save your like'); });
+  }
+
+  /* ---------- save (kept on the device; sync to the account later) ---------- */
+  function toggleSave(b, id) {
+    var l = loadJSON('mp_saved', []), at = -1;
+    l.forEach(function (x, k) { if (String(x.id) === id) at = k; });
+    if (at === -1) {
+      var st = findItem(id);
+      if (!st) return;
+      l.unshift({ id: st.id, caption: st.caption, ward: st.ward, county: st.county, mood: st.mood, category: st.category });
+      b.setAttribute('aria-pressed', 'true'); toast('Saved');
+    } else { l.splice(at, 1); b.setAttribute('aria-pressed', 'false'); toast('Removed from Saved'); }
+    saveJSON('mp_saved', l);
+  }
+  var savedPanel = $('savedPanel'), savedBody = $('savedBody');
+  function openSaved() {
+    var l = loadJSON('mp_saved', []);
+    savedBody.innerHTML = l.length ? l.map(function (x) {
+      return '<div class="card"><span class="badge">' + esc(moodText(x.mood)) + '</span><span class="badge">' + esc(x.category) + '</span><br><b>' + esc(x.caption) + '</b>' +
+        '<div class="muted">' + esc(x.ward) + ', ' + esc(x.county) + '</div>' +
+        '<div class="row"><button class="btn ghost" type="button" data-rm="' + esc(x.id) + '">Remove</button></div></div>';
+    }).join('') : '<h1 class="h1">Nothing saved yet</h1><p class="lede">Tap the bookmark on a story to keep it here.</p>';
+    savedPanel.classList.add('open');
+  }
+  savedBody.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-rm]');
+    if (!b) return;
+    saveJSON('mp_saved', loadJSON('mp_saved', []).filter(function (x) { return String(x.id) !== b.dataset.rm; }));
+    document.querySelectorAll('.savebtn').forEach(function (n) { if (n.dataset.id === b.dataset.rm) n.setAttribute('aria-pressed', 'false'); });
+    openSaved();
+  });
+  $('savedBtn').addEventListener('click', openSaved);
+  $('savedClose').addEventListener('click', function () { savedPanel.classList.remove('open'); });
+
+  /* ---------- share: phone share sheet, or copy the link ---------- */
+  function shareStory(id) {
+    var st = findItem(id), url = location.href.split('#')[0] + '#story=' + id;   // backend: GET /v1/stories/:id opens it from this link
+    var data = { title: 'Mtaa Pulse', text: st ? st.caption.slice(0, 100) : '', url: url };
+    if (navigator.share) { navigator.share(data).catch(function () {}); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { toast('Link copied'); }).catch(function () { toast(url, 4000); });
+    else toast(url, 4000);
+  }
+
+  /* ---------- comments (accounts only) ---------- */
+  var cmtSheet = $('cmtSheet'), cmtId = null;
+  function renderComments(list) {
+    $('cmtList').innerHTML = list.length ? list.map(function (c) {
+      return '<div class="card"><b>' + esc(c.user) + '</b> <span class="muted">' + esc(c.when) + '</span><div>' + esc(c.text) + '</div></div>';
+    }).join('') : '<p class="note">No comments yet. Be the first.</p>';
+  }
+  function openComments(id) {
+    cmtId = id; $('cmtErr').textContent = ''; $('cmtInput').value = '';
+    $('cmtList').innerHTML = '<p class="note">Loading…</p>';
+    cmtSheet.classList.add('open');
+    api.listComments(id).then(renderComments).catch(function () { $('cmtList').innerHTML = '<p class="note">Could not load comments.</p>'; });
+  }
+  function closeComments() { cmtSheet.classList.remove('open'); cmtId = null; }
+  $('cmtScrim').addEventListener('click', closeComments);
+  function postComment() {
+    var text = $('cmtInput').value.trim(), err = $('cmtErr');
+    if (!(session && session.type === 'account')) { closeComments(); toast('Log in to comment'); openAuth('login', null, 'login'); return; }
+    if (text.length < 2) { err.textContent = 'Write a comment first.'; return; }
+    var id = cmtId, btn = $('cmtPost');
+    btn.disabled = true; err.textContent = '';
+    api.addComment(id, text, '@' + session.username).then(function (r) {
+      btn.disabled = false; $('cmtInput').value = '';
+      api.listComments(id).then(renderComments);
+      document.querySelectorAll('.cmtbtn').forEach(function (n) { if (n.dataset.id === String(id)) n.parentNode.querySelector('span').textContent = r.count; });
+    }).catch(function (e) { btn.disabled = false; err.textContent = errMsg(e); });
+  }
+  $('cmtPost').addEventListener('click', postComment);
+  $('cmtInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); postComment(); } });
+
+  /* ---------- search ---------- */
+  var searchSheet = $('searchSheet'), searchInput = $('searchInput');
+  function runSearch() {
+    var q = searchInput.value.trim();
+    if (q.length < 2) { toast('Type at least 2 letters'); return; }
+    state.query = q; state.scope = 'kenya';           // search covers all of Kenya
+    searchSheet.classList.remove('open');
+    updateHeader(); resetFeed();
+  }
+  $('searchBtn').addEventListener('click', function () { searchInput.value = state.query; searchSheet.classList.add('open'); searchInput.focus(); });
+  $('searchScrim').addEventListener('click', function () { searchSheet.classList.remove('open'); });
+  $('searchGo').addEventListener('click', runSearch);
+  searchInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); runSearch(); } });
+  $('searchClear').addEventListener('click', function () { searchInput.value = ''; searchSheet.classList.remove('open'); if (state.query) { setScope('nearby'); } });
+
+  /* ---------- map tab: a real map with a green dot for every public story ----------
+     Leaflet is loaded only when someone opens the Map tab, to save data. Tiles come from OpenStreetMap,
+     fine for testing. For launch use a tile provider with a key (MapTiler, Stadia, Mapbox) to stay within usage terms.
+     At scale the server should cluster dots by zoom level (GET /v1/stories/geo?bbox=) instead of sending every story. */
+  var mapPanel = $('mapPanel'), mapBody = $('mapBody'), mapObj = null;
+  var KENYA_BOUNDS = [[-4.7, 33.9], [5.0, 41.9]];
+  function loadLeaflet() {
+    if (window.L) return Promise.resolve(window.L);
+    return new Promise(function (res, rej) {
+      var css = document.createElement('link'), sc = document.createElement('script');
+      css.rel = 'stylesheet'; css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+      sc.onload = function () { res(window.L); };
+      sc.onerror = function () { rej(new Error('map library')); };
+      document.head.appendChild(css); document.head.appendChild(sc);
+    });
+  }
+  function pickCounty(name) {
+    state.county = name; state.scope = 'county'; state.query = '';
+    mapPanel.classList.remove('open');
+    updateHeader(); resetFeed();
+  }
+  function popupHtml(pt) {
+    return '<b>' + esc(moodText(pt.mood)) + '</b> &middot; ' + esc(pt.category) + '<br>' + esc(pt.caption) + '<br><span style="color:#555">' + esc(pt.ward) + ', ' + esc(pt.county) + '</span><br>' +
+      '<button type="button" data-county="' + esc(pt.county) + '" style="margin-top:8px;padding:6px 12px;border:0;border-radius:14px;background:#F2A33C;color:#071F2A;font:inherit;font-weight:700;cursor:pointer">See stories in this county</button>';
+  }
+  function drawMap(points) {
+    loadLeaflet().then(function (L) {
+      if (!$('mapBox')) return;                                        // panel was closed while loading
+      mapObj = L.map('mapBox').fitBounds(KENYA_BOUNDS);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; OpenStreetMap contributors' }).addTo(mapObj);
+      var pts = [];
+      points.forEach(function (pt) {
+        L.circleMarker([pt.lat, pt.lng], { radius: 7, color: '#071F2A', weight: 2, fillColor: '#34D17A', fillOpacity: 0.95 }).addTo(mapObj).bindPopup(popupHtml(pt));
+        pts.push([pt.lat, pt.lng]);
+      });
+      if (pts.length) mapObj.fitBounds(pts, { padding: [30, 30], maxZoom: 10 });
+      mapObj.on('popupopen', function (e) {                           // Leaflet stops clicks bubbling out of popups, so attach here
+        var btn = e.popup.getElement().querySelector('[data-county]');
+        if (btn) btn.onclick = function () { pickCounty(btn.dataset.county); };
+      });
+      setTimeout(function () { if (mapObj) mapObj.invalidateSize(); }, 60);   // the panel was hidden when the map was built
+      $('mapNote').textContent = points.length ? 'Green dots are posted stories. Locations are approximate.' : 'No stories on the map yet.';
+    }).catch(function () {
+      if ($('mapBox')) $('mapBox').innerHTML = '<div class="empty"><span>The map could not load.</span></div>';
+      if ($('mapNote')) $('mapNote').textContent = 'Check your connection. The county list below still works.';
+    });
+  }
+  function openMap() {
+    if (mapObj) { mapObj.remove(); mapObj = null; }
+    mapBody.innerHTML = '<div id="mapBox" style="height:48vh;min-height:260px;border-radius:18px;overflow:hidden;background:rgba(232,244,250,.07)"></div>' +
+      '<p class="note" id="mapNote">Loading the map…</p><div id="mapList"></div>';
+    mapPanel.classList.add('open');
+    Promise.all([api.countyCounts(), api.mapPoints()]).then(function (r) {
+      var c = r[0], names = Object.keys(c).sort(function (x, y) { return c[y] - c[x]; });
+      $('mapList').innerHTML = '<p class="lede" style="margin-top:14px">Stories by county. Tap one to see its stories.</p>' +
+        (names.length ? '<ul class="list">' + names.map(function (n) {
+          return '<li><button type="button" data-county="' + esc(n) + '"><span>' + esc(n) + '</span><span class="muted">' + c[n] + ' stories</span></button></li>';
+        }).join('') + '</ul>' : '<p class="lede">No stories yet.</p>');
+      drawMap(r[1]);
+    }).catch(function () { $('mapNote').textContent = 'Could not load the map. Check your connection.'; });
+  }
+  mapBody.addEventListener('click', function (e) {                    // the county list below the map
+    var b = e.target.closest('#mapList [data-county]');
+    if (b) pickCounty(b.dataset.county);
+  });
+  $('mapBtn').addEventListener('click', openMap);
+  $('mapClose').addEventListener('click', function () { mapPanel.classList.remove('open'); });
 
   /* ==================================================================
      11. START
