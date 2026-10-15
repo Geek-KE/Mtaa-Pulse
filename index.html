@@ -19,7 +19,8 @@
   --body:#CFE4EE;
   --accent:#F2A33C;
   --danger:#FF9B8A;
-  --nav-h:76px;
+  --nav-h:58px;
+  --top-h:calc(env(safe-area-inset-top) + 66px);
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:#02080C}
@@ -30,13 +31,13 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .app{position:relative;width:100%;max-width:430px;height:100vh;height:100dvh;margin:0 auto;overflow:hidden;background:var(--ink)}
 
 /* ---------- feed ---------- */
-.feed{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scroll-snap-type:y mandatory;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;will-change:scroll-position;scrollbar-width:none}
+.feed{position:absolute;left:0;right:0;top:var(--top-h);bottom:calc(var(--nav-h) + env(safe-area-inset-bottom));overflow-y:auto;overflow-x:hidden;scroll-snap-type:y mandatory;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;will-change:scroll-position;scrollbar-width:none}
 .feed::-webkit-scrollbar{display:none}
 .slide{position:relative;height:100%;overflow:hidden;contain:layout paint style;scroll-snap-align:start;scroll-snap-stop:always}
 .scene{position:absolute;inset:0}
 .scene svg,.scene video{position:absolute;inset:0;width:100%;height:100%;display:block}
 .scene video{object-fit:cover}
-.slide-body{position:absolute;left:0;right:0;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom));display:flex;align-items:flex-end;gap:10px;padding:0 14px 8px}
+.slide-body{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:flex-end;gap:10px;padding:0 14px 8px}
 .info{flex:1;min-width:0}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .tag{padding:4px 10px;border-radius:999px;font-size:12px}
@@ -66,10 +67,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .empty .btn{width:auto;padding:0 28px;margin-top:10px}
 
 /* ---------- top ---------- */
-.top{position:absolute;left:0;right:0;top:0;z-index:5;padding-top:env(safe-area-inset-top)}
-.brand{padding:8px 16px 0;font-size:18px;font-weight:700;letter-spacing:-.01em;color:#fff}
+.top{position:absolute;left:0;right:0;top:0;z-index:5;height:var(--top-h);padding-top:env(safe-area-inset-top);background:rgba(7,31,42,.95);border-bottom:1px solid rgba(232,244,250,.12)}
+.brand{padding:5px 16px 0;font-size:17px;line-height:1.2;font-weight:700;letter-spacing:-.01em;color:#fff}
 .brand span{color:var(--accent)}
-.bar{display:flex;align-items:center;gap:6px;padding:4px 16px 0}
+.bar{display:flex;align-items:center;gap:6px;padding:3px 16px 0}
 .pill,.tab,.iconbtn{position:relative}
 .pill::after,.tab::after,.iconbtn::after{content:'';position:absolute;inset:-6px}
 .pill{display:flex;align-items:center;gap:5px;flex:0 1 auto;min-width:0;height:30px;padding:0 10px 0 8px;border-radius:15px;background:rgba(7,31,42,.62);border:1px solid rgba(232,244,250,.22);font-size:12px;font-weight:500;color:var(--sky)}
@@ -83,14 +84,14 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .scope{padding:4px 16px 0;font-size:11px;color:var(--muted)}
 
 /* ---------- bottom navigation ---------- */
-.nav{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;align-items:center;justify-content:space-around;height:calc(var(--nav-h) + env(safe-area-inset-bottom));padding:0 8px calc(8px + env(safe-area-inset-bottom));background:rgba(7,31,42,.95);border-top:1px solid rgba(232,244,250,.12)}
-.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:64px;height:56px;font-size:12px;font-weight:500;color:var(--muted)}
+.nav{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;align-items:center;justify-content:space-around;height:calc(var(--nav-h) + env(safe-area-inset-bottom));padding:0 8px calc(4px + env(safe-area-inset-bottom));background:rgba(7,31,42,.95);border-top:1px solid rgba(232,244,250,.12)}
+.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:64px;height:48px;font-size:11px;font-weight:500;color:var(--muted)}
 .nav-item[aria-current="page"]{font-weight:700;color:#fff}
 .nav-av{width:24px;height:24px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)}
-.report{display:flex;align-items:center;justify-content:center;width:64px;height:48px;border-radius:16px;background:var(--accent);color:var(--ink)}
+.report{display:flex;align-items:center;justify-content:center;width:56px;height:38px;border-radius:14px;background:var(--accent);color:var(--ink)}
 
 /* ---------- toast ---------- */
-.toast{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 84px);z-index:60;transform:translateX(-50%);max-width:92%;padding:10px 18px;border-radius:999px;background:rgba(7,31,42,.94);border:1px solid rgba(232,244,250,.28);font-size:14px;font-weight:500;color:#fff;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s ease}
+.toast{position:absolute;left:50%;top:calc(var(--top-h) + 10px);z-index:60;transform:translateX(-50%);max-width:92%;padding:10px 18px;border-radius:999px;background:rgba(7,31,42,.94);border:1px solid rgba(232,244,250,.28);font-size:14px;font-weight:500;color:#fff;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s ease}
 .toast.show{opacity:1}
 
 /* ---------- county picker ---------- */
@@ -160,6 +161,23 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 /* report form */
 .vidbox{position:relative;aspect-ratio:9/12;max-height:300px;width:100%;border-radius:18px;overflow:hidden;background:rgba(232,244,250,.07);border:1px dashed rgba(232,244,250,.3);display:flex;align-items:center;justify-content:center}
 .vidbox video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+.rectimer{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(7,31,42,.72);font-size:13px;font-weight:700;color:#fff}
+.rectimer i{width:10px;height:10px;border-radius:50%;background:#ff4d4d}
+.wheelwrap{position:relative;height:132px;border-radius:16px;background:rgba(232,244,250,.07);border:1px solid rgba(232,244,250,.2);overflow:hidden}
+.wheelwrap::after{content:'';position:absolute;left:8px;right:8px;top:43px;height:44px;border-radius:12px;border:2px solid var(--accent);pointer-events:none}
+.wheel{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;touch-action:pan-y;padding:44px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(transparent,#000 32%,#000 68%,transparent);mask-image:linear-gradient(transparent,#000 32%,#000 68%,transparent)}
+.wheel::-webkit-scrollbar{display:none}
+.wi{display:flex;align-items:center;justify-content:center;width:100%;height:44px;padding:0 16px;scroll-snap-align:center;scroll-snap-stop:always;font-size:16px;font-weight:500;color:var(--muted);text-align:center}
+.wi[aria-selected="true"]{color:#fff;font-weight:700}
+.chk{display:flex;align-items:flex-start;gap:12px;margin-top:12px;min-height:44px;cursor:pointer;color:#fff}
+.chk input{flex:none;width:22px;height:22px;margin:2px 0 0;accent-color:var(--accent)}
+.vidbox canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+.facewarn{position:absolute;left:10px;right:10px;bottom:10px;padding:8px 12px;border-radius:12px;background:rgba(255,155,138,.95);color:#071F2A;font-size:13px;font-weight:700;text-align:center}
+.facewarn[hidden]{display:none}
+.hrow{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.hrow::-webkit-scrollbar{display:none}
+.hi{flex:none;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid rgba(232,244,250,.28);background:rgba(232,244,250,.07);font-size:14px;font-weight:500;color:var(--sky);scroll-snap-align:start;white-space:nowrap}
+.hi[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--ink);font-weight:700}
 .vidrow{display:flex;gap:10px;margin-top:10px}
 .vidrow .btn{height:46px;font-size:15px}
 .sec{margin:20px 0 8px;font-size:14px;font-weight:700;color:#fff}
@@ -169,6 +187,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 textarea.ta{width:100%;min-height:96px;padding:12px 14px;border-radius:14px;border:1px solid rgba(232,244,250,.28);background:rgba(232,244,250,.08);color:#fff;font:inherit;font-size:16px;line-height:1.4;resize:vertical}
 textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
 .counter{margin-top:4px;text-align:right;font-size:12px;color:var(--muted)}
+.where[hidden]{display:none}
 .where{display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px;color:var(--body)}
 .where svg{flex:none;stroke:var(--accent)}
 .who{padding:12px 14px;border-radius:14px;background:rgba(232,244,250,.07);font-size:14px;line-height:1.4;color:var(--body)}
@@ -215,13 +234,12 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       </div>
       <button class="iconbtn" id="searchBtn" type="button" aria-label="Search" data-icon="search" data-size="16"></button>
     </div>
-    <div class="scope" id="scopeLabel"></div>
   </header>
 
   <nav class="nav" aria-label="Main">
     <button class="nav-item" id="homeBtn" type="button" aria-current="page"><span data-icon="home"></span>Home</button>
     <button class="nav-item" id="mapBtn" type="button"><span data-icon="map"></span>Map</button>
-    <button class="report" id="reportBtn" type="button" aria-label="Report" data-icon="plus" data-size="28" data-stroke="2.5"></button>
+    <button class="report" id="reportBtn" type="button" aria-label="Report" data-icon="plus" data-size="24" data-stroke="2.5"></button>
     <button class="nav-item" id="savedBtn" type="button"><span data-icon="bookmark"></span>Saved</button>
     <button class="nav-item" id="loginBtn" type="button"><span id="loginIcon" data-icon="user"></span><span id="loginLabel">Log in</span></button>
   </nav>
@@ -254,7 +272,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   <section class="panel" id="reportPanel" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
     <div class="panel-head">
       <span class="hbtn" aria-hidden="true"></span>
-      <h2 id="reportTitle">New story</h2>
+      <h2 id="reportTitle">New post</h2>
       <button class="hbtn" id="reportClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
     </div>
     <div class="panel-body" id="reportBody"></div>
@@ -377,6 +395,13 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     VIDEO_MAX_BYTES: 50 * 1024 * 1024,
     CAPTION_MIN: 10,
     CAPTION_MAX: 280,
+    // Face check (nature and surroundings only, no people in focus)
+    FACE_FOCUS_RATIO: 0.035,                // a face covering this share of the frame counts as "in focus" (3.5%)
+    FACE_FOCUS_SEC: 2,                      // seconds with a face in focus before the recording is stopped and thrown away
+    FACE_DETECT_MS: 150,                    // how often a frame is scanned
+    FACE_HOLD_MS: 600,                      // keep blurring a spot this long after the face was last seen
+    FACE_LOAD_MS: 12000,                    // how long to wait for the face model on slow networks before recording without it
+    BG_FILE_MAX: 8 * 1024 * 1024,           // largest sound file a person can attach
 
     /* ---- SAFETY SETTINGS (see the six layers; all tunable here) ---- */
     // Layer 1 - stop it at the door
@@ -401,8 +426,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     REVIEW_TARGET_HOURS: 4                  // reported or held stories should get a human decision within this time
   };
 
-  var MOODS = ['Hooray!', 'Relief!', 'Proud!', 'Hopeful!', 'Worried!', 'Frustrated!'];
-  var CATEGORIES = ['Roads and bridges', 'Water', 'Farms', 'Health', 'Schools', 'Security', 'Power', 'Markets', 'Environment', 'Other'];
+  var MOODS = ["Affectionate", "Amazed", "Amused", "Angry", "Annoyed", "Anxious", "Appreciative", "Ashamed", "Awestruck", "Betrayed", "Bored", "Brave", "Calm", "Cautious", "Cheerful", "Concerned", "Confident", "Confused", "Content", "Curious", "Defeated", "Delighted", "Depressed", "Determined", "Disappointed", "Disgusted", "Distressed", "Doubtful", "Eager", "Embarrassed", "Empowered", "Encouraged", "Energetic", "Enthusiastic", "Envious", "Excited", "Exhausted", "Fearful", "Frustrated", "Furious", "Grateful", "Grieving", "Guilty", "Happy", "Heartbroken", "Helpless", "Hooray", "Hopeful", "Hopeless", "Horrified", "Humbled", "Hurt", "Impatient", "Inspired", "Irritated", "Jealous", "Joyful", "Lonely", "Loved", "Moved", "Nervous", "Nostalgic", "Optimistic", "Outraged", "Overwhelmed", "Panicked", "Peaceful", "Pleased", "Proud", "Reassured", "Regretful", "Relaxed", "Relieved", "Resentful", "Restless", "Sad", "Safe", "Satisfied", "Scared", "Shocked", "Shy", "Stressed", "Surprised", "Suspicious", "Sympathetic", "Tense", "Terrified", "Thankful", "Thrilled", "Tired", "Touched", "Troubled", "Uncertain", "Uneasy", "Unsafe", "Upset", "Worried"];
+  var CATEGORIES = ["Agriculture and crops", "Livestock and dairy", "Fisheries and aquaculture", "Forestry", "Mining and quarrying", "Manufacturing and industry", "Construction and housing", "Roads and bridges", "Transport and logistics", "Aviation", "Railways", "Ports and maritime", "Energy and power", "Oil and gas", "Water and sanitation", "Waste management", "Environment and climate", "Wildlife and conservation", "Tourism and hospitality", "Trade and markets", "Retail and wholesale", "Small business and jobs", "Banking and finance", "Insurance", "Mobile money and fintech", "Technology and internet", "Telecommunications", "Media and entertainment", "Arts and culture", "Sports and recreation", "Education and schools", "Health and hospitals", "Security and policing", "Justice and courts", "Government services", "Land and property", "Real estate", "Cooperatives and savings groups", "Professional services", "Social support and welfare", "Youth and employment", "Women and families", "Disability and inclusion", "Religion and community", "Disaster and emergency", "Other"];
 
   /* ==================================================================
      2. API LAYER
@@ -600,6 +625,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     return out;
   }
   // Layer 2: automatic video check. PLUG IN here: run a nudity / graphic-violence classifier on the TRANSCODED file.
+  // The phone already blurs background faces and rejects clips with a person in focus, but the server must repeat it, because the phone cannot be trusted:
+  // run face detection (for example MediaPipe / YuNet, or a cloud service) on the transcoded file, blur every face, reject clips with a person in focus.
   function scanVideo(videoKey) { return Promise.resolve({ flags: [] }); }
 
   // Small helpers used by the flag, appeal and moderator functions below.
@@ -743,7 +770,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
           });
         }
         return pre.then(function () { return scanVideo(p.videoKey); }).then(function (scan) {
-          var reasons = chk.hold.concat(scan.flags);
+          var reasons = chk.hold.concat(scan.flags, p.faceCheck === 'done' ? [] : ['Face check was not done on the phone']);
           var trusted = !anon && (mock.trust[p.posterName] || 0) >= CONFIG.TRUSTED_AFTER;
           // Anonymous (or flagged) -> review queue FIRST, not public yet.
           // Trusted account with clean checks -> lighter review: auto-checks only.
@@ -1152,7 +1179,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
             '<div class="chiprow"><span class="chip">' + icon('pin', 14, 2.2) + esc(s.ward) + '</span><span class="muted">' + esc(s.when) + '</span></div>' +
             '<div class="chiprow">' +
               (s.verified ? '<span class="chip verified">' + icon('shield', 14, 2.2) + 'Verified</span>' : '<span class="chip">Being checked</span>') +
-              '<span class="poster">' + avatar + esc(s.poster || 'Anonymous reporter') + '</span>' +
+              '<span class="poster">' + avatar + esc(s.poster || 'Anonymous') + '</span>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -1280,17 +1307,12 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   });
 
   /* ---------- header: county and scope ---------- */
-  var countyName = $('countyName'), countyBtn = $('countyBtn'), tabNearby = $('tabNearby'), tabKenya = $('tabKenya'), scopeLabel = $('scopeLabel');
+  var countyName = $('countyName'), countyBtn = $('countyBtn'), tabNearby = $('tabNearby'), tabKenya = $('tabKenya'), scopeLabel = null;
   function updateHeader() {
     countyName.textContent = state.county;
     countyBtn.classList.toggle('on', state.scope === 'county');
     tabNearby.setAttribute('aria-pressed', String(state.scope === 'nearby'));
     tabKenya.setAttribute('aria-pressed', String(state.scope === 'kenya'));
-    scopeLabel.textContent =
-      state.query ? 'Results for "' + state.query + '" in all of Kenya' :
-      state.scope === 'county' ? 'Showing ' + state.county + ' only' :
-      state.scope === 'kenya' ? 'Showing stories from all of Kenya' :
-      'Showing ' + state.county + ' and nearby areas';
   }
   function setScope(scope) { state.scope = scope; state.query = ''; updateHeader(); resetFeed(); }
   tabNearby.addEventListener('click', function () { setScope('nearby'); });
@@ -1822,7 +1844,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   var reportPanel = $('reportPanel'), reportBody = $('reportBody'), rep = null;
 
   function newReport() {
-    return { file: null, url: null, dur: 0, mood: null, category: null, caption: '', ward: null, county: null, locState: 'idle', uploading: false, key: uuid() };
+    return { file: null, url: null, dur: 0, mood: null, category: null, caption: '', ward: null, county: null, locState: 'idle', uploading: false, key: uuid(), voice: true, bg: 'none', bgVol: 35, bgFile: null, bgName: '' };
   }
   function openReport() {
     if (!hasValidSession()) { openAuth('choose', 'report'); return; }
@@ -1830,10 +1852,11 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     rep = newReport();
     renderReport();
     reportPanel.classList.add('open');
-    detectWard();
+    warmFaceCheck();
   }
   function closeReport() {
     if (rep && rep.uploading) { toast('Please wait, your story is uploading'); return; }
+    stopCamera(rep);
     if (rep && rep.url) URL.revokeObjectURL(rep.url);
     reportPanel.classList.remove('open');
     rep = null;
@@ -1844,114 +1867,387 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     var anon = session.type !== 'account';
     reportBody.innerHTML =
       '<div class="vidbox" id="vidBox">' + videoBoxHtml() + '</div>' +
-      '<p class="note" id="vidInfo">' + videoInfoText() + '</p>' +
-      '<div class="vidrow">' +
-        '<button class="btn" type="button" data-r="record">' + icon('video', 20) + 'Record</button>' +
-        '<button class="btn ghost" type="button" data-r="upload">' + icon('upload', 20) + 'Choose</button>' +
-      '</div>' +
-      '<input class="sr" id="vidRec" type="file" accept="video/*" capture="environment" tabindex="-1">' +
-      '<input class="sr" id="vidPick" type="file" accept="video/*" tabindex="-1">' +
-      '<div class="sec" id="moodLbl">How does it feel?</div>' +
-      '<div class="opts" role="radiogroup" aria-labelledby="moodLbl">' +
-        MOODS.map(function (m) { return '<button class="opt" type="button" role="radio" aria-checked="false" data-r="mood" data-v="' + esc(m) + '">' + esc(m) + '</button>'; }).join('') +
-      '</div>' +
-      '<div class="sec" id="catLbl">What is it about?</div>' +
-      '<div class="opts" role="radiogroup" aria-labelledby="catLbl">' +
-        CATEGORIES.map(function (c) { return '<button class="opt" type="button" role="radio" aria-checked="false" data-r="cat" data-v="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') +
-      '</div>' +
-      '<label class="sec" for="cap" style="display:block">Tell the story</label>' +
-      '<textarea class="ta" id="cap" maxlength="' + CONFIG.CAPTION_MAX + '" placeholder="What happened, and why does it matter to your neighbours?"></textarea>' +
+      '<div class="vidrow"><button class="btn" id="recBtn" type="button" data-r="record">' + recBtnHtml() + '</button></div>' +
+      '<p class="note">Mtaa Pulse is for nature and your surroundings. Faces in the background are blurred automatically, and a clip with a person up close is not kept.</p>' +
+      '<div class="sec">Sound</div>' + soundHtml() +
+      wheelHtml('mood', 'Current Feeling', MOODS) +
+      wheelHtml('category', 'What is it about?', CATEGORIES) +
+      '<label class="sec" for="cap" style="display:block">Video Caption</label>' +
+      '<textarea class="ta" id="cap" maxlength="' + CONFIG.CAPTION_MAX + '"></textarea>' +
       '<div class="counter" id="capCount">0 / ' + CONFIG.CAPTION_MAX + '</div>' +
-      '<div class="sec">Where</div><div class="where" id="where"></div>' +
+      '<div class="sec" id="whereLbl" hidden>Where</div><div class="where" id="where" hidden></div>' +
       '<div class="sec">Posting as</div>' +
       '<div class="who">' + (anon
-        ? '<b>Anonymous reporter</b><br>No account is created, and ' + (CONFIG.ANON_LINK_MODE === 'none' ? 'nothing that links this story to you is kept after you post.' : 'your story shows no name.') + ' Anonymous stories are checked by our team before they go public, and you can post up to ' + CONFIG.ANON_DAILY_LIMIT + ' a day.'
+        ? '<b>Anonymous</b>' + '<div class="chk" style="align-items:center;cursor:default"><input type="checkbox" id="anonOk" aria-label="I consent to posting anonymously"><button class="linkbtn" type="button" data-r="consent" style="padding:0">Consent</button></div>'
         : '<b>@' + esc(session.username) + '</b>') + '</div>' +
       '<p class="err" id="repErr" role="alert" style="margin-top:14px"></p>' +
       '<div class="prog" id="prog" hidden role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="progBar"></i></div>' +
-      '<button class="btn" id="repGo" type="button" data-r="post" disabled>Post story</button>' +
+      '<button class="btn" id="repGo" type="button" data-r="post" disabled>Post</button>' +
       '<p class="note">New stories are processed and checked before they show a Verified badge.</p>';
     renderWhere();
   }
+  function soundHtml() {
+    return '<label class="chk" style="margin-top:0"><input type="checkbox" id="voiceOn"' + (rep.voice ? ' checked' : '') + '><span>Record my voice, so I can talk about what I am showing</span></label>' +
+      '<div class="label" style="margin:12px 0 6px">Background sound (slide to see more)</div>' +
+      '<div class="hrow" role="listbox" aria-label="Background sound">' +
+      BG_TONES.map(function (t) { return '<button class="hi" type="button" role="option" aria-selected="' + (rep.bg === t.id) + '" data-r="bg" data-v="' + t.id + '">' + t.label + '</button>'; }).join('') +
+      '<button class="hi" type="button" role="option" aria-selected="' + (rep.bg === 'file') + '" data-r="bgfile">' + (rep.bgName ? esc(rep.bgName.slice(0, 18)) : 'Attach my own') + '</button></div>' +
+      '<input class="sr" id="bgFile" type="file" accept="audio/*" tabindex="-1">' +
+      '<label class="label" for="bgVol" style="margin:12px 0 4px">Background volume</label>' +
+      '<input type="range" id="bgVol" min="0" max="100" value="' + rep.bgVol + '" style="width:100%;accent-color:var(--accent)">' +
+      '<p class="note">The sound is mixed into your video while you record. You will not hear it on your phone while recording.</p>';
+  }
+  function wheelHtml(key, label, list) {
+    return '<div class="sec" id="' + key + 'Lbl">' + label + ' <span class="muted" id="' + key + 'Val" style="font-weight:500">Slide up or down to choose</span></div>' +
+      '<div class="wheelwrap"><div class="wheel" data-key="' + key + '" role="listbox" aria-labelledby="' + key + 'Lbl" tabindex="0">' +
+      list.map(function (v) { return '<button class="wi" type="button" role="option" aria-selected="false" data-r="wheel" data-v="' + esc(v) + '">' + esc(v) + '</button>'; }).join('') +
+      '</div></div>';
+  }
+  function selectWheel(w, idx) {
+    var items = w.querySelectorAll('.wi');
+    idx = Math.max(0, Math.min(items.length - 1, idx));
+    items.forEach(function (n, k) { n.setAttribute('aria-selected', String(k === idx)); });
+    var v = items[idx].dataset.v;
+    if (rep) rep[w.dataset.key] = v;
+    var lab = $(w.dataset.key + 'Val');
+    if (lab) lab.textContent = w.dataset.key === 'mood' ? moodText(v) : v;
+    validateReport();
+  }
   function videoBoxHtml() {
     if (rep.url) return '<video src="' + esc(rep.url) + '" controls muted playsinline preload="metadata"></video>';
-    return '<span class="muted" style="font-size:14px;text-align:center;padding:0 24px">Record or choose a video up to ' + CONFIG.VIDEO_MAX_SEC + ' seconds</span>';
+    return '<span class="muted" style="font-size:14px;text-align:center;padding:0 24px">Tap Record to open the camera</span>';
   }
-  function videoInfoText() {
-    if (!rep.file) return 'Up to ' + CONFIG.VIDEO_MAX_SEC + ' seconds and ' + fmtBytes(CONFIG.VIDEO_MAX_BYTES) + '. Hold your phone upright.';
-    return Math.round(rep.dur) + ' seconds, ' + fmtBytes(rep.file.size);
+  function recBtnHtml() {
+    if (rep.opening) return 'Opening camera…';
+    if (rep.recording) return icon('video', 20) + 'Stop recording';
+    return icon('video', 20) + (rep.file ? 'Record again' : 'Record');
+  }
+  function updateRecUI() {
+    var b = $('recBtn');
+    if (!b || !rep) return;
+    b.innerHTML = recBtnHtml();
+    b.disabled = !!rep.opening;
+    b.dataset.r = rep.recording ? 'stop' : 'record';
   }
   function repErr(msg) { var el = $('repErr'); if (el) el.textContent = msg || ''; }
 
   function renderWhere() {
     var el = $('where');
     if (!el) return;
+    var idle = rep.locState === 'idle';
+    el.hidden = idle; if ($('whereLbl')) $('whereLbl').hidden = idle;
     if (rep.locState === 'busy') el.innerHTML = icon('pin', 18) + '<span>Finding your ward…</span>';
     else if (rep.locState === 'ok') el.innerHTML = icon('pin', 18) + '<span><b style="color:#fff">' + esc(rep.ward) + '</b>, ' + esc(rep.county) + '</span>';
-    else el.innerHTML = '<div style="width:100%"><p class="note" style="margin:0 0 8px">We could not read your location. Turn on location for this site and try again.</p>' +
-      '<button class="btn ghost" type="button" data-r="locate" style="height:44px">Try again</button></div>';
+    else if (rep.locState === 'fail') el.innerHTML = '<span style="color:var(--danger)">We could not read your location. Turn on location for this site, then tap Record again.</span>';
+    else el.innerHTML = '';
   }
   /* Stand-in. Real version: GET /v1/geo/ward?lat=..&lng=.. */
   function resolveWard() { return wait(500).then(function () { return { ward: 'Nyanchwa Ward', county: state.home }; }); }
-  function detectWard() {
-    if (!navigator.geolocation) { rep.locState = 'fail'; renderWhere(); return; }
-    rep.locState = 'busy'; renderWhere();
-    navigator.geolocation.getCurrentPosition(function (pos) {
-      if (rep) { rep.lat = pos.coords.latitude; rep.lng = pos.coords.longitude; }   // for the map dot (blurred on the server)
-      resolveWard(pos.coords.latitude, pos.coords.longitude).then(function (r) {
-        if (!rep) return;
-        rep.ward = r.ward; rep.county = r.county; rep.locState = 'ok'; renderWhere(); validateReport();
-      });
-    }, function () {
-      if (!rep) return;
-      rep.locState = 'fail'; renderWhere(); validateReport();
-    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+  function locateNow() {
+    return new Promise(function (res, rej) {
+      if (!navigator.geolocation) { rej(new Error('no location')); return; }
+      navigator.geolocation.getCurrentPosition(function (pos) { res(pos.coords); }, function () { rej(new Error('denied')); },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+    });
   }
+  function pickMime() {
+    var list = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
+    for (var i = 0; i < list.length; i++) if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(list[i])) return list[i];
+    return '';
+  }
+  function fmtClock(sec) { sec = Math.floor(sec); return Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2); }
+
+  /* ---------- face check ----------
+     This app is for nature and surroundings, not people. While recording, every frame is scanned for faces:
+       - a face that is small or in the background is pixelated in the video itself (it never leaves the phone un-blurred)
+       - a face that fills enough of the frame (CONFIG.FACE_FOCUS_RATIO) for CONFIG.FACE_FOCUS_SEC seconds means the camera is
+         pointed at a person, so the recording stops and the clip is thrown away.
+     Uses the phone's built-in FaceDetector when there is one, otherwise MediaPipe (loaded from a CDN only when needed).
+     The phone check can be bypassed by a modified app, so the server must repeat it on the uploaded video (see scanVideo). */
+  var faceEngine = { det: null, loading: null };
+  var MP_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+  var MP_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
+  function loadFaceEngine() {
+    if (faceEngine.det) return Promise.resolve(faceEngine.det);
+    if (faceEngine.loading) return faceEngine.loading;
+    faceEngine.loading = new Promise(function (resolve, reject) {
+      if (window.FaceDetector) {
+        try {
+          var nd = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 8 });
+          faceEngine.det = function (el) { return nd.detect(el).then(function (a) { return a.map(function (f) { var b = f.boundingBox; return { x: b.x, y: b.y, w: b.width, h: b.height }; }); }); };
+          resolve(faceEngine.det); return;
+        } catch (e) { /* fall through to MediaPipe */ }
+      }
+      import(MP_BASE + '/vision_bundle.mjs').then(function (m) {
+        return m.FilesetResolver.forVisionTasks(MP_BASE + '/wasm').then(function (fs) {
+          return m.FaceDetector.createFromOptions(fs, { baseOptions: { modelAssetPath: MP_MODEL }, runningMode: 'VIDEO', minDetectionConfidence: 0.5 });
+        });
+      }).then(function (d) {
+        faceEngine.det = function (el, ts) {
+          var list = (d.detectForVideo(el, ts).detections || []).map(function (x) { var b = x.boundingBox; return { x: b.originX, y: b.originY, w: b.width, h: b.height }; });
+          return Promise.resolve(list);
+        };
+        resolve(faceEngine.det);
+      }).catch(function (e) { faceEngine.loading = null; reject(e); });
+    });
+    return faceEngine.loading;
+  }
+  function warmFaceCheck() { loadFaceEngine().catch(function () {}); }
+
+  /* ---------- background sounds (made on the phone with Web Audio, no files to download) ---------- */
+  var BG_TONES = [
+    { id: 'none', label: 'None' }, { id: 'rain', label: 'Rain' }, { id: 'wind', label: 'Wind' },
+    { id: 'stream', label: 'Stream' }, { id: 'night', label: 'Night crickets' }, { id: 'hum', label: 'Soft hum' }
+  ];
+  function noiseBuf(ac, pink) {
+    var len = ac.sampleRate * 2, b = ac.createBuffer(1, len, ac.sampleRate), d = b.getChannelData(0), last = 0;
+    for (var i = 0; i < len; i++) { var w = Math.random() * 2 - 1; if (pink) { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; } else d[i] = w; }
+    return b;
+  }
+  function makeTone(ac, id, out) {
+    var nodes = [], g = ac.createGain();
+    g.connect(out);
+    function osc(type, f) { var o = ac.createOscillator(); o.type = type; o.frequency.value = f; o.start(); nodes.push(o); return o; }
+    function noise(pink) { var s = ac.createBufferSource(); s.buffer = noiseBuf(ac, pink); s.loop = true; s.start(); nodes.push(s); return s; }
+    function filt(type, f, q) { var x = ac.createBiquadFilter(); x.type = type; x.frequency.value = f; if (q) x.Q.value = q; return x; }
+    function lfo(f, depth, target) { var l = osc('sine', f), lg = ac.createGain(); lg.gain.value = depth; l.connect(lg); lg.connect(target); }
+    if (id === 'rain') { var hp = filt('highpass', 900), lp = filt('lowpass', 9000); noise(false).connect(hp); hp.connect(lp); lp.connect(g); g.gain.value = 0.5; }
+    else if (id === 'wind') { var bp = filt('bandpass', 500, 0.6); noise(true).connect(bp); bp.connect(g); g.gain.value = 1.2; lfo(0.12, 0.6, g.gain); }
+    else if (id === 'stream') { var sb = filt('bandpass', 1400, 0.8); noise(true).connect(sb); sb.connect(g); g.gain.value = 0.9; lfo(0.7, 500, sb.frequency); }
+    else if (id === 'night') { var ca = ac.createGain(); ca.gain.value = 0.05; osc('sine', 4600).connect(ca); ca.connect(g); g.gain.value = 0.6; lfo(32, 0.05, ca.gain); lfo(2.2, 0.05, ca.gain); }
+    else if (id === 'hum') { var hl = filt('lowpass', 600); [110, 164.8, 220].forEach(function (f) { var og = ac.createGain(); og.gain.value = 0.12; osc('sine', f).connect(og); og.connect(hl); }); hl.connect(g); g.gain.value = 1; }
+    return { stop: function () { nodes.forEach(function (n) { try { n.stop(); } catch (e) {} }); try { g.disconnect(); } catch (e) {} } };
+  }
+  function applyBg(r) {
+    if (!r.ac || !r.bgGain) return;
+    if (r.tone) { r.tone.stop(); r.tone = null; }
+    if (r.bg === 'file') {
+      if (!r.bgBuf) return;
+      var s = r.ac.createBufferSource(); s.buffer = r.bgBuf; s.loop = true; s.connect(r.bgGain); s.start();
+      r.tone = { stop: function () { try { s.stop(); } catch (e) {} try { s.disconnect(); } catch (e) {} } };
+    } else if (r.bg !== 'none') r.tone = makeTone(r.ac, r.bg, r.bgGain);
+  }
+  function decodeBgFile(r) {
+    if (!r.ac || !r.bgFile) return Promise.resolve();
+    return r.bgFile.arrayBuffer().then(function (buf) {
+      return new Promise(function (res, rej) { r.ac.decodeAudioData(buf, res, rej); });
+    }).then(function (b) { r.bgBuf = b; }).catch(function () { r.bgBuf = null; r.bg = 'none'; toast('We could not read that sound file'); });
+  }
+
+  /* ---------- teardown ---------- */
+  function teardown(r) {
+    if (!r) return;
+    clearInterval(r.timer); r.timer = 0;
+    r.loop = false; if (r.raf) { cancelAnimationFrame(r.raf); r.raf = 0; }
+    if (r.tone) { r.tone.stop(); r.tone = null; }
+    [r.stream, r.out, r.cs].forEach(function (st) { if (st) st.getTracks().forEach(function (t) { t.stop(); }); });
+    r.stream = r.out = r.cs = null;
+    if (r.src) { r.src.srcObject = null; r.src = null; }
+    if (r.ac) { try { r.ac.close(); } catch (e) {} r.ac = null; r.bgGain = r.micGain = null; }
+    r.recording = false; r.opening = false;
+  }
+  function stopCamera(r) {
+    if (!r) return;
+    if (r.mr) { r.mr.onstop = null; try { if (r.mr.state !== 'inactive') r.mr.stop(); } catch (e) {} r.mr = null; }
+    teardown(r);
+  }
+
+  function pixelate(r, b) {
+    var cv = r.cv, x = Math.max(0, Math.floor(b.x)), y = Math.max(0, Math.floor(b.y));
+    var w = Math.min(cv.width - x, Math.ceil(b.w)), h = Math.min(cv.height - y, Math.ceil(b.h));
+    if (w < 4 || h < 4) return;
+    var bs = Math.max(w, h) / 5, sw = Math.max(1, Math.round(w / bs)), sh = Math.max(1, Math.round(h / bs));
+    r.tmp.width = sw; r.tmp.height = sh;
+    r.tcx.drawImage(cv, x, y, w, h, 0, 0, sw, sh);
+    r.cx.imageSmoothingEnabled = false;
+    r.cx.drawImage(r.tmp, 0, 0, sw, sh, x, y, w, h);
+    r.cx.imageSmoothingEnabled = true;
+  }
+  function drawLoop(r) {
+    if (!r.loop) return;
+    r.raf = requestAnimationFrame(function () { drawLoop(r); });
+    var now = performance.now(), sv = r.src;
+    if (!sv || sv.readyState < 2) return;
+    r.cx.drawImage(sv, 0, 0, r.cv.width, r.cv.height);
+    if (r.det && !r.detBusy && now - r.lastDet >= CONFIG.FACE_DETECT_MS) {
+      var dt = Math.min(0.6, (now - r.lastDet) / 1000);
+      r.lastDet = now; r.detBusy = true;
+      Promise.resolve(r.det(sv, now)).then(function (list) {
+        r.detBusy = false;
+        var vw = sv.videoWidth || 1, vh = sv.videoHeight || 1, sc = r.cv.width / vw, focus = false;
+        r.faces = list.map(function (f) {
+          if ((f.w * f.h) / (vw * vh) >= CONFIG.FACE_FOCUS_RATIO) focus = true;
+          return { x: (f.x - f.w * 0.25) * sc, y: (f.y - f.h * 0.35) * sc, w: f.w * 1.5 * sc, h: f.h * 1.7 * sc };
+        });
+        r.faceSeen = r.faceSeen || list.length > 0;
+        r.faceAt = performance.now();
+        r.focusSec = focus ? r.focusSec + dt : Math.max(0, r.focusSec - dt * 0.5);
+        var warn = $('faceWarn'); if (warn) warn.hidden = !focus;
+        if (r.focusSec >= CONFIG.FACE_FOCUS_SEC && r.recording) { r.declined = true; stopRecording(false); }
+      }).catch(function () {
+        r.detBusy = false; r.faceErrs = (r.faceErrs || 0) + 1;
+        if (r.faceErrs > 3) { r.det = null; r.faceChecked = false; }
+      });
+    }
+    if (now - r.faceAt > CONFIG.FACE_HOLD_MS) r.faces = [];
+    for (var i = 0; i < r.faces.length; i++) pixelate(r, r.faces[i]);
+  }
+
+  // Opens the camera (live recording only, no gallery uploads), reads the phone's coordinates at the same moment,
+  // blurs faces, and mixes voice and background sound into the recording.
+  function startRecording() {
+    if (!rep || rep.uploading || rep.recording || rep.opening) return;
+    var r = rep, md = navigator.mediaDevices;
+    repErr('');
+    if (!(md && md.getUserMedia && window.MediaRecorder && HTMLCanvasElement.prototype.captureStream)) { repErr('This browser cannot record video. Please open Mtaa Pulse in Chrome or Safari.'); return; }
+    var AC = window.AudioContext || window.webkitAudioContext, ac = null;
+    try { if (AC) { ac = new AC(); if (ac.resume) ac.resume(); } } catch (e) { ac = null; }   // created inside the tap so phones allow it
+    r.opening = true; r.locState = 'busy'; renderWhere(); updateRecUI(); validateReport();
+    var vc = { facingMode: { ideal: 'environment' } };
+    var cam = md.getUserMedia({ video: vc, audio: true })
+      .catch(function () { return md.getUserMedia({ video: vc }); })     // microphone refused: still record video with background sound
+      .then(function (s) { return { s: s }; }, function (e) { return { e: e }; });
+    var loc = locateNow().then(function (c) { return { c: c }; }, function (e) { return { e: e }; });
+    var face = Promise.race([loadFaceEngine(), wait(CONFIG.FACE_LOAD_MS)]).then(function (d) { return d || null; }, function () { return null; });
+    Promise.all([cam, loc, face]).then(function (res) {
+      var camR = res[0], locR = res[1], det = res[2];
+      function dropCam() { if (camR.s) camR.s.getTracks().forEach(function (t) { t.stop(); }); if (ac) { try { ac.close(); } catch (e) {} } }
+      if (rep !== r) { dropCam(); return; }
+      r.opening = false;
+      if (locR.e) r.locState = 'fail'; else { r.lat = locR.c.latitude; r.lng = locR.c.longitude; }
+      if (camR.e) repErr('We could not open the camera. Allow camera access for this site, then tap Record again.');
+      if (locR.e || camR.e) { dropCam(); if (!locR.e) r.locState = 'idle'; renderWhere(); updateRecUI(); validateReport(); return; }
+      resolveWard(r.lat, r.lng).then(function (w) {
+        if (rep !== r) return;
+        r.ward = w.ward; r.county = w.county; r.locState = 'ok'; renderWhere(); validateReport();
+      });
+      if (r.url) { URL.revokeObjectURL(r.url); r.url = null; }
+      r.file = null; r.dur = 0; r.chunks = []; r.declined = false; r.auto = false;
+      r.det = det; r.faceChecked = !!det; r.faces = []; r.faceAt = 0; r.focusSec = 0; r.faceSeen = false; r.faceErrs = 0; r.lastDet = 0; r.detBusy = false;
+      var vtrack = camR.s.getVideoTracks()[0], sv = document.createElement('video');
+      sv.muted = true; sv.setAttribute('playsinline', ''); sv.playsInline = true; sv.srcObject = new MediaStream([vtrack]);
+      var ready = new Promise(function (ok) { sv.onloadeddata = ok; setTimeout(ok, 4000); });
+      var pp = sv.play(); if (pp && pp.catch) pp.catch(function () {});
+      r.src = sv; r.stream = camR.s;
+      ready.then(function () {
+        if (rep !== r || r.src !== sv) return;
+        var vw = sv.videoWidth || 720, vh = sv.videoHeight || 1280, k = Math.min(1, 1280 / Math.max(vw, vh));
+        r.cv = document.createElement('canvas'); r.cv.width = Math.round(vw * k); r.cv.height = Math.round(vh * k);
+        r.cx = r.cv.getContext('2d'); r.tmp = document.createElement('canvas'); r.tcx = r.tmp.getContext('2d');
+        // sound: voice and background are mixed into one track
+        var tracks = [], audioTracks = camR.s.getAudioTracks();
+        if (ac) {
+          r.ac = ac; var dest = ac.createMediaStreamDestination();
+          r.bgGain = ac.createGain(); r.bgGain.gain.value = r.bgVol / 100; r.bgGain.connect(dest);
+          r.micGain = ac.createGain(); r.micGain.gain.value = r.voice ? 1 : 0; r.micGain.connect(dest);
+          if (audioTracks.length) ac.createMediaStreamSource(new MediaStream(audioTracks)).connect(r.micGain);
+          tracks = dest.stream.getAudioTracks();
+        } else tracks = r.voice ? audioTracks : [];
+        r.cs = r.cv.captureStream(30);
+        r.out = new MediaStream(r.cs.getVideoTracks().concat(tracks));
+        var opts = { videoBitsPerSecond: 2500000 }, mime = pickMime();
+        if (mime) opts.mimeType = mime;
+        try { r.mr = new MediaRecorder(r.out, opts); }
+        catch (e1) { try { r.mr = new MediaRecorder(r.out); } catch (e2) { teardown(r); repErr('This phone cannot record video here.'); updateRecUI(); return; } }
+        r.mr.ondataavailable = function (ev) { if (ev.data && ev.data.size) r.chunks.push(ev.data); };
+        r.mr.onstop = function () { finishRecording(r); };
+        var box = $('vidBox'); box.innerHTML = '';
+        box.appendChild(r.cv);
+        box.insertAdjacentHTML('beforeend', '<div class="rectimer"><i></i><span id="recClock">0:00 / ' + fmtClock(CONFIG.VIDEO_MAX_SEC) + '</span></div><div class="facewarn" id="faceWarn" hidden>A person is in focus. Point the camera at nature and your surroundings.</div>');
+        r.loop = true; drawLoop(r);
+        decodeBgFile(r).then(function () { applyBg(r); });
+        r.mr.start(1000);
+        r.recording = true; r.t0 = Date.now();
+        r.timer = setInterval(function () {
+          var el = (Date.now() - r.t0) / 1000, c = $('recClock');
+          if (c) c.textContent = fmtClock(Math.min(el, CONFIG.VIDEO_MAX_SEC)) + ' / ' + fmtClock(CONFIG.VIDEO_MAX_SEC);
+          if (el >= CONFIG.VIDEO_MAX_SEC) stopRecording(true);
+        }, 250);
+        updateRecUI(); validateReport();
+      });
+    });
+  }
+  function stopRecording(auto) {
+    var r = rep;
+    if (!r || !r.recording || !r.mr) return;
+    r.dur = Math.min((Date.now() - r.t0) / 1000, CONFIG.VIDEO_MAX_SEC);
+    r.auto = !!auto;
+    clearInterval(r.timer); r.timer = 0;
+    r.recording = false;
+    try { r.mr.stop(); } catch (e) { finishRecording(r); }
+    updateRecUI();
+  }
+  function finishRecording(r) {
+    var type = (r.mr && r.mr.mimeType ? r.mr.mimeType : (r.chunks[0] && r.chunks[0].type) || 'video/webm').split(';')[0];
+    r.mr = null;
+    teardown(r);
+    if (rep !== r) return;
+    var blob = new Blob(r.chunks, { type: type });
+    r.chunks = [];
+    if (r.declined) { $('vidBox').innerHTML = videoBoxHtml(); repErr('That clip showed a person up close, so it was not kept. Mtaa Pulse is for nature and your surroundings. Please record again.'); updateRecUI(); validateReport(); return; }
+    if (r.dur < 1 || !blob.size) { $('vidBox').innerHTML = videoBoxHtml(); repErr('That recording was too short. Please record again.'); updateRecUI(); validateReport(); return; }
+    if (blob.size > CONFIG.VIDEO_MAX_BYTES) { $('vidBox').innerHTML = videoBoxHtml(); repErr('That video is ' + fmtBytes(blob.size) + '. The limit is ' + fmtBytes(CONFIG.VIDEO_MAX_BYTES) + '. Please record a shorter clip.'); updateRecUI(); validateReport(); return; }
+    r.file = blob; r.url = URL.createObjectURL(blob);
+    $('vidBox').innerHTML = videoBoxHtml();
+    updateRecUI(); validateReport();
+    if (r.auto) toast(CONFIG.VIDEO_MAX_SEC + ' seconds reached. Recording stopped.', 3800);
+    else if (r.faceSeen) toast('Faces in the background were blurred.', 3000);
+  }
+
   function validateReport() {
     var b = $('repGo');
     if (!b || !rep) return;
-    b.disabled = !(rep.file && rep.mood && rep.category && rep.caption.trim().length >= CONFIG.CAPTION_MIN && rep.locState === 'ok') || rep.uploading;
-  }
-
-  function takeVideo(file) {
-    repErr('');
-    if (!file) return;
-    if (!/^video\//.test(file.type)) { repErr('Please choose a video file.'); return; }
-    if (file.size > CONFIG.VIDEO_MAX_BYTES) { repErr('That video is ' + fmtBytes(file.size) + '. The limit is ' + fmtBytes(CONFIG.VIDEO_MAX_BYTES) + '. Try a shorter clip.'); return; }
-    var url = URL.createObjectURL(file), probe = document.createElement('video');
-    probe.preload = 'metadata';
-    probe.onloadedmetadata = function () {
-      var dur = probe.duration;
-      if (!isFinite(dur) || dur <= 0) { URL.revokeObjectURL(url); repErr('We could not read that video. Try another one.'); return; }
-      if (dur > CONFIG.VIDEO_MAX_SEC + 0.5) { URL.revokeObjectURL(url); repErr('That video is ' + Math.round(dur) + ' seconds. The limit is ' + CONFIG.VIDEO_MAX_SEC + '.'); return; }
-      if (!rep) { URL.revokeObjectURL(url); return; }
-      if (rep.url) URL.revokeObjectURL(rep.url);
-      rep.file = file; rep.url = url; rep.dur = dur;
-      $('vidBox').innerHTML = videoBoxHtml();
-      $('vidInfo').textContent = videoInfoText();
-      validateReport();
-    };
-    probe.onerror = function () { URL.revokeObjectURL(url); repErr('We could not read that video. Try another one.'); };
-    probe.src = url;
+    b.disabled = !(rep.file && rep.mood && rep.category && rep.caption.trim().length >= CONFIG.CAPTION_MIN && rep.locState === 'ok') || rep.uploading || rep.recording || rep.opening || (session && session.type !== 'account' && !rep.anonOk);
   }
 
   reportBody.addEventListener('click', function (e) {
     var el = e.target.closest('[data-r]');
     if (!el || !rep || rep.uploading) return;
     var a = el.dataset.r;
-    if (a === 'record') $('vidRec').click();
-    else if (a === 'upload') $('vidPick').click();
-    else if (a === 'mood' || a === 'cat') {
-      el.parentNode.querySelectorAll('.opt').forEach(function (o) { o.setAttribute('aria-checked', String(o === el)); });
-      rep[a === 'mood' ? 'mood' : 'category'] = el.dataset.v;
-      validateReport();
+    if (a === 'record') startRecording();
+    else if (a === 'stop') stopRecording(false);
+    else if (a === 'wheel') {
+      var w = el.parentNode, idx = Array.prototype.indexOf.call(w.children, el);
+      selectWheel(w, idx);
+      w.scrollTo({ top: idx * el.offsetHeight, behavior: 'smooth' });
     }
-    else if (a === 'locate') detectWard();
+    else if (a === 'bg') {
+      rep.bg = el.dataset.v;
+      el.parentNode.querySelectorAll('.hi').forEach(function (n) { n.setAttribute('aria-selected', String(n === el)); });
+      applyBg(rep);
+    }
+    else if (a === 'bgfile') $('bgFile').click();
+    else if (a === 'consent') openConsent();
     else if (a === 'post') submitReport();
   });
   reportBody.addEventListener('change', function (e) {
-    if ((e.target.id === 'vidRec' || e.target.id === 'vidPick') && e.target.files[0]) { takeVideo(e.target.files[0]); e.target.value = ''; }
+    if (!rep) return;
+    var id = e.target.id;
+    if (id === 'anonOk') { rep.anonOk = e.target.checked; repErr(''); validateReport(); }
+    else if (id === 'voiceOn') { rep.voice = e.target.checked; if (rep.micGain) rep.micGain.gain.value = rep.voice ? 1 : 0; }
+    else if (id === 'bgFile' && e.target.files[0]) {
+      var f = e.target.files[0]; e.target.value = '';
+      if (!/^audio\//.test(f.type)) { repErr('Please choose an audio file.'); return; }
+      if (f.size > CONFIG.BG_FILE_MAX) { repErr('That sound file is ' + fmtBytes(f.size) + '. The limit is ' + fmtBytes(CONFIG.BG_FILE_MAX) + '.'); return; }
+      repErr('');
+      rep.bgFile = f; rep.bgName = f.name; rep.bgBuf = null; rep.bg = 'file';
+      var row = reportBody.querySelector('.hrow');
+      if (row) { row.querySelectorAll('.hi').forEach(function (n) { n.setAttribute('aria-selected', String(n.dataset.r === 'bgfile')); }); row.lastChild.textContent = f.name.slice(0, 18); }
+      if (rep.ac) decodeBgFile(rep).then(function () { applyBg(rep); });
+    }
   });
+  reportBody.addEventListener('input', function (e) {
+    if (e.target.id === 'bgVol' && rep) { rep.bgVol = +e.target.value; if (rep.bgGain) rep.bgGain.gain.value = rep.bgVol / 100; }
+  });
+  reportBody.addEventListener('scroll', function (e) {          // the wheels: whatever sits in the middle when scrolling stops is chosen
+    var w = e.target;
+    if (!w.classList || !w.classList.contains('wheel')) return;
+    clearTimeout(w._t);
+    w._t = setTimeout(function () {
+      var first = w.querySelector('.wi');
+      if (first && rep) selectWheel(w, Math.round(w.scrollTop / first.offsetHeight));
+    }, 120);
+  }, true);
   reportBody.addEventListener('input', function (e) {
     if (e.target.id !== 'cap' || !rep) return;
     rep.caption = e.target.value;
@@ -1964,6 +2260,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   function submitReport() {
     if (!rep || rep.uploading) return;
     if (!hasValidSession()) { repErr('Your verification expired. Close this and verify again.'); return; }
+    if (session.type !== 'account' && !rep.anonOk) { repErr('Tick the box to confirm you are posting anonymously.'); return; }
     var pre = checkCaption(rep.caption, session.type !== 'account');
     if (pre.reject) { repErr(pre.reject); return; }
     rep.uploading = true;
@@ -1986,7 +2283,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
         lat: rep.lat, lng: rep.lng,                             // phone location for the map dot (the server blurs it)
         deviceId: deviceId,                                     // hashed on the server for rate limits, never shown to others
         mood: rep.mood, category: rep.category, caption: rep.caption.trim(),
-        ward: rep.ward, county: rep.county, videoKey: videoKey, durationSec: Math.round(rep.dur),
+        ward: rep.ward, county: rep.county, videoKey: videoKey, durationSec: Math.round(rep.dur), faceCheck: rep.faceChecked ? 'done' : 'none',
         posterName: isAnon ? null : '@' + session.username,
         posterAvatar: isAnon ? null : session.avatar,
         localPreview: rep.url                                   // demo only
@@ -2008,8 +2305,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       toast(isAnon ? 'Posted anonymously.' : 'Posted. We will check it before it is marked Verified.', 3400);
     }).catch(function (err) {
       rep.uploading = false;
-      prog.hidden = true; go.textContent = 'Post story'; validateReport();
-      repErr(/^(rate_limited|daily_limit|banned|caption_rule|unverified)$/.test(err.code) ? errMsg(err) : (err.message || 'Upload failed.') + ' Tap Post story to try again.');
+      prog.hidden = true; go.textContent = 'Post'; validateReport();
+      repErr(/^(rate_limited|daily_limit|banned|caption_rule|unverified)$/.test(err.code) ? errMsg(err) : (err.message || 'Upload failed.') + ' Tap Post to try again.');
     });
   }
 
@@ -2018,7 +2315,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     if (sheet.classList.contains('open')) closeSheet();
-    else if (reportPanel.classList.contains('open')) closeReport();
+    else if (reportPanel.classList.contains('open') && !termsPanel.classList.contains('open')) closeReport();
     else if (authPanel.classList.contains('open') && !termsPanel.classList.contains('open')) closeAuth();
   });
 
@@ -2045,7 +2342,17 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   var termsPanel = $('termsPanel'), termsFocus = null;
   function openTerms() {
     termsFocus = document.activeElement;
+    $('termsTitle').textContent = 'Terms and conditions';
     $('termsBody').innerHTML = '<h2 class="sec">How anonymity works</h2>' + policyHtml();
+    termsPanel.classList.add('open');
+  }
+  function openConsent() {
+    termsFocus = document.activeElement;
+    $('termsTitle').textContent = 'Consent';
+    $('termsBody').innerHTML = '<p class="lede">No account is created, and ' + (CONFIG.ANON_LINK_MODE === 'none' ? 'nothing that links this post to you is kept after you post.' : 'your post shows no name.') +
+      ' Anonymous posts are checked by our team before they go public, and you can post up to ' + CONFIG.ANON_DAILY_LIMIT + ' a day.</p>' +
+      '<p class="lede">I confirm I am posting anonymously, and I understand our team must approve this post before it goes public.</p>' +
+      '<p class="note">Tick the Consent box on the New post screen to agree.</p>';
     termsPanel.classList.add('open');
   }
   function closeTerms() { termsPanel.classList.remove('open'); if (termsFocus && termsFocus.focus) termsFocus.focus(); }
