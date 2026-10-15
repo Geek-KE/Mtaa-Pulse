@@ -18,13 +18,14 @@
   --muted:#9FC3D2;
   --body:#CFE4EE;
   --accent:#F2A33C;
+  --danger:#FF9B8A;
   --nav-h:76px;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:#02080C}
 body{font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--sky);-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
-button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 
 .app{position:relative;width:100%;max-width:430px;height:100vh;height:100dvh;margin:0 auto;overflow:hidden;background:var(--ink)}
 
@@ -52,7 +53,8 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 .chip svg{stroke:var(--accent)}
 .chip.verified{font-weight:700}
 .muted{color:var(--muted)}
-.poster{font-weight:500;color:var(--sky)}
+.poster{display:inline-flex;align-items:center;gap:6px;font-weight:500;color:var(--sky)}
+.av{width:20px;height:20px;border-radius:50%;object-fit:cover;background:var(--trust)}
 
 .rail{display:flex;flex-direction:column;align-items:center;gap:8px;width:48px;font-size:11px;color:var(--sky)}
 .rail-item{display:flex;flex-direction:column;align-items:center;gap:2px}
@@ -61,8 +63,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 .empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0 32px;text-align:center}
 .empty strong{font-size:22px;color:#fff}
 .empty span{font-size:15px;color:var(--muted)}
+.empty .btn{width:auto;padding:0 28px;margin-top:10px}
 
-/* ---------- top: name, county, scope ---------- */
+/* ---------- top ---------- */
 .top{position:absolute;left:0;right:0;top:0;z-index:5;padding-top:env(safe-area-inset-top)}
 .brand{padding:8px 16px 0;font-size:18px;font-weight:700;letter-spacing:-.01em;color:#fff}
 .brand span{color:var(--accent)}
@@ -83,10 +86,11 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 .nav{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;align-items:center;justify-content:space-around;height:calc(var(--nav-h) + env(safe-area-inset-bottom));padding:0 8px calc(8px + env(safe-area-inset-bottom));background:rgba(7,31,42,.95);border-top:1px solid rgba(232,244,250,.12)}
 .nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:64px;height:56px;font-size:12px;font-weight:500;color:var(--muted)}
 .nav-item[aria-current="page"]{font-weight:700;color:#fff}
+.nav-av{width:24px;height:24px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)}
 .report{display:flex;align-items:center;justify-content:center;width:64px;height:48px;border-radius:16px;background:var(--accent);color:var(--ink)}
 
-/* ---------- message ---------- */
-.toast{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 84px);z-index:15;transform:translateX(-50%);padding:10px 18px;border-radius:999px;background:rgba(7,31,42,.94);border:1px solid rgba(232,244,250,.28);font-size:14px;font-weight:500;color:#fff;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s ease}
+/* ---------- toast ---------- */
+.toast{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 84px);z-index:60;transform:translateX(-50%);max-width:92%;padding:10px 18px;border-radius:999px;background:rgba(7,31,42,.94);border:1px solid rgba(232,244,250,.28);font-size:14px;font-weight:500;color:#fff;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s ease}
 .toast.show{opacity:1}
 
 /* ---------- county picker ---------- */
@@ -104,8 +108,77 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 .list svg{stroke:var(--accent)}
 .list .none{padding:16px 0;font-size:15px;color:var(--muted)}
 
+/* ---------- full-screen panels ---------- */
+.panel{position:absolute;inset:0;z-index:30;display:none;flex-direction:column;background:var(--ink)}
+.panel.open{display:flex}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top) + 10px) 12px 6px}
+.panel-head h2{margin:0;font-size:17px;font-weight:700;color:#fff}
+.hbtn{position:relative;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;color:var(--sky)}
+.hbtn[hidden]{visibility:hidden;display:flex}
+.panel-body{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:8px 20px calc(28px + env(safe-area-inset-bottom));scrollbar-width:none}
+.panel-body::-webkit-scrollbar{display:none}
+.h1{margin:8px 0 6px;font-size:26px;line-height:1.15;font-weight:700;color:#fff;letter-spacing:-.01em}
+.lede{margin:0 0 20px;font-size:15px;line-height:1.45;color:var(--body)}
+.stack{display:flex;flex-direction:column;gap:12px}
+.choice{display:flex;flex-direction:column;gap:4px;width:100%;padding:16px;border-radius:18px;text-align:left;background:rgba(232,244,250,.07);border:1px solid rgba(232,244,250,.2)}
+.choice strong{font-size:17px;color:#fff}
+.choice span{font-size:14px;line-height:1.35;color:var(--body)}
+.choice.main{border-color:var(--accent);background:rgba(242,163,60,.1)}
+.choice:hover{border-color:var(--accent)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;border-radius:26px;background:var(--accent);color:var(--ink);font-size:16px;font-weight:700}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--sky);border:1px solid rgba(232,244,250,.28);font-weight:500}
+.linkbtn{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;font-size:14px;font-weight:700;color:var(--accent)}
+.linkbtn[disabled]{color:var(--muted);cursor:default}
+.center{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:4px;margin-top:8px}
+.center .muted{font-size:14px}
+.divider{margin:18px 0 6px;padding-top:14px;border-top:1px solid rgba(232,244,250,.14)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin-bottom:14px;border-radius:24px;background:rgba(232,244,250,.08)}
+.seg button{height:40px;border-radius:20px;font-size:14px;font-weight:500;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--trust);color:#fff;font-weight:700}
+.label{display:block;margin:0 0 6px;font-size:13px;font-weight:500;color:var(--muted)}
+.gap{height:14px}
+.field{display:flex;align-items:center;height:52px;border-radius:14px;border:1px solid rgba(232,244,250,.28);background:rgba(232,244,250,.08);overflow:hidden}
+.field:focus-within{border-color:var(--accent)}
+.field .pre{padding:0 0 0 14px;font-size:16px;font-weight:500;color:var(--muted)}
+.field input{flex:1;min-width:0;height:100%;padding:0 14px;background:transparent;border:0;color:#fff;font:inherit;font-size:16px}
+.field input::placeholder{color:#6F98A9}
+.field input:focus-visible{outline:none}
+.field .tgl{flex:none;height:100%;padding:0 14px;font-size:13px;font-weight:700;color:var(--accent)}
+.err{min-height:20px;margin:8px 0 12px;font-size:14px;line-height:1.35;color:var(--danger)}
+.note{margin:12px 0 0;font-size:13px;line-height:1.4;color:var(--muted)}
+.demo{margin:0 0 14px;padding:10px 12px;border-radius:12px;background:rgba(242,163,60,.14);border:1px dashed var(--accent);font-size:13px;color:var(--sky)}
+.otp{width:100%;height:60px;border-radius:14px;border:1px solid rgba(232,244,250,.28);background:rgba(232,244,250,.08);color:#fff;font:inherit;font-size:30px;font-weight:700;letter-spacing:.5em;text-align:center;padding-left:.5em}
+.otp:focus-visible{outline:none;border-color:var(--accent)}
+.avwrap{display:flex;align-items:center;gap:16px;margin:4px 0 18px}
+.avbtn{position:relative;flex:none;width:92px;height:92px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(232,244,250,.08);border:2px dashed rgba(232,244,250,.35);color:var(--muted)}
+.avbtn img{width:100%;height:100%;object-fit:cover;display:block}
+.avmeta{font-size:14px;line-height:1.4;color:var(--body)}
+.avmeta b{color:#fff}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* report form */
+.vidbox{position:relative;aspect-ratio:9/12;max-height:300px;width:100%;border-radius:18px;overflow:hidden;background:rgba(232,244,250,.07);border:1px dashed rgba(232,244,250,.3);display:flex;align-items:center;justify-content:center}
+.vidbox video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+.vidrow{display:flex;gap:10px;margin-top:10px}
+.vidrow .btn{height:46px;font-size:15px}
+.sec{margin:20px 0 8px;font-size:14px;font-weight:700;color:#fff}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{min-height:40px;padding:0 14px;border-radius:20px;border:1px solid rgba(232,244,250,.28);background:rgba(232,244,250,.07);font-size:14px;font-weight:500;color:var(--sky)}
+.opt[aria-checked="true"]{background:var(--accent);border-color:var(--accent);color:var(--ink);font-weight:700}
+textarea.ta{width:100%;min-height:96px;padding:12px 14px;border-radius:14px;border:1px solid rgba(232,244,250,.28);background:rgba(232,244,250,.08);color:#fff;font:inherit;font-size:16px;line-height:1.4;resize:vertical}
+textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
+.counter{margin-top:4px;text-align:right;font-size:12px;color:var(--muted)}
+.where{display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px;color:var(--body)}
+.where svg{flex:none;stroke:var(--accent)}
+.who{padding:12px 14px;border-radius:14px;background:rgba(232,244,250,.07);font-size:14px;line-height:1.4;color:var(--body)}
+.who b{color:#fff}
+.prog{height:8px;border-radius:4px;background:rgba(232,244,250,.14);overflow:hidden;margin:0 0 12px}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s linear}
+.prog[hidden]{display:none}
+
 @media (prefers-reduced-motion:reduce){
-  .toast{transition:none}
+  .toast,.prog i{transition:none}
 }
 </style>
 </head>
@@ -134,11 +207,12 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
     <button class="nav-item" id="mapBtn" type="button"><span data-icon="map"></span>Map</button>
     <button class="report" id="reportBtn" type="button" aria-label="Report" data-icon="plus" data-size="28" data-stroke="2.5"></button>
     <button class="nav-item" id="savedBtn" type="button"><span data-icon="bookmark"></span>Saved</button>
-    <button class="nav-item" id="loginBtn" type="button"><span data-icon="user"></span>Log in</button>
+    <button class="nav-item" id="loginBtn" type="button"><span id="loginIcon" data-icon="user"></span><span id="loginLabel">Log in</span></button>
   </nav>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <!-- county picker -->
   <div class="sheet-wrap" id="sheet">
     <button class="scrim" id="scrim" type="button" aria-label="Close county picker"></button>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
@@ -149,46 +223,374 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
       <ul class="list" id="countyList"></ul>
     </div>
   </div>
+
+  <!-- sign up / log in panel (rendered step by step) -->
+  <section class="panel" id="authPanel" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="panel-head">
+      <button class="hbtn" id="authBack" type="button" aria-label="Back" data-icon="back" data-size="24"></button>
+      <h2 id="authTitle">Welcome</h2>
+      <button class="hbtn" id="authClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
+    </div>
+    <div class="panel-body" id="authBody"></div>
+  </section>
+
+  <!-- report panel -->
+  <section class="panel" id="reportPanel" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+    <div class="panel-head">
+      <span class="hbtn" aria-hidden="true"></span>
+      <h2 id="reportTitle">New story</h2>
+      <button class="hbtn" id="reportClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
+    </div>
+    <div class="panel-body" id="reportBody"></div>
+  </section>
 </div>
 
 <script>
 (function () {
   'use strict';
 
-  /* ------------------------------------------------------------------
-     SAMPLE DATA. Replace with your backend.
-     Each story needs: county, ward (stamped from the phone's location
-     when the video is recorded), mood, category (both chosen at
-     recording), caption, when, poster (null = anonymous), counts, and
-     optionally video (a URL). Without a video the illustration is shown.
-     ------------------------------------------------------------------ */
-  var STORIES = [
-    { id: 1, county: 'Kisii County', ward: 'Nyanchwa Ward', mood: 'Hooray!', category: 'Roads and bridges',
-      caption: 'Children can now cross to school even when the river is full. Work finished last week.',
-      when: '2 days ago', poster: null, verified: true, likes: 248, comments: 31, scene: 'bridge', video: null },
-    { id: 2, county: 'Nyamira County', ward: 'Township Ward', mood: 'Relief!', category: 'Water',
-      caption: 'The borehole near the market is pumping again after the repair. Queues are much shorter this morning.',
-      when: '5 hours ago', poster: null, verified: true, likes: 96, comments: 12, scene: 'tower', video: null },
-    { id: 3, county: 'Nyeri County', ward: 'Mweiga Ward', mood: 'Proud!', category: 'Farms',
-      caption: 'Soil now stays on the slope after heavy rain. Beans and maize look strong this season. The terraces were built together over two weekends.',
-      when: '1 day ago', poster: null, verified: true, likes: 180, comments: 24, scene: 'terraces', video: null }
-  ];
-
-  /* Which counties count as "nearby". Replace with data from your backend. */
-  var NEARBY = {
-    'Kisii County': ['Nyamira County', 'Migori County', 'Homa Bay County', 'Kericho County', 'Narok County'],
-    'Nyamira County': ['Kisii County', 'Kericho County', 'Homa Bay County', 'Bomet County'],
-    'Nyeri County': ['Kirinyaga County', "Murang'a County", 'Laikipia County', 'Nyandarua County', 'Meru County']
+  /* ==================================================================
+     1. CONFIG
+     Every limit lives here so it can be tuned (or served from your
+     server) without touching the logic below.
+     ================================================================== */
+  var CONFIG = {
+    DEMO: true,                 // true = fake backend, OTP shown on screen. Set false when your real backend is connected.
+    OTP_LENGTH: 6,
+    OTP_RESEND_SEC: 30,
+    ANON_TOKEN_MS: 15 * 60 * 1000,          // a verified anonymous poster has 15 minutes to post, one story per verification
+    PASSWORD_MIN: 8,
+    PASSWORD_MAX: 72,
+    USERNAME_RE: /^[a-z0-9_]{3,20}$/,
+    // Feed paging
+    PAGE_SIZE: 8,
+    PREFETCH_AHEAD: 3,                      // fetch the next page when the viewer is this many stories from the end
+    // Profile picture
+    AVATAR_MAX_INPUT: 15 * 1024 * 1024,
+    AVATAR_TARGET_BYTES: 30 * 1024,
+    AVATAR_SIZES: [320, 256, 192, 128],
+    AVATAR_QUALITIES: [0.86, 0.78, 0.70, 0.60, 0.50],
+    // Story video (the server transcodes it, see notes in the API section)
+    VIDEO_MAX_SEC: 60,
+    VIDEO_MAX_BYTES: 50 * 1024 * 1024,
+    CAPTION_MIN: 10,
+    CAPTION_MAX: 280
   };
 
-  var COUNTIES = ['Baringo','Bomet','Bungoma','Busia','Elgeyo-Marakwet','Embu','Garissa','Homa Bay','Isiolo','Kajiado','Kakamega','Kericho','Kiambu','Kilifi','Kirinyaga','Kisii','Kisumu','Kitui','Kwale','Laikipia','Lamu','Machakos','Makueni','Mandera','Marsabit','Meru','Migori','Mombasa',"Murang'a",'Nairobi','Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri','Samburu','Siaya','Taita-Taveta','Tana River','Tharaka-Nithi','Trans-Nzoia','Turkana','Uasin Gishu','Vihiga','Wajir','West Pokot'].map(function (n) { return n + ' County'; });
+  var MOODS = ['Hooray!', 'Relief!', 'Proud!', 'Hopeful!', 'Worried!', 'Frustrated!'];
+  var CATEGORIES = ['Roads and bridges', 'Water', 'Farms', 'Health', 'Schools', 'Security', 'Power', 'Markets', 'Environment', 'Other'];
 
-  /* home = the county the person is browsing from. Replace it with the
-     county found from their location. county = the name shown on the
-     pill. Only scope 'county' filters to a single county. */
-  var state = { scope: 'nearby', home: 'Kisii County', county: 'Kisii County' };
+  /* ==================================================================
+     2. API LAYER
+     The screens only ever call `api`. Below is a working fake so every
+     flow can be tried. To go live, replace each function body with a
+     request, keep the return shapes, and set CONFIG.DEMO = false.
 
-  /* ---------- icons ---------- */
+     Endpoints (all JSON, all behind your CDN/WAF):
+       POST /v1/otp/request     { channel, contact, purpose }         -> { ok }                    429 + Retry-After when limited
+       POST /v1/otp/verify      { channel, contact, code, purpose }   -> { token, exists? }
+       POST /v1/auth/login      { contact, password }                 -> { token, profile }
+       POST /v1/auth/reset      { token, contact, password }          -> { ok }
+       GET  /v1/usernames/:name                                       -> { available }
+       POST /v1/accounts        { token, contact, username, password, avatarUrl } -> { token, profile }
+       POST /v1/uploads         { kind, type, size }                  -> { uploadUrl, objectKey, publicUrl, headers }
+       PUT  <uploadUrl>         (bytes straight to object storage)
+       POST /v1/stories         { idempotencyKey, token, anonymous, ..., videoKey } -> { story }
+       GET  /v1/stories?scope=&county=&cursor=&limit=                 -> { items, nextCursor }
+
+     Rules the server must follow for 10M users:
+       - Phone numbers and emails are salted-hashed before storage or lookup,
+         and never returned to other people.
+       - OTP requests are rate limited per contact AND per IP (and per device),
+         with a short lock after repeated wrong codes. Reply 429 + Retry-After.
+       - Passwords use argon2id or bcrypt. Login attempts are rate limited.
+       - Videos and photos go browser -> object storage (presigned URL) -> CDN.
+         Your servers only see small JSON. Use resumable uploads (tus or S3
+         multipart) for video on weak networks.
+       - Video is transcoded on the server after upload (HLS/MP4 ladder, short
+         thumbnails) by a queue worker. The story shows "Being checked" until
+         transcoding and review finish. Do not re-encode on the phone.
+       - Anonymous posts: the verification token is single use and expires in
+         minutes. When the story is created, burn the token and keep nothing
+         that links the post to the email or number. Keep only a short-lived
+         salted hash for rate limiting, then discard it.
+       - Feed uses cursor paging (opaque cursor, never page numbers/offsets in
+         production), cached per county at the edge.
+     ================================================================== */
+  function apiErr(code, msg, retryAfter) { var e = new Error(msg); e.code = code; e.retryAfter = retryAfter || 0; return e; }
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  /* ----- fake data for the demo backend ----- */
+  var TEMPLATES = [
+    { mood: 'Hooray!', category: 'Roads and bridges', scene: 'bridge', caption: 'Children can now cross to school even when the river is full. Work finished last week.' },
+    { mood: 'Relief!', category: 'Water', scene: 'tower', caption: 'The borehole near the market is pumping again after the repair. Queues are much shorter this morning.' },
+    { mood: 'Proud!', category: 'Farms', scene: 'terraces', caption: 'Soil now stays on the slope after heavy rain. Beans and maize look strong this season. The terraces were built together over two weekends.' }
+  ];
+  var PLACES = [
+    { county: 'Kisii County', ward: 'Nyanchwa Ward' }, { county: 'Nyamira County', ward: 'Township Ward' },
+    { county: 'Nyeri County', ward: 'Mweiga Ward' }, { county: 'Migori County', ward: 'Suna East Ward' },
+    { county: 'Kericho County', ward: 'Kapsoit Ward' }
+  ];
+  var WHENS = ['2 days ago', '5 hours ago', '1 day ago', '3 days ago', '40 minutes ago'];
+  function seedStories() {
+    var list = [
+      { id: 1, county: 'Kisii County', ward: 'Nyanchwa Ward', mood: 'Hooray!', category: 'Roads and bridges', caption: TEMPLATES[0].caption, when: '2 days ago', poster: null, verified: true, likes: 248, comments: 31, scene: 'bridge', video: null },
+      { id: 2, county: 'Nyamira County', ward: 'Township Ward', mood: 'Relief!', category: 'Water', caption: TEMPLATES[1].caption, when: '5 hours ago', poster: null, verified: true, likes: 96, comments: 12, scene: 'tower', video: null },
+      { id: 3, county: 'Nyeri County', ward: 'Mweiga Ward', mood: 'Proud!', category: 'Farms', caption: TEMPLATES[2].caption, when: '1 day ago', poster: null, verified: true, likes: 180, comments: 24, scene: 'terraces', video: null }
+    ];
+    for (var i = 0; i < 36; i++) {
+      var t = TEMPLATES[i % 3], p = PLACES[i % 5];
+      list.push({ id: 100 + i, county: p.county, ward: p.ward, mood: t.mood, category: t.category, caption: t.caption,
+        when: WHENS[i % 5], poster: i % 2 ? '@amina_k' : null, avatar: null, verified: true,
+        likes: 10 + i * 7, comments: i % 13, scene: t.scene, video: null });
+    }
+    return list;
+  }
+  var mock = { otps: {}, otpLog: {}, fails: {}, verified: {}, users: loadJSON('mp_mock_users', {}), stories: seedStories() };
+  function saveUsers() { saveJSON('mp_mock_users', mock.users); }
+  function hashPw(contact, pw) {
+    var data = new TextEncoder().encode(contact + '|' + pw);
+    if (!(window.crypto && crypto.subtle)) return Promise.resolve('plain:' + contact + pw);
+    return crypto.subtle.digest('SHA-256', data).then(function (b) {
+      return Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+    });
+  }
+  function xhrPut(url, blob, onProgress, headers) {
+    return new Promise(function (res, rej) {
+      var x = new XMLHttpRequest();
+      x.open('PUT', url);
+      Object.keys(headers || {}).forEach(function (k) { x.setRequestHeader(k, headers[k]); });
+      x.upload.onprogress = function (e) { if (e.lengthComputable) onProgress(e.loaded / e.total * 100); };
+      x.onload = function () { x.status >= 200 && x.status < 300 ? res() : rej(apiErr('upload_failed', 'The upload did not finish. Please try again.')); };
+      x.onerror = function () { rej(apiErr('network', 'No connection. Please try again.')); };
+      x.send(blob);
+    });
+  }
+  function inScope(s, scope, county) {
+    if (scope === 'kenya') return true;
+    if (s.county === county) return true;
+    return scope === 'nearby' && (NEARBY[county] || []).indexOf(s.county) !== -1;
+  }
+
+  var api = {
+    requestOtp: function (channel, contact, purpose) {
+      return wait(600).then(function () {
+        var now = Date.now();
+        var log = (mock.otpLog[contact] = (mock.otpLog[contact] || []).filter(function (t) { return now - t < 10 * 60 * 1000; }));
+        if (log.length >= 3) throw apiErr('rate_limited', 'Too many codes requested.', Math.ceil((10 * 60 * 1000 - (now - log[0])) / 1000));
+        log.push(now);
+        var code = String(Math.floor(Math.random() * Math.pow(10, CONFIG.OTP_LENGTH))).padStart(CONFIG.OTP_LENGTH, '0');
+        mock.otps[contact] = { code: code, exp: now + 5 * 60 * 1000, tries: 0 };
+        if (window.console) console.info('[demo] code for ' + contact + ': ' + code);
+        return { ok: true, demoCode: CONFIG.DEMO ? code : null };
+      });
+    },
+    verifyOtp: function (channel, contact, code, purpose) {
+      return wait(500).then(function () {
+        var o = mock.otps[contact];
+        if (!o) throw apiErr('no_code', 'Request a new code first.');
+        if (Date.now() > o.exp) { delete mock.otps[contact]; throw apiErr('expired', 'That code has expired. Request a new one.'); }
+        if (o.tries >= 5) throw apiErr('locked', 'Too many wrong tries. Request a new code.');
+        if (o.code !== code) { o.tries++; throw apiErr('bad_code', 'That code is not right. Check it and try again.'); }
+        delete mock.otps[contact];
+        var token = 'v_' + Math.random().toString(36).slice(2);
+        if (purpose === 'anon') return { token: token };           // nothing is stored for anonymous posters
+        if (purpose === 'signup' && mock.users[contact]) return { exists: true };
+        mock.verified[contact] = token;
+        return { token: token };
+      });
+    },
+    login: function (channel, contact, password) {
+      return wait(600).then(function () {
+        if ((mock.fails[contact] || 0) >= 5) throw apiErr('rate_limited', 'Too many tries.', 300);
+        var u = mock.users[contact];
+        return hashPw(contact, password).then(function (h) {
+          if (!u || u.pw !== h) { mock.fails[contact] = (mock.fails[contact] || 0) + 1; throw apiErr('bad_credentials', 'bad'); }
+          mock.fails[contact] = 0;
+          return { token: 'tok_' + Math.random().toString(36).slice(2), profile: { username: u.username, avatar: u.avatar } };
+        });
+      });
+    },
+    resetPassword: function (token, contact, password) {
+      return wait(500).then(function () {
+        if (mock.verified[contact] !== token) throw apiErr('unverified', 'Please verify your code again.');
+        delete mock.verified[contact];
+        if (!mock.users[contact]) return { ok: true };            // same reply whether or not an account exists
+        return hashPw(contact, password).then(function (h) { mock.users[contact].pw = h; saveUsers(); mock.fails[contact] = 0; return { ok: true }; });
+      });
+    },
+    checkUsername: function (name) {
+      return wait(250).then(function () {
+        var taken = ['admin', 'mtaa', 'mtaapulse', 'support', 'moderator'];
+        Object.keys(mock.users).forEach(function (k) { taken.push(mock.users[k].username); });
+        return { available: taken.indexOf(name) === -1 };
+      });
+    },
+    createAccount: function (p) {
+      return wait(500).then(function () {
+        if (mock.verified[p.contact] !== p.token) throw apiErr('unverified', 'Please verify your code again.');
+        delete mock.verified[p.contact];
+        return hashPw(p.contact, p.password).then(function (h) {
+          mock.users[p.contact] = { username: p.username, avatar: p.avatarUrl || null, pw: h };
+          saveUsers();
+          return { token: 'tok_' + Math.random().toString(36).slice(2), profile: { username: p.username, avatar: p.avatarUrl || null } };
+        });
+      });
+    },
+    getUploadTarget: function (kind, meta) {
+      return wait(200).then(function () {
+        return { uploadUrl: 'https://storage.example.invalid/' + kind + '/' + uuid(), objectKey: kind + '/' + uuid(), publicUrl: null, headers: { 'Content-Type': meta.type } };
+      });
+    },
+    putObject: function (target, blob, onProgress) {
+      if (!CONFIG.DEMO) return xhrPut(target.uploadUrl, blob, onProgress, target.headers);
+      return new Promise(function (resolve) {
+        var pct = 0;
+        var t = setInterval(function () {
+          pct = Math.min(100, pct + 8 + Math.random() * 10);
+          onProgress(pct);
+          if (pct >= 100) { clearInterval(t); resolve(); }
+        }, 140);
+      });
+    },
+    createStory: function (p) {
+      return wait(400).then(function () {
+        var story = { id: Date.now(), county: p.county, ward: p.ward, mood: p.mood, category: p.category, caption: p.caption,
+          when: 'Just now', poster: p.posterName || null, avatar: p.posterAvatar || null, verified: false,
+          likes: 0, comments: 0, scene: 'bridge', video: p.localPreview || null };   // real server returns the CDN URL after transcoding
+        mock.stories.unshift(story);
+        return { story: story };
+      });
+    },
+    listStories: function (q) {
+      return wait(250).then(function () {
+        var all = mock.stories.filter(function (s) { return inScope(s, q.scope, q.county); });
+        var start = q.cursor ? parseInt(q.cursor, 10) : 0;
+        var items = all.slice(start, start + q.limit);
+        var next = start + q.limit < all.length ? String(start + q.limit) : null;
+        return { items: items, nextCursor: next };
+      });
+    }
+  };
+
+  /* ==================================================================
+     3. SMALL UTILITIES
+     ================================================================== */
+  function loadJSON(k, fallback) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; } }
+  function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function removeKey(k) { try { localStorage.removeItem(k); } catch (e) {} }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+  }
+  function fmtBytes(n) {
+    if (n < 1024) return n + ' B';
+    if (n < 1048576) return Math.round(n / 1024) + ' KB';
+    return (n / 1048576).toFixed(1) + ' MB';
+  }
+  function uuid() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+  }
+  function moodText(m) { m = String(m).trim(); return /!$/.test(m) ? m : m + '!'; }
+  function $(id) { return document.getElementById(id); }
+
+  function normalizePhone(raw) {
+    var d = String(raw).replace(/\D/g, '');
+    if (d.indexOf('254') === 0) d = d.slice(3);
+    else if (d.charAt(0) === '0') d = d.slice(1);
+    return /^[17]\d{8}$/.test(d) ? '+254' + d : null;
+  }
+  function normalizeEmail(raw) {
+    var e = String(raw).trim().toLowerCase();
+    return e.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e) ? e : null;
+  }
+  function maskContact(channel, c) {
+    if (channel === 'email') { var p = c.split('@'); return p[0].charAt(0) + '***@' + p[1]; }
+    return c.slice(0, 5) + ' *** ***' + c.slice(-3);
+  }
+  function blobToDataUrl(blob) {
+    return new Promise(function (res, rej) {
+      var r = new FileReader();
+      r.onload = function () { res(r.result); };
+      r.onerror = function () { rej(r.error); };
+      r.readAsDataURL(blob);
+    });
+  }
+  function errMsg(e) {
+    if (e && e.code === 'rate_limited') {
+      var m = Math.max(1, Math.ceil((e.retryAfter || 60) / 60));
+      return 'Too many tries. Please wait ' + m + ' minute' + (m > 1 ? 's' : '') + ' and try again.';
+    }
+    if (e && e.code === 'network') return e.message;
+    return (e && e.message) || 'Something went wrong. Please try again.';
+  }
+
+  /* ==================================================================
+     4. PROFILE PICTURE COMPRESSION (in the browser)
+     Centre-crop to a square, halve down in steps so it stays sharp,
+     save as WebP (JPEG where WebP is missing), trying lower quality and
+     size until it is 30 KB or less. Only the small file is uploaded.
+     ================================================================== */
+  var webpOk = (function () {
+    try { return document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') === 0; } catch (e) { return false; }
+  })();
+  function makeCanvas(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+  function toBlob(canvas, type, q) { return new Promise(function (res) { canvas.toBlob(res, type, q); }); }
+  function decodeViaImg(file) {
+    return new Promise(function (res, rej) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () { URL.revokeObjectURL(url); res(img); };
+      img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('bad image')); };
+      img.src = url;
+    });
+  }
+  function decodeImage(file) {
+    if (window.createImageBitmap) return createImageBitmap(file, { imageOrientation: 'from-image' }).catch(function () { return decodeViaImg(file); });
+    return decodeViaImg(file);
+  }
+  function imgW(i) { return i.naturalWidth || i.width; }
+  function imgH(i) { return i.naturalHeight || i.height; }
+  function drawSquare(img, size) {
+    var side = Math.min(imgW(img), imgH(img));
+    var sx = (imgW(img) - side) / 2, sy = (imgH(img) - side) / 2, src = img, sw = side;
+    while (sw / 2 >= size) {
+      var half = Math.round(sw / 2), tmp = makeCanvas(half, half), tctx = tmp.getContext('2d');
+      tctx.imageSmoothingQuality = 'high';
+      tctx.drawImage(src, sx, sy, sw, sw, 0, 0, half, half);
+      src = tmp; sx = 0; sy = 0; sw = half;
+    }
+    var out = makeCanvas(size, size), ctx = out.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, size, size);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(src, sx, sy, sw, sw, 0, 0, size, size);
+    return out;
+  }
+  async function compressAvatar(file) {
+    if (!file || !/^image\//.test(file.type)) throw new Error('Please choose a photo (JPG, PNG or WebP).');
+    if (file.size > CONFIG.AVATAR_MAX_INPUT) throw new Error('That photo is too big. Choose one under ' + fmtBytes(CONFIG.AVATAR_MAX_INPUT) + '.');
+    var img;
+    try { img = await decodeImage(file); } catch (e) { throw new Error('We could not read that photo. Try another one.'); }
+    var type = webpOk ? 'image/webp' : 'image/jpeg', best = null;
+    for (var i = 0; i < CONFIG.AVATAR_SIZES.length; i++) {
+      var canvas = drawSquare(img, CONFIG.AVATAR_SIZES[i]);
+      for (var j = 0; j < CONFIG.AVATAR_QUALITIES.length; j++) {
+        var blob = await toBlob(canvas, type, CONFIG.AVATAR_QUALITIES[j]);
+        if (!blob) continue;
+        if (!best || blob.size < best.size) best = blob;
+        if (blob.size <= CONFIG.AVATAR_TARGET_BYTES) {
+          if (img.close) img.close();
+          return { blob: blob, before: file.size, after: blob.size };
+        }
+      }
+    }
+    if (img.close) img.close();
+    if (!best) throw new Error('We could not shrink that photo. Try another one.');
+    return { blob: best, before: file.size, after: best.size };
+  }
+
+  /* ==================================================================
+     5. ICONS
+     ================================================================== */
   var ICONS = {
     pin: '<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
     search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
@@ -201,30 +603,55 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     shield: '<path d="M12 3 20 6v6c0 4.5-3.3 7.8-8 9-4.7-1.2-8-4.5-8-9V6z"/><path d="m8.5 12 2.5 2.5L16 9.5"/>',
-    check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>'
+    check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+    back: '<path d="m15 5-7 7 7 7"/>',
+    close: '<path d="M6 6l12 12M18 6 6 18"/>',
+    camera: '<path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>',
+    video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/>',
+    upload: '<path d="M12 16V4m0 0L8 8m4-4 4 4M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/>'
   };
   function icon(name, size, stroke) {
     return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (stroke || 2) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[name] + '</svg>';
   }
-  function hydrateIcons() {
-    document.querySelectorAll('[data-icon]').forEach(function (el) {
+  function hydrateIcons(root) {
+    (root || document).querySelectorAll('[data-icon]').forEach(function (el) {
       el.innerHTML = icon(el.dataset.icon, el.dataset.size || 26, el.dataset.stroke);
     });
   }
 
-  function esc(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
+  /* ==================================================================
+     6. STATE AND SESSION
+     Only real accounts are remembered on the device. An anonymous
+     poster's verification lives in memory only, is single use, and is
+     thrown away right after the story is posted.
+     ================================================================== */
+  var NEARBY = {
+    'Kisii County': ['Nyamira County', 'Migori County', 'Homa Bay County', 'Kericho County', 'Narok County'],
+    'Nyamira County': ['Kisii County', 'Kericho County', 'Homa Bay County', 'Bomet County'],
+    'Nyeri County': ['Kirinyaga County', "Murang'a County", 'Laikipia County', 'Nyandarua County', 'Meru County']
+  };
+  var COUNTIES = ['Baringo','Bomet','Bungoma','Busia','Elgeyo-Marakwet','Embu','Garissa','Homa Bay','Isiolo','Kajiado','Kakamega','Kericho','Kiambu','Kilifi','Kirinyaga','Kisii','Kisumu','Kitui','Kwale','Laikipia','Lamu','Machakos','Makueni','Mandera','Marsabit','Meru','Migori','Mombasa',"Murang'a",'Nairobi','Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri','Samburu','Siaya','Taita-Taveta','Tana River','Tharaka-Nithi','Trans-Nzoia','Turkana','Uasin Gishu','Vihiga','Wajir','West Pokot'].map(function (n) { return n + ' County'; });
+
+  var state = { scope: 'nearby', home: 'Kisii County', county: 'Kisii County' };
+
+  /* session = { type:'account', token, username, avatar, contactMask }  (saved on device)
+             | { type:'anon', token, exp }                                (memory only) */
+  var saved = loadJSON('mp_session', null);
+  var session = saved && saved.type === 'account' ? saved : null;
+  function setSession(s) {
+    session = s;
+    if (s && s.type === 'account') saveJSON('mp_session', s); else removeKey('mp_session');
+    updateLoginButton();
+  }
+  function hasValidSession() {
+    if (!session) return false;
+    if (session.exp && Date.now() > session.exp) { session = null; return false; }
+    return true;
   }
 
-  /* Every mood or feeling word ends with an exclamation mark. */
-  function moodText(m) {
-    m = String(m).trim();
-    return /!$/.test(m) ? m : m + '!';
-  }
-
-  /* ---------- illustrations (stand in for video) ---------- */
+  /* ==================================================================
+     7. ILLUSTRATIONS (stand in for video)
+     ================================================================== */
   function scene(i, label, extra) {
     return '<svg viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" role="img" aria-label="' + label + '">' +
       '<defs>' +
@@ -264,22 +691,22 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
     }
   };
 
-  /* ---------- feed ---------- */
-  var feed = document.getElementById('feed');
-
-  function visibleStories() {
-    return STORIES.filter(function (s) {
-      if (state.scope === 'kenya') return true;
-      if (s.county === state.county) return true;
-      if (state.scope === 'nearby') return (NEARBY[state.county] || []).indexOf(s.county) !== -1;
-      return false;
-    });
-  }
+  /* ==================================================================
+     8. FEED (cursor paged)
+     Loads one page at a time and fetches the next when the viewer gets
+     near the end. A video only gets its source while it is within one
+     screen of the viewer, and is released again when it scrolls far
+     away, so memory and data stay low however long someone scrolls.
+     ================================================================== */
+  var feed = $('feed');
+  var fs = { items: [], seen: {}, cursor: null, done: false, loading: false, gen: 0 };
+  var playObs = null, loadObs = null;
 
   function slideHtml(s, i) {
     var media = s.video
-      ? '<video src="' + esc(s.video) + '" muted loop playsinline preload="metadata"></video>'
+      ? '<video data-src="' + esc(s.video) + '" muted loop playsinline preload="metadata"></video>'
       : (SCENES[s.scene] || SCENES.bridge)(i);
+    var avatar = s.avatar ? '<img class="av" src="' + esc(s.avatar) + '" alt="" width="20" height="20" loading="lazy" decoding="async">' : '';
     return '<article class="slide" aria-label="Story ' + (i + 1) + '">' +
       '<div class="scene">' + media + '</div>' +
       '<div class="slide-body">' +
@@ -290,8 +717,8 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
           '<div class="chips">' +
             '<div class="chiprow"><span class="chip">' + icon('pin', 14, 2.2) + esc(s.ward) + '</span><span class="muted">' + esc(s.when) + '</span></div>' +
             '<div class="chiprow">' +
-              (s.verified ? '<span class="chip verified">' + icon('shield', 14, 2.2) + 'Verified</span>' : '') +
-              '<span class="poster">' + esc(s.poster || 'Anonymous reporter') + '</span>' +
+              (s.verified ? '<span class="chip verified">' + icon('shield', 14, 2.2) + 'Verified</span>' : '<span class="chip">Being checked</span>') +
+              '<span class="poster">' + avatar + esc(s.poster || 'Anonymous reporter') + '</span>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -304,26 +731,31 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
       '</div>' +
     '</article>';
   }
-
+  function loadingHtml() { return '<article class="slide"><div class="empty"><span>Loading stories…</span></div></article>'; }
   function emptyHtml() {
     var where = state.scope === 'county' ? state.county : state.county + ' or nearby';
     return '<article class="slide"><div class="empty"><strong>No stories yet</strong><span>Nothing has been posted from ' + esc(where) + '. Try All Kenya.</span></div></article>';
   }
+  function failHtml() {
+    return '<article class="slide"><div class="empty"><strong>Could not load stories</strong><span>Check your connection.</span><button class="btn retry" type="button">Try again</button></div></article>';
+  }
 
-  function updateMoreButtons() {
-    feed.querySelectorAll('.slide').forEach(function (slide) {
-      var cap = slide.querySelector('.caption');
-      var btn = slide.querySelector('.more');
+  function updateMoreButtons(nodes) {
+    (nodes || feed.querySelectorAll('.slide')).forEach(function (slide) {
+      var cap = slide.querySelector('.caption'), btn = slide.querySelector('.more');
       if (!cap || !btn || cap.classList.contains('open')) return;
       btn.hidden = cap.scrollHeight <= cap.clientHeight + 1;
     });
   }
 
-  var observer = null;
-  function watchVideos() {
-    if (observer) observer.disconnect();
-    if (!('IntersectionObserver' in window)) return;
-    observer = new IntersectionObserver(function (entries) {
+  function teardownObservers() {
+    if (playObs) playObs.disconnect();
+    if (loadObs) loadObs.disconnect();
+    playObs = loadObs = null;
+  }
+  function ensureObservers() {
+    if (playObs || !('IntersectionObserver' in window)) return;
+    playObs = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
         var v = e.target.querySelector('video');
         if (!v) return;
@@ -331,34 +763,83 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
         else { v.pause(); v.currentTime = 0; }
       });
     }, { root: feed, threshold: 0.6 });
-    feed.querySelectorAll('.slide').forEach(function (s) { observer.observe(s); });
+    loadObs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        var v = e.target.querySelector('video');
+        if (!v) return;
+        if (e.isIntersecting) { if (!v.getAttribute('src')) v.setAttribute('src', v.dataset.src); }
+        else if (v.getAttribute('src')) { v.pause(); v.removeAttribute('src'); v.load(); }
+      });
+    }, { root: feed, rootMargin: '100% 0px 100% 0px' });
+  }
+  function observeSlides(nodes) {
+    ensureObservers();
+    nodes.forEach(function (n) {
+      var v = n.querySelector('video');
+      if (!v) return;
+      if (playObs) { playObs.observe(n); loadObs.observe(n); }
+      else v.setAttribute('src', v.dataset.src);
+    });
   }
 
-  function renderFeed() {
+  function resetFeed() {
     stopGlide();
-    var list = visibleStories();
-    feed.innerHTML = list.length ? list.map(slideHtml).join('') : emptyHtml();
+    fs.gen++; fs.items = []; fs.seen = {}; fs.cursor = null; fs.done = false; fs.loading = false;
+    teardownObservers();
+    feed.innerHTML = loadingHtml();
     feed.scrollTop = 0;
-    updateMoreButtons();
-    watchVideos();
+    loadPage();
   }
+
+  function loadPage() {
+    if (fs.loading || fs.done) return;
+    fs.loading = true;
+    var gen = fs.gen;
+    api.listStories({ scope: state.scope, county: state.county, cursor: fs.cursor, limit: CONFIG.PAGE_SIZE }).then(function (r) {
+      if (gen !== fs.gen) return;
+      fs.loading = false;
+      var first = fs.items.length === 0;
+      var fresh = r.items.filter(function (s) { if (fs.seen[s.id]) return false; fs.seen[s.id] = 1; return true; });
+      var start = fs.items.length;
+      fs.items = fs.items.concat(fresh);
+      fs.cursor = r.nextCursor;
+      fs.done = !r.nextCursor;
+      if (first && !fresh.length) { feed.innerHTML = emptyHtml(); return; }
+      var html = fresh.map(function (s, k) { return slideHtml(s, start + k); }).join('');
+      if (first) feed.innerHTML = html; else feed.insertAdjacentHTML('beforeend', html);
+      var added = Array.prototype.slice.call(feed.querySelectorAll('.slide'), start);
+      updateMoreButtons(added);
+      observeSlides(added);
+      maybeLoadMore();
+    }).catch(function () {
+      if (gen !== fs.gen) return;
+      fs.loading = false;
+      if (!fs.items.length) feed.innerHTML = failHtml(); else toast('Could not load more stories');
+    });
+  }
+
+  var pageRaf = 0;
+  function maybeLoadMore() {
+    if (fs.done || fs.loading || !fs.items.length) return;
+    if (currentIndex() >= fs.items.length - CONFIG.PREFETCH_AHEAD) loadPage();
+  }
+  feed.addEventListener('scroll', function () {
+    if (pageRaf) return;
+    pageRaf = requestAnimationFrame(function () { pageRaf = 0; maybeLoadMore(); });
+  }, { passive: true });
 
   feed.addEventListener('click', function (e) {
+    if (e.target.closest('.retry')) { feed.innerHTML = loadingHtml(); loadPage(); return; }
     var btn = e.target.closest('.more');
     if (!btn) return;
-    var cap = document.getElementById(btn.getAttribute('aria-controls'));
+    var cap = $(btn.getAttribute('aria-controls'));
     var open = cap.classList.toggle('open');
     btn.textContent = open ? 'Show less' : 'Show more';
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   });
 
   /* ---------- header: county and scope ---------- */
-  var countyName = document.getElementById('countyName');
-  var countyBtn = document.getElementById('countyBtn');
-  var tabNearby = document.getElementById('tabNearby');
-  var tabKenya = document.getElementById('tabKenya');
-  var scopeLabel = document.getElementById('scopeLabel');
-
+  var countyName = $('countyName'), countyBtn = $('countyBtn'), tabNearby = $('tabNearby'), tabKenya = $('tabKenya'), scopeLabel = $('scopeLabel');
   function updateHeader() {
     countyName.textContent = state.county;
     countyBtn.classList.toggle('on', state.scope === 'county');
@@ -369,27 +850,12 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
       state.scope === 'kenya' ? 'Showing stories from all of Kenya' :
       'Showing ' + state.county + ' and nearby areas';
   }
-
-  function setScope(scope) {
-    state.scope = scope;
-    updateHeader();
-    renderFeed();
-  }
-
+  function setScope(scope) { state.scope = scope; updateHeader(); resetFeed(); }
   tabNearby.addEventListener('click', function () { setScope('nearby'); });
-  /* All Kenya: the pill goes back to the home county, but nothing is
-     filtered. County-only stories need a county picked from the pill. */
-  tabKenya.addEventListener('click', function () {
-    state.county = state.home;
-    setScope('kenya');
-  });
+  tabKenya.addEventListener('click', function () { state.county = state.home; setScope('kenya'); });
 
   /* ---------- county picker ---------- */
-  var sheet = document.getElementById('sheet');
-  var scrim = document.getElementById('scrim');
-  var countySearch = document.getElementById('countySearch');
-  var countyList = document.getElementById('countyList');
-
+  var sheet = $('sheet'), scrim = $('scrim'), countySearch = $('countySearch'), countyList = $('countyList');
   function renderCounties() {
     var q = countySearch.value.trim().toLowerCase();
     var items = COUNTIES.filter(function (c) { return c.toLowerCase().indexOf(q) !== -1; });
@@ -399,96 +865,55 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
         }).join('')
       : '<li class="none">No county matches that name.</li>';
   }
-
-  function openSheet() {
-    countySearch.value = '';
-    renderCounties();
-    sheet.classList.add('open');
-    countySearch.focus();
-  }
-  function closeSheet() {
-    sheet.classList.remove('open');
-    countyBtn.focus();
-  }
-
+  function openSheet() { countySearch.value = ''; renderCounties(); sheet.classList.add('open'); countySearch.focus(); }
+  function closeSheet() { sheet.classList.remove('open'); countyBtn.focus(); }
   countyBtn.addEventListener('click', openSheet);
   scrim.addEventListener('click', closeSheet);
   countySearch.addEventListener('input', renderCounties);
   countyList.addEventListener('click', function (e) {
     var b = e.target.closest('[data-county]');
     if (!b) return;
-    state.county = b.dataset.county;
-    state.scope = 'county';
+    state.county = b.dataset.county; state.scope = 'county';
     sheet.classList.remove('open');
-    updateHeader();
-    renderFeed();
-    countyBtn.focus();
-  });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && sheet.classList.contains('open')) closeSheet();
+    updateHeader(); resetFeed(); countyBtn.focus();
   });
 
   /* ---------- toast ---------- */
-  var toastEl = document.getElementById('toast');
-  var toastTimer = null;
-  function toast(msg) {
+  var toastEl = $('toast'), toastTimer = null;
+  function toast(msg, ms) {
     clearTimeout(toastTimer);
     toastEl.textContent = msg;
     toastEl.classList.add('show');
-    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 1800);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, ms || 2200);
   }
 
-  /* ---------- smooth, one-video-at-a-time scrolling ----------
-     Touch uses the browser's own snapping. Mouse wheel, trackpad,
-     keyboard and the Home button glide with an eased animation, so
-     every device moves exactly one video per gesture. */
-  var animRaf = 0;
-  var wheelLock = false;
-  var lastWheel = 0;
-
+  /* ---------- smooth one-video-at-a-time scrolling ---------- */
+  var animRaf = 0, wheelLock = false, lastWheel = 0;
   function slideSize() { return feed.clientHeight || 1; }
   function currentIndex() { return Math.round(feed.scrollTop / slideSize()); }
-
-  function stopGlide() {
-    if (animRaf) { cancelAnimationFrame(animRaf); animRaf = 0; feed.style.scrollSnapType = ''; }
-  }
-
+  function stopGlide() { if (animRaf) { cancelAnimationFrame(animRaf); animRaf = 0; feed.style.scrollSnapType = ''; } }
   function animateTo(target) {
     stopGlide();
-    var start = feed.scrollTop;
-    var delta = target - start;
+    var start = feed.scrollTop, delta = target - start;
     if (Math.abs(delta) < 1) return;
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      feed.scrollTop = target;
-      return;
-    }
-    var duration = Math.min(700, 380 + (Math.abs(delta) / slideSize()) * 70);
-    var t0 = null;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { feed.scrollTop = target; return; }
+    var duration = Math.min(700, 380 + (Math.abs(delta) / slideSize()) * 70), t0 = null;
     feed.style.scrollSnapType = 'none';
     function step(ts) {
       if (t0 === null) t0 = ts;
       var p = Math.min(1, (ts - t0) / duration);
       var eased = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
       feed.scrollTop = start + delta * eased;
-      if (p < 1) {
-        animRaf = requestAnimationFrame(step);
-      } else {
-        animRaf = 0;
-        feed.style.scrollSnapType = '';
-      }
+      if (p < 1) animRaf = requestAnimationFrame(step);
+      else { animRaf = 0; feed.style.scrollSnapType = ''; }
     }
     animRaf = requestAnimationFrame(step);
   }
-
   function goToIndex(i) {
     var count = feed.querySelectorAll('.slide').length;
-    i = Math.max(0, Math.min(count - 1, i));
-    animateTo(i * slideSize());
+    animateTo(Math.max(0, Math.min(count - 1, i)) * slideSize());
   }
-
-  /* A finger on the screen always wins over a running glide. */
   feed.addEventListener('touchstart', stopGlide, { passive: true });
-
   feed.addEventListener('wheel', function (e) {
     if (e.ctrlKey) return;
     e.preventDefault();
@@ -496,15 +921,14 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
     if (wheelLock || Math.abs(e.deltaY) < 6) return;
     wheelLock = true;
     goToIndex(currentIndex() + (e.deltaY > 0 ? 1 : -1));
-    (function release() {
-      setTimeout(function () {
-        if (Date.now() - lastWheel < 140) { release(); } else { wheelLock = false; }
-      }, 720);
-    })();
+    (function release() { setTimeout(function () { if (Date.now() - lastWheel < 140) release(); else wheelLock = false; }, 720); })();
   }, { passive: false });
 
+  function anyPanelOpen() {
+    return sheet.classList.contains('open') || $('authPanel').classList.contains('open') || $('reportPanel').classList.contains('open');
+  }
   document.addEventListener('keydown', function (e) {
-    if (sheet.classList.contains('open')) return;
+    if (anyPanelOpen()) return;
     if (e.target && /^(input|textarea)$/i.test(e.target.tagName)) return;
     var d = 0;
     if (e.key === 'ArrowDown' || e.key === 'PageDown') d = 1;
@@ -516,40 +940,625 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 
   /* ---------- Home: one tap = first video, two taps = refresh ---------- */
   var homeTimer = null;
-  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  /* Replace with a real request, for example fetch('/api/stories?...'). */
-  function refreshFeed() {
-    renderFeed();
-    toast('Feed refreshed');
-  }
-  function goToFirst() {
-    animateTo(0);
-    toast('Back to the first video');
-  }
-
-  document.getElementById('homeBtn').addEventListener('click', function () {
-    if (homeTimer) {
-      clearTimeout(homeTimer);
-      homeTimer = null;
-      refreshFeed();
-      return;
-    }
-    homeTimer = setTimeout(function () {
-      homeTimer = null;
-      goToFirst();
-    }, 350);
+  $('homeBtn').addEventListener('click', function () {
+    if (homeTimer) { clearTimeout(homeTimer); homeTimer = null; resetFeed(); toast('Feed refreshed'); return; }
+    homeTimer = setTimeout(function () { homeTimer = null; animateTo(0); toast('Back to the first video'); }, 350);
   });
 
-  /* ---------- start ---------- */
+  /* ==================================================================
+     9. SIGN UP, LOG IN, ANONYMOUS VERIFICATION
+       signup : contact -> code -> username + password + photo -> account
+       login  : contact + password
+       reset  : contact -> code -> new password
+       anon   : contact -> code -> go straight to the report form
+     Anonymous never creates an account. A password is required for
+     every account login; a code alone is only for anonymous posting
+     (and for confirming a contact when creating or resetting).
+     ================================================================== */
+  var authPanel = $('authPanel'), authBody = $('authBody'), authTitle = $('authTitle'), authBack = $('authBack');
+  var flow = null, resendTimer = null, lastFocus = null;
+
+  function newFlow(mode, after) {
+    return { mode: mode, after: after || null, channel: 'email', rawContact: '', contact: '', step: null, trail: [],
+             demoCode: null, avatar: null, username: '', password: '', verifyToken: null, busy: false, compressing: false };
+  }
+  function openAuth(first, after, mode) {
+    lastFocus = document.activeElement;
+    flow = newFlow(mode || 'signup', after);
+    authPanel.classList.add('open');
+    showStep(first);
+  }
+  function closeAuth() {
+    clearInterval(resendTimer);
+    if (flow && flow.avatar && flow.avatar.url) URL.revokeObjectURL(flow.avatar.url);
+    authPanel.classList.remove('open');
+    flow = null;
+    authBody.innerHTML = '';
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  var STEPS = { choose: renderChoose, login: renderLogin, contact: renderContact, otp: renderOtp, profile: renderProfile, newpass: renderNewPass, account: renderAccount };
+  function showStep(step, opts) {
+    opts = opts || {};
+    if (flow.step && flow.step !== step && !opts.noPush) flow.trail.push(flow.step);
+    if (opts.clearTrail) flow.trail = [];
+    flow.step = step;
+    clearInterval(resendTimer);
+    STEPS[step]();
+    hydrateIcons(authBody);
+    authBack.hidden = flow.trail.length === 0;
+    authBody.scrollTop = 0;
+    var first = authBody.querySelector('input:not([type=file]),button[data-focus]');
+    if (first) setTimeout(function () { first.focus(); }, 30);
+  }
+  authBack.addEventListener('click', function () {
+    if (!flow || !flow.trail.length) return;
+    showStep(flow.trail.pop(), { noPush: true });
+  });
+  $('authClose').addEventListener('click', closeAuth);
+
+  function setErr(msg) { var el = $('authErr'); if (el) el.textContent = msg || ''; }
+  function setBusy(on, label) {
+    flow.busy = on;
+    var b = $('authGo');
+    if (!b) return;
+    b.disabled = on;
+    b.textContent = on ? label : b.dataset.label;
+  }
+
+  function channelToggle() {
+    var isEmail = flow.channel === 'email';
+    return '<div class="seg" role="group" aria-label="Email or phone">' +
+      '<button type="button" data-act="channel" data-ch="email" aria-pressed="' + isEmail + '">Email</button>' +
+      '<button type="button" data-act="channel" data-ch="phone" aria-pressed="' + !isEmail + '">Phone</button></div>';
+  }
+  function contactField() {
+    var isEmail = flow.channel === 'email';
+    return '<label class="label" for="contact">' + (isEmail ? 'Email address' : 'Phone number') + '</label>' +
+      '<div class="field">' + (isEmail ? '' : '<span class="pre">+254</span>') +
+      '<input id="contact" type="' + (isEmail ? 'email' : 'tel') + '" inputmode="' + (isEmail ? 'email' : 'numeric') + '" autocomplete="' + (isEmail ? 'email' : 'tel-national') + '" ' +
+      'placeholder="' + (isEmail ? 'you@example.com' : '712 345 678') + '" maxlength="254" value="' + esc(flow.rawContact) + '"></div>';
+  }
+  function passwordField(label, autocomplete) {
+    return '<label class="label" for="pw">' + label + '</label>' +
+      '<div class="field"><input id="pw" type="password" autocomplete="' + autocomplete + '" maxlength="' + CONFIG.PASSWORD_MAX + '" placeholder="At least ' + CONFIG.PASSWORD_MIN + ' characters">' +
+      '<button class="tgl" type="button" data-act="togglepw" aria-label="Show password">Show</button></div>';
+  }
+
+  /* --- choose: + button lands here --- */
+  function renderChoose() {
+    authTitle.textContent = 'Post a story';
+    authBody.innerHTML =
+      '<h1 class="h1">Share what is happening</h1>' +
+      '<p class="lede">Create an account to post under your own name, or post once without an account.</p>' +
+      '<div class="stack">' +
+        '<button class="choice main" type="button" data-act="mode" data-mode="signup" data-focus><strong>Create an account</strong><span>Pick a username, a password and a photo. Your stories carry your name.</span></button>' +
+        '<button class="choice" type="button" data-act="mode" data-mode="anon"><strong>Post anonymously</strong><span>No account and no username. We confirm a code sent to your email or phone, and keep nothing that links the story to you.</span></button>' +
+      '</div>' +
+      '<div class="center divider"><span class="muted">Already have an account?</span><button class="linkbtn" type="button" data-act="gologin">Log in</button></div>';
+  }
+
+  /* --- login: contact + password --- */
+  function renderLogin() {
+    authTitle.textContent = 'Log in';
+    authBody.innerHTML =
+      '<h1 class="h1">Welcome back</h1>' +
+      '<p class="lede">Log in with your email or phone number and your password.</p>' +
+      channelToggle() + contactField() + '<div class="gap"></div>' + passwordField('Password', 'current-password') +
+      '<p class="err" id="authErr" role="alert"></p>' +
+      '<button class="btn" id="authGo" type="button" data-act="login" data-label="Log in">Log in</button>' +
+      '<div class="center"><button class="linkbtn" type="button" data-act="forgot">Forgot password?</button></div>' +
+      '<div class="center divider"><span class="muted">New here?</span><button class="linkbtn" type="button" data-act="mode" data-mode="signup">Create an account</button></div>' +
+      '<div class="center"><button class="linkbtn" type="button" data-act="mode" data-mode="anon">Or post anonymously</button></div>';
+  }
+
+  /* --- contact (sign up, anonymous, reset) --- */
+  function renderContact() {
+    var t = { signup: 'Create account', anon: 'Post anonymously', reset: 'Reset password' };
+    var h = { signup: 'Confirm it is you', anon: 'Confirm before you post', reset: 'Reset your password' };
+    var p = {
+      signup: 'We will send a 6-digit code by email or SMS to confirm your contact.',
+      anon: 'We send a 6-digit code to confirm you are real. We do not save your email or number with your story.',
+      reset: 'Enter the email or number you signed up with and we will send a code.'
+    };
+    authTitle.textContent = t[flow.mode];
+    authBody.innerHTML =
+      '<h1 class="h1">' + h[flow.mode] + '</h1><p class="lede">' + p[flow.mode] + '</p>' +
+      channelToggle() + contactField() +
+      '<p class="err" id="authErr" role="alert"></p>' +
+      '<button class="btn" id="authGo" type="button" data-act="send" data-label="Send code">Send code</button>' +
+      (flow.mode === 'signup' ? '<div class="center divider"><span class="muted">Already have an account?</span><button class="linkbtn" type="button" data-act="gologin">Log in</button></div>' : '') +
+      (flow.mode === 'anon' ? '<p class="note">Anonymous posting needs no account and no password. You verify again each time you post.</p>' : '<p class="note">Standard SMS rates may apply.</p>');
+  }
+
+  /* --- one-time code --- */
+  function renderOtp() {
+    authTitle.textContent = 'Enter code';
+    authBody.innerHTML =
+      '<h1 class="h1">Check your ' + (flow.channel === 'email' ? 'email' : 'messages') + '</h1>' +
+      '<p class="lede">We sent a ' + CONFIG.OTP_LENGTH + '-digit code to <b style="color:#fff">' + esc(maskContact(flow.channel, flow.contact)) + '</b>. It works for 5 minutes.</p>' +
+      (CONFIG.DEMO && flow.demoCode ? '<p class="demo">Demo mode: your code is <b>' + esc(flow.demoCode) + '</b>. A real backend sends it to you instead.</p>' : '') +
+      '<label class="sr" for="otp">One-time code</label>' +
+      '<input class="otp" id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="' + CONFIG.OTP_LENGTH + '" placeholder="······">' +
+      '<p class="err" id="authErr" role="alert"></p>' +
+      '<button class="btn" id="authGo" type="button" data-act="verify" data-label="Verify" disabled>Verify</button>' +
+      '<div class="center"><button class="linkbtn" id="resend" type="button" data-act="resend" disabled></button>' +
+      '<button class="linkbtn" type="button" data-act="change">Change ' + (flow.channel === 'email' ? 'email' : 'number') + '</button></div>';
+    startCooldown(CONFIG.OTP_RESEND_SEC);
+  }
+  function startCooldown(sec) {
+    var left = sec, btn = $('resend');
+    clearInterval(resendTimer);
+    function tick() {
+      if (!btn) return;
+      if (left <= 0) { btn.disabled = false; btn.textContent = 'Send a new code'; clearInterval(resendTimer); return; }
+      btn.disabled = true; btn.textContent = 'Send a new code in ' + left + 's'; left--;
+    }
+    tick();
+    resendTimer = setInterval(tick, 1000);
+  }
+
+  /* --- profile (sign up) --- */
+  function renderProfile() {
+    authTitle.textContent = 'Your profile';
+    var a = flow.avatar;
+    authBody.innerHTML =
+      '<h1 class="h1">Set up your account</h1>' +
+      '<p class="lede">Choose a username and a password. A photo is optional.</p>' +
+      '<div class="avwrap">' +
+        '<button class="avbtn" type="button" data-act="pick" aria-label="Choose a profile photo">' + (a ? '<img src="' + esc(a.url) + '" alt="Your profile photo preview">' : icon('camera', 30)) + '</button>' +
+        '<div class="avmeta" id="avMeta">' + avatarMetaHtml() + '</div>' +
+      '</div>' +
+      '<input class="sr" id="avFile" type="file" accept="image/*" tabindex="-1">' +
+      '<label class="label" for="uname">Username</label>' +
+      '<div class="field"><span class="pre">@</span><input id="uname" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20" placeholder="your_name"></div>' +
+      '<p class="note" style="margin:6px 0 14px">3 to 20 characters: small letters, numbers and underscore.</p>' +
+      passwordField('Password', 'new-password') +
+      '<p class="err" id="authErr" role="alert"></p>' +
+      '<button class="btn" id="authGo" type="button" data-act="create" data-label="Create account">Create account</button>';
+    $('uname').value = flow.username; $('pw').value = flow.password;
+  }
+  function avatarMetaHtml() {
+    var a = flow.avatar;
+    if (flow.compressing) return '<b>Shrinking your photo…</b>';
+    if (!a) return '<b>Add a photo</b><br>We shrink it on your phone so it uses very little data.';
+    return '<b>Photo ready</b><br>Reduced from ' + fmtBytes(a.before) + ' to ' + fmtBytes(a.after) + '. Tap the photo to change it.';
+  }
+
+  /* --- new password (reset) --- */
+  function renderNewPass() {
+    authTitle.textContent = 'New password';
+    authBody.innerHTML =
+      '<h1 class="h1">Choose a new password</h1><p class="lede">Use at least ' + CONFIG.PASSWORD_MIN + ' characters.</p>' +
+      passwordField('New password', 'new-password') +
+      '<p class="err" id="authErr" role="alert"></p>' +
+      '<button class="btn" id="authGo" type="button" data-act="savepw" data-label="Save password">Save password</button>';
+  }
+
+  /* --- account (logged in user taps the nav) --- */
+  function renderAccount() {
+    authTitle.textContent = 'You';
+    authBody.innerHTML =
+      '<div class="avwrap"><div class="avbtn" style="border-style:solid">' + (session.avatar ? '<img src="' + esc(session.avatar) + '" alt="Your profile photo">' : icon('user', 36)) +
+      '</div><div class="avmeta"><b style="font-size:20px">@' + esc(session.username) + '</b><br>' + esc(session.contactMask || '') + '</div></div>' +
+      '<div class="stack"><button class="btn" type="button" data-act="report-now" data-focus>Report a story</button>' +
+      '<button class="btn ghost" type="button" data-act="logout">Log out</button></div>';
+  }
+
+  /* --- one delegated click handler for the whole panel --- */
+  authBody.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act]');
+    if (!el || !flow) return;
+    var act = el.dataset.act;
+    if (act === 'togglepw') {
+      var pw = $('pw'), show = pw.type === 'password';
+      pw.type = show ? 'text' : 'password';
+      el.textContent = show ? 'Hide' : 'Show';
+      el.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      return;
+    }
+    if (flow.busy) return;
+    if (act === 'mode') { flow.mode = el.dataset.mode; flow.rawContact = ''; showStep('contact'); }
+    else if (act === 'gologin') { flow.mode = 'login'; flow.rawContact = ''; showStep('login'); }
+    else if (act === 'forgot') { flow.mode = 'reset'; showStep('contact'); }
+    else if (act === 'channel') { flow.channel = el.dataset.ch; flow.rawContact = ''; STEPS[flow.step](); hydrateIcons(authBody); var c = $('contact'); if (c) c.focus(); }
+    else if (act === 'send') sendCode(false);
+    else if (act === 'resend') sendCode(true);
+    else if (act === 'change') showStep('contact', { noPush: true });
+    else if (act === 'verify') verifyCode();
+    else if (act === 'login') doLogin();
+    else if (act === 'pick') $('avFile').click();
+    else if (act === 'create') createAccount();
+    else if (act === 'savepw') savePassword();
+    else if (act === 'logout') { setSession(null); closeAuth(); toast('You are logged out'); }
+    else if (act === 'report-now') { closeAuth(); openReport(); }
+  });
+  authBody.addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.id === 'otp') {
+      t.value = t.value.replace(/\D/g, '').slice(0, CONFIG.OTP_LENGTH);
+      $('authGo').disabled = t.value.length !== CONFIG.OTP_LENGTH;
+      setErr('');
+      if (t.value.length === CONFIG.OTP_LENGTH) verifyCode();
+    } else if (t.id === 'uname') {
+      t.value = t.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+      flow.username = t.value; setErr('');
+    } else if (t.id === 'pw') { flow.password = t.value; setErr(''); }
+    else if (t.id === 'contact') { flow.rawContact = t.value; setErr(''); }
+  });
+  authBody.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || !/^(contact|uname|pw)$/.test(e.target.id)) return;
+    var go = $('authGo');
+    if (go && !go.disabled) { e.preventDefault(); go.click(); }
+  });
+  authBody.addEventListener('change', function (e) {
+    if (e.target.id === 'avFile' && e.target.files && e.target.files[0]) pickAvatar(e.target.files[0]);
+  });
+
+  function readContact() {
+    var raw = ($('contact') && $('contact').value) || flow.rawContact || '';
+    return flow.channel === 'email' ? normalizeEmail(raw) : normalizePhone(raw);
+  }
+  var CONTACT_ERR = { email: 'Enter a valid email address.', phone: 'Enter a valid Kenyan number, like 0712 345 678.' };
+
+  function sendCode(isResend) {
+    var c = isResend ? flow.contact : readContact();
+    if (!c) { setErr(CONTACT_ERR[flow.channel]); return; }
+    flow.contact = c;
+    if (!isResend) setBusy(true, 'Sending…'); else flow.busy = true;
+    api.requestOtp(flow.channel, c, flow.mode).then(function (r) {
+      flow.busy = false;
+      flow.demoCode = r.demoCode;
+      showStep('otp');
+      if (isResend) toast('New code sent');
+    }).catch(function (err) {
+      flow.busy = false;
+      if (isResend) { setErr(errMsg(err)); var rb = $('resend'); if (rb) rb.disabled = true; }
+      else { setBusy(false); setErr(errMsg(err)); }
+    });
+  }
+
+  function verifyCode() {
+    var input = $('otp'), code = input ? input.value : '';
+    if (code.length !== CONFIG.OTP_LENGTH || flow.busy) return;
+    setBusy(true, 'Checking…');
+    api.verifyOtp(flow.channel, flow.contact, code, flow.mode).then(function (r) {
+      flow.busy = false;
+      if (flow.mode === 'anon') {
+        /* Nothing is saved: no account, no stored contact. The token is held in memory for one post. */
+        flow.contact = ''; flow.rawContact = '';
+        session = { type: 'anon', token: r.token, exp: Date.now() + CONFIG.ANON_TOKEN_MS };
+        updateLoginButton();
+        finishAuth('You are verified. Post your story anonymously.');
+      } else if (r.exists) {
+        flow.mode = 'login';
+        showStep('login', { clearTrail: true });
+        toast('You already have an account. Log in with your password.', 3200);
+      } else {
+        flow.verifyToken = r.token;
+        showStep(flow.mode === 'reset' ? 'newpass' : 'profile', { noPush: false });
+      }
+    }).catch(function (err) {
+      flow.busy = false; setBusy(false);
+      setErr(errMsg(err));
+      if (input) { input.value = ''; input.focus(); $('authGo').disabled = true; }
+    });
+  }
+
+  function validPassword(p) {
+    if (p.length < CONFIG.PASSWORD_MIN) return 'Your password needs at least ' + CONFIG.PASSWORD_MIN + ' characters.';
+    return '';
+  }
+
+  function doLogin() {
+    var c = readContact(), pw = ($('pw') || {}).value || '';
+    if (!c) { setErr(CONTACT_ERR[flow.channel]); return; }
+    if (!pw) { setErr('Enter your password.'); return; }
+    setBusy(true, 'Logging in…');
+    api.login(flow.channel, c, pw).then(function (r) {
+      flow.busy = false;
+      setSession({ type: 'account', token: r.token, username: r.profile.username, avatar: r.profile.avatar, contactMask: maskContact(flow.channel, c) });
+      finishAuth('Welcome back, @' + r.profile.username);
+    }).catch(function (err) {
+      flow.busy = false; setBusy(false);
+      // Same message for "no such account" and "wrong password" so nobody can probe which contacts are registered.
+      setErr(err.code === 'bad_credentials' ? 'That email or number and password do not match. You can reset your password or create an account below.' : errMsg(err));
+    });
+  }
+
+  function savePassword() {
+    var msg = validPassword(flow.password);
+    if (msg) { setErr(msg); return; }
+    setBusy(true, 'Saving…');
+    api.resetPassword(flow.verifyToken, flow.contact, flow.password).then(function () {
+      flow.busy = false;
+      flow.mode = 'login'; flow.password = ''; flow.verifyToken = null;
+      showStep('login', { clearTrail: true });
+      toast('Password changed. Log in with the new one.', 3000);
+    }).catch(function (err) { flow.busy = false; setBusy(false); setErr(errMsg(err)); });
+  }
+
+  function pickAvatar(file) {
+    var meta = $('avMeta');
+    flow.compressing = true;
+    if (meta) meta.innerHTML = avatarMetaHtml();
+    setErr('');
+    compressAvatar(file).then(function (res) {
+      if (!flow) return;
+      if (flow.avatar && flow.avatar.url) URL.revokeObjectURL(flow.avatar.url);
+      res.url = URL.createObjectURL(res.blob);
+      flow.avatar = res; flow.compressing = false;
+      renderProfile(); hydrateIcons(authBody);
+    }).catch(function (err) {
+      if (!flow) return;
+      flow.compressing = false;
+      if (meta) meta.innerHTML = avatarMetaHtml();
+      setErr(err.message);
+    });
+  }
+
+  /* Upload the small avatar straight to storage, never through our own servers. */
+  function uploadAvatar(blob) {
+    return api.getUploadTarget('avatar', { type: blob.type, size: blob.size }).then(function (t) {
+      return api.putObject(t, blob, function () {}).then(function () {
+        return CONFIG.DEMO ? blobToDataUrl(blob) : t.publicUrl;
+      });
+    });
+  }
+
+  function createAccount() {
+    var name = (flow.username || '').toLowerCase();
+    if (!CONFIG.USERNAME_RE.test(name)) { setErr('Username must be 3 to 20 characters: letters, numbers or underscore.'); return; }
+    var pm = validPassword(flow.password);
+    if (pm) { setErr(pm); return; }
+    setBusy(true, 'Creating…');
+    api.checkUsername(name).then(function (r) {
+      if (!r.available) throw apiErr('taken', 'That username is taken. Try another.');
+      return flow.avatar ? uploadAvatar(flow.avatar.blob) : null;
+    }).then(function (avatarUrl) {
+      return api.createAccount({ token: flow.verifyToken, contact: flow.contact, username: name, password: flow.password, avatarUrl: avatarUrl }).then(function (r) {
+        flow.busy = false;
+        setSession({ type: 'account', token: r.token, username: name, avatar: avatarUrl, contactMask: maskContact(flow.channel, flow.contact) });
+        finishAuth('Account created. Welcome, @' + name);
+      });
+    }).catch(function (err) { flow.busy = false; setBusy(false); setErr(errMsg(err)); });
+  }
+
+  function finishAuth(msg) {
+    var after = flow && flow.after;
+    closeAuth();
+    toast(msg);
+    if (after === 'report') openReport();
+  }
+
+  /* ---------- nav: Log in / Me ---------- */
+  function updateLoginButton() {
+    var label = $('loginLabel'), ic = $('loginIcon');
+    if (session && session.type === 'account') {
+      label.textContent = 'Me';
+      ic.innerHTML = session.avatar ? '<img class="nav-av" src="' + esc(session.avatar) + '" alt="">' : icon('user', 26);
+    } else {
+      label.textContent = 'Log in';
+      ic.innerHTML = icon('user', 26);
+    }
+  }
+  $('loginBtn').addEventListener('click', function () {
+    if (session && session.type === 'account') {
+      lastFocus = document.activeElement;
+      flow = newFlow('login'); authPanel.classList.add('open'); showStep('account');
+    } else openAuth('login', null, 'login');
+  });
+
+  /* ==================================================================
+     10. REPORTING
+     Needs either an account login or a fresh anonymous verification.
+     The + button goes to account creation, where anonymous is offered.
+     The ward is read from the phone's location. The video goes straight
+     to object storage, then the story is created with its storage key.
+     ================================================================== */
+  var reportPanel = $('reportPanel'), reportBody = $('reportBody'), rep = null;
+
+  function newReport() {
+    return { file: null, url: null, dur: 0, mood: null, category: null, caption: '', ward: null, county: null, locState: 'idle', uploading: false, key: uuid() };
+  }
+  function openReport() {
+    if (!hasValidSession()) { openAuth('choose', 'report'); return; }
+    lastFocus = document.activeElement;
+    rep = newReport();
+    renderReport();
+    reportPanel.classList.add('open');
+    detectWard();
+  }
+  function closeReport() {
+    if (rep && rep.uploading) { toast('Please wait, your story is uploading'); return; }
+    if (rep && rep.url) URL.revokeObjectURL(rep.url);
+    reportPanel.classList.remove('open');
+    rep = null;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  function renderReport() {
+    var anon = session.type !== 'account';
+    reportBody.innerHTML =
+      '<div class="vidbox" id="vidBox">' + videoBoxHtml() + '</div>' +
+      '<p class="note" id="vidInfo">' + videoInfoText() + '</p>' +
+      '<div class="vidrow">' +
+        '<button class="btn" type="button" data-r="record">' + icon('video', 20) + 'Record</button>' +
+        '<button class="btn ghost" type="button" data-r="upload">' + icon('upload', 20) + 'Choose</button>' +
+      '</div>' +
+      '<input class="sr" id="vidRec" type="file" accept="video/*" capture="environment" tabindex="-1">' +
+      '<input class="sr" id="vidPick" type="file" accept="video/*" tabindex="-1">' +
+      '<div class="sec" id="moodLbl">How does it feel?</div>' +
+      '<div class="opts" role="radiogroup" aria-labelledby="moodLbl">' +
+        MOODS.map(function (m) { return '<button class="opt" type="button" role="radio" aria-checked="false" data-r="mood" data-v="' + esc(m) + '">' + esc(m) + '</button>'; }).join('') +
+      '</div>' +
+      '<div class="sec" id="catLbl">What is it about?</div>' +
+      '<div class="opts" role="radiogroup" aria-labelledby="catLbl">' +
+        CATEGORIES.map(function (c) { return '<button class="opt" type="button" role="radio" aria-checked="false" data-r="cat" data-v="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') +
+      '</div>' +
+      '<label class="sec" for="cap" style="display:block">Tell the story</label>' +
+      '<textarea class="ta" id="cap" maxlength="' + CONFIG.CAPTION_MAX + '" placeholder="What happened, and why does it matter to your neighbours?"></textarea>' +
+      '<div class="counter" id="capCount">0 / ' + CONFIG.CAPTION_MAX + '</div>' +
+      '<div class="sec">Where</div><div class="where" id="where"></div>' +
+      '<div class="sec">Posting as</div>' +
+      '<div class="who">' + (anon
+        ? '<b>Anonymous reporter</b><br>No account is created, and nothing that links this story to you is kept after you post.'
+        : '<b>@' + esc(session.username) + '</b>') + '</div>' +
+      '<p class="err" id="repErr" role="alert" style="margin-top:14px"></p>' +
+      '<div class="prog" id="prog" hidden role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="progBar"></i></div>' +
+      '<button class="btn" id="repGo" type="button" data-r="post" disabled>Post story</button>' +
+      '<p class="note">New stories are processed and checked before they show a Verified badge.</p>';
+    renderWhere();
+  }
+  function videoBoxHtml() {
+    if (rep.url) return '<video src="' + esc(rep.url) + '" controls muted playsinline preload="metadata"></video>';
+    return '<span class="muted" style="font-size:14px;text-align:center;padding:0 24px">Record or choose a video up to ' + CONFIG.VIDEO_MAX_SEC + ' seconds</span>';
+  }
+  function videoInfoText() {
+    if (!rep.file) return 'Up to ' + CONFIG.VIDEO_MAX_SEC + ' seconds and ' + fmtBytes(CONFIG.VIDEO_MAX_BYTES) + '. Hold your phone upright.';
+    return Math.round(rep.dur) + ' seconds, ' + fmtBytes(rep.file.size);
+  }
+  function repErr(msg) { var el = $('repErr'); if (el) el.textContent = msg || ''; }
+
+  function renderWhere() {
+    var el = $('where');
+    if (!el) return;
+    if (rep.locState === 'busy') el.innerHTML = icon('pin', 18) + '<span>Finding your ward…</span>';
+    else if (rep.locState === 'ok') el.innerHTML = icon('pin', 18) + '<span><b style="color:#fff">' + esc(rep.ward) + '</b>, ' + esc(rep.county) + '</span>';
+    else el.innerHTML = '<div style="width:100%"><p class="note" style="margin:0 0 8px">We could not read your location. Turn on location for this site and try again.</p>' +
+      '<button class="btn ghost" type="button" data-r="locate" style="height:44px">Try again</button></div>';
+  }
+  /* Stand-in. Real version: GET /v1/geo/ward?lat=..&lng=.. */
+  function resolveWard() { return wait(500).then(function () { return { ward: 'Nyanchwa Ward', county: state.home }; }); }
+  function detectWard() {
+    if (!navigator.geolocation) { rep.locState = 'fail'; renderWhere(); return; }
+    rep.locState = 'busy'; renderWhere();
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      resolveWard(pos.coords.latitude, pos.coords.longitude).then(function (r) {
+        if (!rep) return;
+        rep.ward = r.ward; rep.county = r.county; rep.locState = 'ok'; renderWhere(); validateReport();
+      });
+    }, function () {
+      if (!rep) return;
+      rep.locState = 'fail'; renderWhere(); validateReport();
+    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+  }
+  function validateReport() {
+    var b = $('repGo');
+    if (!b || !rep) return;
+    b.disabled = !(rep.file && rep.mood && rep.category && rep.caption.trim().length >= CONFIG.CAPTION_MIN && rep.locState === 'ok') || rep.uploading;
+  }
+
+  function takeVideo(file) {
+    repErr('');
+    if (!file) return;
+    if (!/^video\//.test(file.type)) { repErr('Please choose a video file.'); return; }
+    if (file.size > CONFIG.VIDEO_MAX_BYTES) { repErr('That video is ' + fmtBytes(file.size) + '. The limit is ' + fmtBytes(CONFIG.VIDEO_MAX_BYTES) + '. Try a shorter clip.'); return; }
+    var url = URL.createObjectURL(file), probe = document.createElement('video');
+    probe.preload = 'metadata';
+    probe.onloadedmetadata = function () {
+      var dur = probe.duration;
+      if (!isFinite(dur) || dur <= 0) { URL.revokeObjectURL(url); repErr('We could not read that video. Try another one.'); return; }
+      if (dur > CONFIG.VIDEO_MAX_SEC + 0.5) { URL.revokeObjectURL(url); repErr('That video is ' + Math.round(dur) + ' seconds. The limit is ' + CONFIG.VIDEO_MAX_SEC + '.'); return; }
+      if (!rep) { URL.revokeObjectURL(url); return; }
+      if (rep.url) URL.revokeObjectURL(rep.url);
+      rep.file = file; rep.url = url; rep.dur = dur;
+      $('vidBox').innerHTML = videoBoxHtml();
+      $('vidInfo').textContent = videoInfoText();
+      validateReport();
+    };
+    probe.onerror = function () { URL.revokeObjectURL(url); repErr('We could not read that video. Try another one.'); };
+    probe.src = url;
+  }
+
+  reportBody.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-r]');
+    if (!el || !rep || rep.uploading) return;
+    var a = el.dataset.r;
+    if (a === 'record') $('vidRec').click();
+    else if (a === 'upload') $('vidPick').click();
+    else if (a === 'mood' || a === 'cat') {
+      el.parentNode.querySelectorAll('.opt').forEach(function (o) { o.setAttribute('aria-checked', String(o === el)); });
+      rep[a === 'mood' ? 'mood' : 'category'] = el.dataset.v;
+      validateReport();
+    }
+    else if (a === 'locate') detectWard();
+    else if (a === 'post') submitReport();
+  });
+  reportBody.addEventListener('change', function (e) {
+    if ((e.target.id === 'vidRec' || e.target.id === 'vidPick') && e.target.files[0]) { takeVideo(e.target.files[0]); e.target.value = ''; }
+  });
+  reportBody.addEventListener('input', function (e) {
+    if (e.target.id !== 'cap' || !rep) return;
+    rep.caption = e.target.value;
+    $('capCount').textContent = e.target.value.length + ' / ' + CONFIG.CAPTION_MAX;
+    validateReport();
+  });
+  $('reportClose').addEventListener('click', closeReport);
+
+  function submitReport() {
+    if (!rep || rep.uploading) return;
+    if (!hasValidSession()) { repErr('Your verification expired. Close this and verify again.'); return; }
+    rep.uploading = true;
+    repErr('');
+    var go = $('repGo'), prog = $('prog'), bar = $('progBar');
+    go.disabled = true; go.textContent = 'Uploading…';
+    prog.hidden = false;
+    function onProgress(pct) { bar.style.width = pct + '%'; prog.setAttribute('aria-valuenow', String(Math.round(pct))); }
+    var isAnon = session.type !== 'account', videoKey = null;
+
+    api.getUploadTarget('video', { type: rep.file.type, size: rep.file.size, duration: rep.dur }).then(function (t) {
+      videoKey = t.objectKey;
+      return api.putObject(t, rep.file, onProgress);          // bytes go straight to storage
+    }).then(function () {
+      go.textContent = 'Posting…';
+      return api.createStory({
+        idempotencyKey: rep.key,                                // a retry cannot create a second post
+        token: session.token,                                   // single use for anonymous posters
+        anonymous: isAnon,
+        mood: rep.mood, category: rep.category, caption: rep.caption.trim(),
+        ward: rep.ward, county: rep.county, videoKey: videoKey, durationSec: Math.round(rep.dur),
+        posterName: isAnon ? null : '@' + session.username,
+        posterAvatar: isAnon ? null : session.avatar,
+        localPreview: rep.url                                   // demo only
+      });
+    }).then(function (r) {
+      var county = r.story.county;
+      rep.uploading = false;
+      rep.url = null;                                           // the feed now owns the preview
+      if (isAnon) { session = null; updateLoginButton(); }      // anonymous: nothing remembered
+      closeReport();
+      state.scope = 'county'; state.county = county;
+      updateHeader(); resetFeed();
+      toast(isAnon ? 'Posted anonymously. We keep nothing that links it to you.' : 'Posted. We will check it before it is marked Verified.', 3400);
+    }).catch(function (err) {
+      rep.uploading = false;
+      prog.hidden = true; go.textContent = 'Post story'; validateReport();
+      repErr(err.code === 'rate_limited' ? errMsg(err) : (err.message || 'Upload failed.') + ' Tap Post story to try again.');
+    });
+  }
+
+  $('reportBtn').addEventListener('click', openReport);
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (sheet.classList.contains('open')) closeSheet();
+    else if (reportPanel.classList.contains('open')) closeReport();
+    else if (authPanel.classList.contains('open')) closeAuth();
+  });
+
+  /* ==================================================================
+     11. START
+     ================================================================== */
   hydrateIcons();
   updateHeader();
-  renderFeed();
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(updateMoreButtons);
+  updateLoginButton();
+  resetFeed();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { updateMoreButtons(); });
   var resizeRaf = 0;
   window.addEventListener('resize', function () {
     cancelAnimationFrame(resizeRaf);
-    resizeRaf = requestAnimationFrame(updateMoreButtons);
+    resizeRaf = requestAnimationFrame(function () { updateMoreButtons(); });
   });
 })();
 </script>
