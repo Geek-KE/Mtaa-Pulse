@@ -35,27 +35,28 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 .scene{position:absolute;inset:0}
 .scene svg,.scene video{position:absolute;inset:0;width:100%;height:100%;display:block}
 .scene video{object-fit:cover}
-.slide-body{position:absolute;left:0;right:0;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom));display:flex;align-items:flex-end;gap:12px;padding:0 16px 16px}
+.slide-body{position:absolute;left:0;right:0;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom));display:flex;align-items:flex-end;gap:10px;padding:0 14px 8px}
 .info{flex:1;min-width:0}
-.tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
-.tag{padding:6px 14px;border-radius:999px;font-size:14px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.tag{padding:4px 10px;border-radius:999px;font-size:12px}
 .tag-mood{background:var(--accent);color:var(--ink);font-weight:700}
 .tag-cat{background:rgba(232,244,250,.16);color:var(--sky);font-weight:500}
-.caption{margin:0;font-size:20px;line-height:1.3;font-weight:700;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.caption{margin:0;font-size:15px;line-height:1.3;font-weight:700;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .caption.open{display:block}
-.more{display:flex;align-items:center;min-height:44px;font-size:14px;font-weight:700;color:var(--accent)}
+.more{position:relative;display:flex;align-items:center;min-height:30px;font-size:13px;font-weight:700;color:var(--accent)}
+.more::after{content:'';position:absolute;inset:-8px -14px}
 .more[hidden]{display:none}
-.chips{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
-.chiprow{display:flex;align-items:center;gap:10px;font-size:14px}
-.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px 6px 8px;border-radius:999px;background:rgba(7,31,42,.62);border:1px solid rgba(232,244,250,.28);font-size:13px;font-weight:500;color:var(--sky)}
+.chips{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.chiprow{display:flex;align-items:center;gap:8px;font-size:12px}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px 4px 6px;border-radius:999px;background:rgba(7,31,42,.62);border:1px solid rgba(232,244,250,.28);font-size:12px;font-weight:500;color:var(--sky)}
 .chip svg{stroke:var(--accent)}
 .chip.verified{font-weight:700}
 .muted{color:var(--muted)}
 .poster{font-weight:500;color:var(--sky)}
 
-.rail{display:flex;flex-direction:column;align-items:center;gap:14px;width:56px;font-size:13px;color:var(--sky)}
-.rail-item{display:flex;flex-direction:column;align-items:center;gap:4px}
-.round{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;background:rgba(232,244,250,.14);color:var(--sky)}
+.rail{display:flex;flex-direction:column;align-items:center;gap:8px;width:48px;font-size:11px;color:var(--sky)}
+.rail-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.round{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;background:rgba(232,244,250,.14);color:var(--sky)}
 
 .empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0 32px;text-align:center}
 .empty strong{font-size:22px;color:#fff}
@@ -63,18 +64,20 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 
 /* ---------- top: name, county, scope ---------- */
 .top{position:absolute;left:0;right:0;top:0;z-index:5;padding-top:env(safe-area-inset-top)}
-.brand{padding:20px 20px 0;font-size:26px;font-weight:700;letter-spacing:-.01em;color:#fff}
+.brand{padding:8px 16px 0;font-size:18px;font-weight:700;letter-spacing:-.01em;color:#fff}
 .brand span{color:var(--accent)}
-.bar{display:flex;align-items:center;gap:8px;padding:8px 16px 0}
-.pill{display:flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0;height:44px;padding:0 14px;border-radius:22px;background:rgba(7,31,42,.62);border:1px solid rgba(232,244,250,.22);font-size:15px;font-weight:500;color:var(--sky)}
+.bar{display:flex;align-items:center;gap:6px;padding:4px 16px 0}
+.pill,.tab,.iconbtn{position:relative}
+.pill::after,.tab::after,.iconbtn::after{content:'';position:absolute;inset:-6px}
+.pill{display:flex;align-items:center;gap:5px;flex:0 1 auto;min-width:0;height:30px;padding:0 10px 0 8px;border-radius:15px;background:rgba(7,31,42,.62);border:1px solid rgba(232,244,250,.22);font-size:12px;font-weight:500;color:var(--sky)}
 .pill svg{flex:none}
 .pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pill.on{border-color:var(--accent)}
-.tabs{flex:1 0 auto;display:flex;justify-content:center;gap:12px}
-.tab{height:44px;font-size:15px;font-weight:500;color:var(--muted);border-bottom:3px solid transparent}
+.tabs{flex:1 0 auto;display:flex;justify-content:center;gap:10px}
+.tab{height:30px;font-size:12px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent}
 .tab[aria-pressed="true"]{font-weight:700;color:#fff;border-bottom-color:var(--accent)}
-.iconbtn{display:flex;align-items:center;justify-content:center;flex:none;width:44px;height:44px;border-radius:22px;background:rgba(7,31,42,.62);border:1px solid rgba(232,244,250,.22);color:var(--sky)}
-.scope{padding:8px 20px 0;font-size:13px;color:var(--muted)}
+.iconbtn{display:flex;align-items:center;justify-content:center;flex:none;width:30px;height:30px;border-radius:15px;background:rgba(7,31,42,.62);border:1px solid rgba(232,244,250,.22);color:var(--sky)}
+.scope{padding:4px 16px 0;font-size:11px;color:var(--muted)}
 
 /* ---------- bottom navigation ---------- */
 .nav{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;align-items:center;justify-content:space-around;height:calc(var(--nav-h) + env(safe-area-inset-bottom));padding:0 8px calc(8px + env(safe-area-inset-bottom));background:rgba(7,31,42,.95);border-top:1px solid rgba(232,244,250,.12)}
@@ -83,7 +86,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 .report{display:flex;align-items:center;justify-content:center;width:64px;height:48px;border-radius:16px;background:var(--accent);color:var(--ink)}
 
 /* ---------- message ---------- */
-.toast{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 124px);z-index:15;transform:translateX(-50%);padding:10px 18px;border-radius:999px;background:rgba(7,31,42,.94);border:1px solid rgba(232,244,250,.28);font-size:14px;font-weight:500;color:#fff;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s ease}
+.toast{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 84px);z-index:15;transform:translateX(-50%);padding:10px 18px;border-radius:999px;background:rgba(7,31,42,.94);border:1px solid rgba(232,244,250,.28);font-size:14px;font-weight:500;color:#fff;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s ease}
 .toast.show{opacity:1}
 
 /* ---------- county picker ---------- */
@@ -115,13 +118,13 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
     <div class="brand">Mtaa <span>Pulse</span></div>
     <div class="bar">
       <button class="pill" id="countyBtn" type="button" aria-haspopup="dialog" aria-label="Choose county">
-        <span data-icon="pin" data-size="18"></span><span id="countyName"></span>
+        <span data-icon="pin" data-size="14"></span><span id="countyName"></span>
       </button>
       <div class="tabs">
         <button class="tab" id="tabNearby" type="button" aria-pressed="true">Nearby</button>
         <button class="tab" id="tabKenya" type="button" aria-pressed="false">All Kenya</button>
       </div>
-      <button class="iconbtn" id="searchBtn" type="button" aria-label="Search" data-icon="search" data-size="22"></button>
+      <button class="iconbtn" id="searchBtn" type="button" aria-label="Search" data-icon="search" data-size="16"></button>
     </div>
     <div class="scope" id="scopeLabel"></div>
   </header>
@@ -230,7 +233,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
       '<path d="M0 380 C100 320 240 310 390 370 L390 844 L0 844Z" fill="#0F4A62"/>' +
       '<path d="M110 470 C200 400 320 400 390 430 L390 844 L110 844Z" fill="#0A3447"/>' +
       extra +
-      '<rect x="0" y="400" width="390" height="444" fill="url(#fade' + i + ')"/></svg>';
+      '<rect x="0" y="560" width="390" height="284" fill="url(#fade' + i + ')"/></svg>';
   }
   var SCENES = {
     bridge: function (i) {
@@ -282,18 +285,18 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
           '<p class="caption" id="cap-' + s.id + '">' + esc(s.caption) + '</p>' +
           '<button class="more" type="button" aria-expanded="false" aria-controls="cap-' + s.id + '">Show more</button>' +
           '<div class="chips">' +
-            '<div class="chiprow"><span class="chip">' + icon('pin', 16, 2.2) + esc(s.ward) + '</span><span class="muted">' + esc(s.when) + '</span></div>' +
+            '<div class="chiprow"><span class="chip">' + icon('pin', 14, 2.2) + esc(s.ward) + '</span><span class="muted">' + esc(s.when) + '</span></div>' +
             '<div class="chiprow">' +
-              (s.verified ? '<span class="chip verified">' + icon('shield', 16, 2.2) + 'Verified</span>' : '') +
+              (s.verified ? '<span class="chip verified">' + icon('shield', 14, 2.2) + 'Verified</span>' : '') +
               '<span class="poster">' + esc(s.poster || 'Anonymous reporter') + '</span>' +
             '</div>' +
           '</div>' +
         '</div>' +
         '<div class="rail">' +
-          '<div class="rail-item"><button class="round" type="button" aria-label="Like">' + icon('thumb', 26) + '</button><span>' + s.likes + '</span></div>' +
-          '<div class="rail-item"><button class="round" type="button" aria-label="Comments">' + icon('comment', 26) + '</button><span>' + s.comments + '</span></div>' +
-          '<div class="rail-item"><button class="round" type="button" aria-label="Share">' + icon('share', 26) + '</button><span>Share</span></div>' +
-          '<div class="rail-item"><button class="round" type="button" aria-label="Save">' + icon('bookmark', 26) + '</button><span>Save</span></div>' +
+          '<div class="rail-item"><button class="round" type="button" aria-label="Like">' + icon('thumb', 22) + '</button><span>' + s.likes + '</span></div>' +
+          '<div class="rail-item"><button class="round" type="button" aria-label="Comments">' + icon('comment', 22) + '</button><span>' + s.comments + '</span></div>' +
+          '<div class="rail-item"><button class="round" type="button" aria-label="Share">' + icon('share', 22) + '</button><span>Share</span></div>' +
+          '<div class="rail-item"><button class="round" type="button" aria-label="Save">' + icon('bookmark', 22) + '</button><span>Save</span></div>' +
         '</div>' +
       '</div>' +
     '</article>';
