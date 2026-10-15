@@ -1848,7 +1848,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   var reportPanel = $('reportPanel'), reportBody = $('reportBody'), rep = null;
 
   function newReport() {
-    return { file: null, url: null, dur: 0, mood: null, category: null, caption: '', ward: null, county: null, locState: 'idle', uploading: false, key: uuid(), voice: true, bg: 'none', bgVol: 35, bgFile: null, bgName: '' };
+    return { file: null, url: null, dur: 0, mood: null, category: null, caption: '', ward: null, county: null, locState: 'idle', uploading: false, key: uuid(), bg: 'none', bgVol: 60, micVol: 100 };
   }
   function openReport() {
     if (!hasValidSession()) { openAuth('choose', 'report'); return; }
@@ -1864,6 +1864,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   function goSignup() {
     if (!rep || rep.uploading) return;
     stashRep = rep;
+    stopPreview();
     reportPanel.classList.remove('open');
     toast('To post without consent, create an account.', 3200);
     openAuth('contact', 'resume', 'signup');
@@ -1885,6 +1886,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   }
   function closeReport() {
     if (rep && rep.uploading) { toast('Please wait, your story is uploading'); return; }
+    stopPreview();
     stopCamera(rep);
     if (rep && rep.url) URL.revokeObjectURL(rep.url);
     reportPanel.classList.remove('open');
@@ -1915,14 +1917,13 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     renderWhere();
   }
   function soundHtml() {
-    return '<label class="chk" style="margin-top:0"><input type="checkbox" id="voiceOn"' + (rep.voice ? ' checked' : '') + '><span>Record my voice, so I can talk about what I am showing</span></label>' +
-      '<div class="label" style="margin:12px 0 6px">Background sound</div>' +
-      '<div class="hrow" role="listbox" aria-label="Background sound">' +
-      BG_TONES.map(function (t) { return '<button class="hi" type="button" role="option" aria-selected="' + (rep.bg === t.id) + '" data-r="bg" data-v="' + t.id + '">' + t.label + '</button>'; }).join('') +
-      '<button class="hi" type="button" role="option" aria-selected="' + (rep.bg === 'file') + '" data-r="bgfile">' + (rep.bgName ? esc(rep.bgName.slice(0, 18)) : 'Attach my own') + '</button></div>' +
-      '<input class="sr" id="bgFile" type="file" accept="audio/*" tabindex="-1">' +
-      '<label class="label" for="bgVol" style="margin:12px 0 4px">Background volume</label>' +
-      '<input type="range" id="bgVol" min="0" max="100" value="' + rep.bgVol + '" style="width:100%;accent-color:var(--accent)">';
+    return '<div class="label" style="margin:0 0 6px">Nature sound</div>' +
+      '<div class="hrow" role="listbox" aria-label="Nature sound" style="flex-wrap:wrap;overflow:visible">' +
+      BG_TONES.map(function (t) { return '<button class="hi" type="button" role="option" aria-selected="' + (rep.bg === t.id) + '" data-r="bg" data-v="' + t.id + '">' + t.label + '</button>'; }).join('') + '</div>' +
+      '<label class="label" for="bgVol" style="margin:14px 0 4px">Nature sound volume</label>' +
+      '<input type="range" id="bgVol" min="0" max="100" value="' + rep.bgVol + '" style="width:100%;accent-color:var(--accent)">' +
+      '<label class="label" for="micVol" style="margin:14px 0 4px">Sound from your video (slide all the way left to mute)</label>' +
+      '<input type="range" id="micVol" min="0" max="100" value="' + rep.micVol + '" style="width:100%;accent-color:var(--accent)">';
   }
   function wheelHtml(key, label, list) {
     return '<div class="sec" id="' + key + 'Lbl">' + label + ' <span class="muted" id="' + key + 'Val" style="font-weight:500">Slide up or down to choose</span></div>' +
@@ -2073,10 +2074,13 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   }
   function warmFaceCheck() { loadFaceEngine().catch(function () {}); }
 
-  /* ---------- background sounds (made on the phone with Web Audio, no files to download) ---------- */
+  /* ---------- nature sounds ----------
+     Made on the phone with Web Audio, so there are no audio files to download. They are generated, not recordings.
+     To use real recordings later, host short looping audio files and play them here instead of calling makeTone. */
   var BG_TONES = [
-    { id: 'none', label: 'None' }, { id: 'rain', label: 'Rain' }, { id: 'wind', label: 'Wind' },
-    { id: 'stream', label: 'Stream' }, { id: 'night', label: 'Night crickets' }, { id: 'hum', label: 'Soft hum' }
+    { id: 'none', label: 'None' }, { id: 'birds', label: 'Birds' }, { id: 'rain', label: 'Rain' }, { id: 'storm', label: 'Thunderstorm' },
+    { id: 'stream', label: 'Stream' }, { id: 'waves', label: 'Ocean waves' }, { id: 'wind', label: 'Wind' },
+    { id: 'night', label: 'Night crickets' }, { id: 'frogs', label: 'Frogs' }
   ];
   function noiseBuf(ac, pink) {
     var len = ac.sampleRate * 2, b = ac.createBuffer(1, len, ac.sampleRate), d = b.getChannelData(0), last = 0;
@@ -2084,33 +2088,110 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     return b;
   }
   function makeTone(ac, id, out) {
-    var nodes = [], g = ac.createGain();
+    var nodes = [], timers = [], alive = true, g = ac.createGain();
+    g.gain.value = 1;
     g.connect(out);
+    function rnd(a, b) { return a + Math.random() * (b - a); }
     function osc(type, f) { var o = ac.createOscillator(); o.type = type; o.frequency.value = f; o.start(); nodes.push(o); return o; }
     function noise(pink) { var s = ac.createBufferSource(); s.buffer = noiseBuf(ac, pink); s.loop = true; s.start(); nodes.push(s); return s; }
     function filt(type, f, q) { var x = ac.createBiquadFilter(); x.type = type; x.frequency.value = f; if (q) x.Q.value = q; return x; }
+    function amp(v, to) { var a = ac.createGain(); a.gain.value = v; a.connect(to || g); return a; }
     function lfo(f, depth, target) { var l = osc('sine', f), lg = ac.createGain(); lg.gain.value = depth; l.connect(lg); lg.connect(target); }
-    if (id === 'rain') { var hp = filt('highpass', 900), lp = filt('lowpass', 9000); noise(false).connect(hp); hp.connect(lp); lp.connect(g); g.gain.value = 0.5; }
-    else if (id === 'wind') { var bp = filt('bandpass', 500, 0.6); noise(true).connect(bp); bp.connect(g); g.gain.value = 1.2; lfo(0.12, 0.6, g.gain); }
-    else if (id === 'stream') { var sb = filt('bandpass', 1400, 0.8); noise(true).connect(sb); sb.connect(g); g.gain.value = 0.9; lfo(0.7, 500, sb.frequency); }
-    else if (id === 'night') { var ca = ac.createGain(); ca.gain.value = 0.05; osc('sine', 4600).connect(ca); ca.connect(g); g.gain.value = 0.6; lfo(32, 0.05, ca.gain); lfo(2.2, 0.05, ca.gain); }
-    else if (id === 'hum') { var hl = filt('lowpass', 600); [110, 164.8, 220].forEach(function (f) { var og = ac.createGain(); og.gain.value = 0.12; osc('sine', f).connect(og); og.connect(hl); }); hl.connect(g); g.gain.value = 1; }
-    return { stop: function () { nodes.forEach(function (n) { try { n.stop(); } catch (e) {} }); try { g.disconnect(); } catch (e) {} } };
+    // do something at random times (bird calls, drops, croaks)
+    function every(minMs, maxMs, fn) { (function next() { timers.push(setTimeout(function () { if (!alive) return; fn(); next(); }, rnd(minMs, maxMs))); })(); }
+    function later(ms, fn) { timers.push(setTimeout(function () { if (alive) fn(); }, ms)); }
+    // one short sound that glides from pitch f to f * glide
+    function blip(f, dur, vol, type, dest, glide) {
+      var t = ac.currentTime, o = ac.createOscillator(), a = ac.createGain();
+      o.type = type || 'sine';
+      o.frequency.setValueAtTime(f, t);
+      o.frequency.exponentialRampToValueAtTime(Math.max(40, f * glide), t + dur);
+      a.gain.setValueAtTime(0.0001, t);
+      a.gain.exponentialRampToValueAtTime(vol, t + dur * 0.25);
+      a.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(a); a.connect(dest || g); o.start(t); o.stop(t + dur + 0.05);
+    }
+    function crickets(level) {
+      [[4300, 29, 2.1], [4650, 33, 2.9], [4950, 37, 1.7]].forEach(function (c) {
+        var o = osc('sine', c[0]), a = ac.createGain(), gate = ac.createGain(), cg = amp(level);
+        a.gain.value = 0.5; gate.gain.value = 0.5;
+        lfo(c[1], 0.5, a.gain); lfo(c[2], 0.5, gate.gain);      // fast chirp pulses, slowly switching on and off
+        o.connect(a); a.connect(gate); gate.connect(cg);
+      });
+    }
+    function rain() {
+      var hp = filt('highpass', 1200), lp = filt('lowpass', 7500);
+      noise(false).connect(hp); hp.connect(lp); lp.connect(amp(0.28));                  // the hiss
+      var rb = filt('lowpass', 350); noise(true).connect(rb); rb.connect(amp(0.6));      // low rumble on the ground
+      every(35, 120, function () { blip(rnd(2500, 6500), 0.025, 0.04, 'sine', g, 0.5); }); // single drops
+    }
+    function thunder() {
+      var t = ac.currentTime, s = ac.createBufferSource(), lp = filt('lowpass', rnd(110, 220)), a = ac.createGain();
+      s.buffer = noiseBuf(ac, true); s.loop = true;
+      a.gain.setValueAtTime(0.0001, t); a.gain.linearRampToValueAtTime(3, t + rnd(0.3, 0.7)); a.gain.exponentialRampToValueAtTime(0.0001, t + 4.2);
+      s.connect(lp); lp.connect(a); a.connect(g); s.start(t); s.stop(t + 4.3);
+    }
+    if (id === 'birds') {
+      var air = filt('bandpass', 700, 0.5); noise(true).connect(air); air.connect(amp(0.5));
+      every(700, 2600, function () {                                                        // a short song: a few quick chirps
+        var base = rnd(2400, 4600), n = 2 + Math.floor(Math.random() * 4), step = rnd(90, 150);
+        for (var i = 0; i < n; i++) (function (k) { later(k * step, function () { blip(base * (1 + k * 0.04), rnd(0.07, 0.12), 0.16, 'sine', g, rnd(0.6, 1.5)); }); })(i);
+      });
+      every(2500, 7000, function () {                                                       // a slow two-note whistle
+        var f = rnd(1300, 1900); blip(f, 0.45, 0.14, 'sine', g, rnd(1.2, 1.6)); later(380, function () { blip(f * 1.25, 0.4, 0.12, 'sine', g, 0.8); });
+      });
+    }
+    else if (id === 'rain') rain();
+    else if (id === 'storm') { rain(); every(9000, 20000, thunder); later(2500, thunder); }
+    else if (id === 'stream') {
+      var s1 = filt('bandpass', 1400, 0.8), s2 = filt('bandpass', 2800, 1.2);
+      noise(false).connect(s1); s1.connect(amp(0.5)); lfo(0.7, 500, s1.frequency);
+      noise(false).connect(s2); s2.connect(amp(0.25)); lfo(1.3, 800, s2.frequency);
+      every(60, 220, function () { blip(rnd(500, 1100), 0.07, 0.05, 'sine', g, rnd(1.4, 2.2)); });   // bubbles
+    }
+    else if (id === 'waves') {
+      var wl = filt('lowpass', 900); noise(true).connect(wl); wl.connect(g);
+      g.gain.value = 1.2; lfo(0.1, 0.9, g.gain);                                              // slow swell, about every 10 seconds
+      var wh = filt('bandpass', 2400, 0.5); noise(false).connect(wh); var wg = amp(0.05); wh.connect(wg); lfo(0.1, 0.04, wg.gain);   // foam
+    }
+    else if (id === 'wind') {
+      var w1 = filt('bandpass', 500, 0.6), w2 = filt('bandpass', 900, 4);
+      noise(true).connect(w1); w1.connect(g); g.gain.value = 1.2; lfo(0.12, 0.6, g.gain);
+      noise(true).connect(w2); w2.connect(amp(0.8)); lfo(0.07, 400, w2.frequency);           // faint whistle
+    }
+    else if (id === 'night') crickets(0.07);
+    else if (id === 'frogs') {
+      crickets(0.03);
+      var fl = filt('lowpass', 700); fl.connect(g);
+      every(1400, 3600, function () {                                                       // a row of croaks
+        var n = 3 + Math.floor(Math.random() * 4), f = rnd(130, 210);
+        for (var i = 0; i < n; i++) later(i * 150, function () { blip(f, 0.12, 0.35, 'sawtooth', fl, 0.75); });
+      });
+    }
+    return { stop: function () { alive = false; timers.forEach(clearTimeout); nodes.forEach(function (n) { try { n.stop(); } catch (e) {} }); try { g.disconnect(); } catch (e) {} } };
   }
   function applyBg(r) {
     if (!r.ac || !r.bgGain) return;
     if (r.tone) { r.tone.stop(); r.tone = null; }
-    if (r.bg === 'file') {
-      if (!r.bgBuf) return;
-      var s = r.ac.createBufferSource(); s.buffer = r.bgBuf; s.loop = true; s.connect(r.bgGain); s.start();
-      r.tone = { stop: function () { try { s.stop(); } catch (e) {} try { s.disconnect(); } catch (e) {} } };
-    } else if (r.bg !== 'none') r.tone = makeTone(r.ac, r.bg, r.bgGain);
+    if (r.bg !== 'none') r.tone = makeTone(r.ac, r.bg, r.bgGain);
   }
-  function decodeBgFile(r) {
-    if (!r.ac || !r.bgFile) return Promise.resolve();
-    return r.bgFile.arrayBuffer().then(function (buf) {
-      return new Promise(function (res, rej) { r.ac.decodeAudioData(buf, res, rej); });
-    }).then(function (b) { r.bgBuf = b; }).catch(function () { r.bgBuf = null; r.bg = 'none'; toast('We could not read that sound file'); });
+
+  // Preview: lets the person hear a nature sound as they choose it, before the camera is open. It stops by itself after 8 seconds.
+  var preview = { ac: null, gain: null, tone: null, timer: 0 };
+  function stopPreview() {
+    clearTimeout(preview.timer); preview.timer = 0;
+    if (preview.tone) { preview.tone.stop(); preview.tone = null; }
+    if (preview.ac) { try { preview.ac.close(); } catch (e) {} preview.ac = null; preview.gain = null; }
+  }
+  function playPreview(id, vol) {
+    stopPreview();
+    if (id === 'none') return;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try { preview.ac = new AC(); if (preview.ac.resume) preview.ac.resume(); } catch (e) { preview.ac = null; return; }
+    preview.gain = preview.ac.createGain(); preview.gain.gain.value = vol / 100; preview.gain.connect(preview.ac.destination);
+    preview.tone = makeTone(preview.ac, id, preview.gain);
+    preview.timer = setTimeout(stopPreview, 8000);
   }
 
   /* ---------- teardown ---------- */
@@ -2180,7 +2261,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     var r = rep, md = navigator.mediaDevices;
     repErr('');
     if (!(md && md.getUserMedia && window.MediaRecorder && HTMLCanvasElement.prototype.captureStream)) { repErr('This browser cannot record video. Please open Mtaa Pulse in Chrome or Safari.'); return; }
-    var AC = window.AudioContext || window.webkitAudioContext, ac = null;
+    stopPreview(); var AC = window.AudioContext || window.webkitAudioContext, ac = null;
     try { if (AC) { ac = new AC(); if (ac.resume) ac.resume(); } } catch (e) { ac = null; }   // created inside the tap so phones allow it
     r.opening = true; r.locMsg = null; r.locState = 'busy'; renderWhere(); updateRecUI(); validateReport();
     r.facing = 'environment';
@@ -2220,15 +2301,15 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
         var vw = sv.videoWidth || 720, vh = sv.videoHeight || 1280, k = Math.min(1, 1280 / Math.max(vw, vh));
         r.cv = document.createElement('canvas'); r.cv.width = Math.round(vw * k); r.cv.height = Math.round(vh * k);
         r.cx = r.cv.getContext('2d'); r.tmp = document.createElement('canvas'); r.tcx = r.tmp.getContext('2d');
-        // sound: voice and background are mixed into one track
+        // sound: the sound from the camera (its volume, 0 = muted) and the nature sound are mixed into one track
         var tracks = [], audioTracks = camR.s.getAudioTracks();
         if (ac) {
           r.ac = ac; var dest = ac.createMediaStreamDestination();
           r.bgGain = ac.createGain(); r.bgGain.gain.value = r.bgVol / 100; r.bgGain.connect(dest);
-          r.micGain = ac.createGain(); r.micGain.gain.value = r.voice ? 1 : 0; r.micGain.connect(dest);
+          r.micGain = ac.createGain(); r.micGain.gain.value = r.micVol / 100; r.micGain.connect(dest);
           if (audioTracks.length) ac.createMediaStreamSource(new MediaStream(audioTracks)).connect(r.micGain);
           tracks = dest.stream.getAudioTracks();
-        } else tracks = r.voice ? audioTracks : [];
+        } else tracks = r.micVol > 0 ? audioTracks : [];
         r.cs = r.cv.captureStream(30);
         r.out = new MediaStream(r.cs.getVideoTracks().concat(tracks));
         var opts = { videoBitsPerSecond: 2500000 }, mime = pickMime();
@@ -2241,7 +2322,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
         box.appendChild(r.cv);
         box.insertAdjacentHTML('beforeend', '<button class="flipbtn" type="button" data-r="flip" aria-label="Flip camera">' + icon('flip', 22) + '</button><div class="rectimer"><i></i><span id="recClock">0:00 / ' + fmtClock(CONFIG.VIDEO_MAX_SEC) + '</span></div><div class="facewarn" id="faceWarn" hidden>Try pointing the camera at nature, animals, or buildings around you.</div>');
         r.loop = true; drawLoop(r);
-        decodeBgFile(r).then(function () { applyBg(r); });
+        applyBg(r);
         r.counting = true; updateRecUI(); validateReport();
         runCountdown(r, function () {
         r.mr.start(1000);
@@ -2352,9 +2433,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     else if (a === 'bg') {
       rep.bg = el.dataset.v;
       el.parentNode.querySelectorAll('.hi').forEach(function (n) { n.setAttribute('aria-selected', String(n === el)); });
-      applyBg(rep);
+      if (rep.ac) applyBg(rep); else playPreview(rep.bg, rep.bgVol);      // camera open: change the live sound. Otherwise play a short preview.
     }
-    else if (a === 'bgfile') $('bgFile').click();
     else if (a === 'consent') openConsent();
     else if (a === 'post') submitReport();
   });
@@ -2362,20 +2442,16 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     if (!rep) return;
     var id = e.target.id;
     if (id === 'anonOk') { rep.anonOk = e.target.checked; repErr(''); validateReport(); }
-    else if (id === 'voiceOn') { rep.voice = e.target.checked; if (rep.micGain) rep.micGain.gain.value = rep.voice ? 1 : 0; }
-    else if (id === 'bgFile' && e.target.files[0]) {
-      var f = e.target.files[0]; e.target.value = '';
-      if (!/^audio\//.test(f.type)) { repErr('Please choose an audio file.'); return; }
-      if (f.size > CONFIG.BG_FILE_MAX) { repErr('That sound file is ' + fmtBytes(f.size) + '. The limit is ' + fmtBytes(CONFIG.BG_FILE_MAX) + '.'); return; }
-      repErr('');
-      rep.bgFile = f; rep.bgName = f.name; rep.bgBuf = null; rep.bg = 'file';
-      var row = reportBody.querySelector('.hrow');
-      if (row) { row.querySelectorAll('.hi').forEach(function (n) { n.setAttribute('aria-selected', String(n.dataset.r === 'bgfile')); }); row.lastChild.textContent = f.name.slice(0, 18); }
-      if (rep.ac) decodeBgFile(rep).then(function () { applyBg(rep); });
-    }
   });
   reportBody.addEventListener('input', function (e) {
-    if (e.target.id === 'bgVol' && rep) { rep.bgVol = +e.target.value; if (rep.bgGain) rep.bgGain.gain.value = rep.bgVol / 100; }
+    if (!rep) return;
+    if (e.target.id === 'bgVol') {
+      rep.bgVol = +e.target.value;
+      if (rep.bgGain) rep.bgGain.gain.value = rep.bgVol / 100;
+      if (preview.gain) preview.gain.gain.value = rep.bgVol / 100;
+      else if (!rep.ac && rep.bg !== 'none') playPreview(rep.bg, rep.bgVol);   // moving the slider plays a short sample
+    }
+    else if (e.target.id === 'micVol') { rep.micVol = +e.target.value; if (rep.micGain) rep.micGain.gain.value = rep.micVol / 100; }
   });
   reportBody.addEventListener('scroll', function (e) {          // the wheels: whatever sits in the middle when scrolling stops is chosen
     var w = e.target;
