@@ -177,6 +177,18 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
 .prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s linear}
 .prog[hidden]{display:none}
 
+/* status + moderation cards (layers 3 and 6) */
+.card{padding:14px;border-radius:16px;background:rgba(232,244,250,.07);border:1px solid rgba(232,244,250,.2);margin-bottom:12px;font-size:14px;line-height:1.4;color:var(--body)}
+.card b{color:#fff}
+.card.late{border-color:var(--danger)}
+.badge{display:inline-block;padding:3px 10px;margin:0 6px 6px 0;border-radius:999px;font-size:12px;font-weight:700;background:var(--accent);color:var(--ink)}
+.badge.bad{background:var(--danger)}
+.badge.ok{background:#8FD8A8}
+.card .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.card .row .btn{flex:1 1 40%;height:40px;font-size:13px}
+details.policy{margin-top:14px;font-size:13px;line-height:1.45;color:var(--body)}
+details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(--accent)}
+
 @media (prefers-reduced-motion:reduce){
   .toast,.prog i{transition:none}
 }
@@ -243,6 +255,37 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
     </div>
     <div class="panel-body" id="reportBody"></div>
   </section>
+
+  <!-- Layer 3: "Report this story" sheet (opened from the flag button on each story) -->
+  <div class="sheet-wrap" id="flagSheet">
+    <button class="scrim" id="flagScrim" type="button" aria-label="Close report menu"></button>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="flagTitle">
+      <div class="grab"></div>
+      <h2 id="flagTitle">Report this story</h2>
+      <p class="hint">Pick the closest reason. Reports are anonymous. Stories with several reports are hidden until a person reviews them.</p>
+      <ul class="list" id="flagList"></ul>
+    </div>
+  </div>
+
+  <!-- Layer 6: status screen, so posters can see under review / approved / removed and appeal -->
+  <section class="panel" id="statusPanel" role="dialog" aria-modal="true" aria-labelledby="statusTitle">
+    <div class="panel-head">
+      <span class="hbtn" aria-hidden="true"></span>
+      <h2 id="statusTitle">My story status</h2>
+      <button class="hbtn" id="statusClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
+    </div>
+    <div class="panel-body" id="statusBody"></div>
+  </section>
+
+  <!-- Layer 6: moderator console (DEMO only, open with #mod in the address) -->
+  <section class="panel" id="modPanel" role="dialog" aria-modal="true" aria-labelledby="modTitle">
+    <div class="panel-head">
+      <span class="hbtn" aria-hidden="true"></span>
+      <h2 id="modTitle">Moderator console (demo)</h2>
+      <button class="hbtn" id="modClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
+    </div>
+    <div class="panel-body" id="modBody"></div>
+  </section>
 </div>
 
 <script>
@@ -274,7 +317,24 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
     VIDEO_MAX_SEC: 60,
     VIDEO_MAX_BYTES: 50 * 1024 * 1024,
     CAPTION_MIN: 10,
-    CAPTION_MAX: 280
+    CAPTION_MAX: 280,
+
+    /* ---- SAFETY SETTINGS (see the six layers; all tunable here) ---- */
+    // Layer 1 - stop it at the door
+    ANON_DAILY_LIMIT: 3,                    // anonymous stories per contact / device / IP per day
+    ANON_HASH_TTL_MS: 24 * 3600 * 1000,     // how long rate-limit hashes live (24 hours to a week). They limit volume, then are deleted.
+    // Layer 2 - stricter standard for anonymous stories
+    TRUSTED_AFTER: 3,                       // approved stories before an account gets lighter review (auto-checks only)
+    DEMO_AUTO_APPROVE_MS: 20000,            // DEMO only: pretend a moderator approves clean anonymous stories after 20s. 0 = off, use #mod instead.
+    // Layer 3 - community flags
+    FLAG_HIDE_THRESHOLD: 3,                 // distinct reports that auto-hide a story until a human reviews it
+    // Layer 5 - the hard question (a legal and ethical decision, decide BEFORE launch)
+    //   'none'   = true anonymity: nothing links a post to a person, so we cannot help police identify anyone. (chosen default)
+    //   'sealed' = store an encrypted link to the contact that only a court order can unlock.
+    // Have a lawyer check the Kenya Data Protection Act and the Computer Misuse and Cybercrimes Act, then write the policy down.
+    ANON_LINK_MODE: 'none',
+    // Layer 6 - run moderation properly
+    REVIEW_TARGET_HOURS: 4                  // reported or held stories should get a human decision within this time
   };
 
   var MOODS = ['Hooray!', 'Relief!', 'Proud!', 'Hopeful!', 'Worried!', 'Frustrated!'];
@@ -296,7 +356,11 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
        POST /v1/uploads         { kind, type, size }                  -> { uploadUrl, objectKey, publicUrl, headers }
        PUT  <uploadUrl>         (bytes straight to object storage)
        POST /v1/stories         { idempotencyKey, token, anonymous, ..., videoKey } -> { story }
-       GET  /v1/stories?scope=&county=&cursor=&limit=                 -> { items, nextCursor }
+       GET  /v1/stories?scope=&county=&cursor=&limit=                 -> { items, nextCursor }   (only live/approved stories)
+       POST /v1/stories/status  { ids }                               -> [{ id, status, reason, canAppeal }]
+       POST /v1/stories/:id/flag   { reason, deviceId }               -> { ok, hidden }          (layer 3)
+       POST /v1/stories/:id/appeal                                    -> { ok }
+       GET  /v1/mod/queue, GET /v1/mod/stats, POST /v1/mod/:id/:action    (separate, authenticated moderator tool)
 
      Rules the server must follow for 10M users:
        - Phone numbers and emails are salted-hashed before storage or lookup,
@@ -346,8 +410,101 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
     }
     return list;
   }
-  var mock = { otps: {}, otpLog: {}, fails: {}, verified: {}, users: loadJSON('mp_mock_users', {}), stories: seedStories() };
+  var mock = { otps: {}, otpLog: {}, fails: {}, verified: {}, users: loadJSON('mp_mock_users', {}), stories: seedStories(),
+              rate: {}, dev: {}, banned: {}, anonTokens: {}, trust: {} };   // safety state, see section 2b
   function saveUsers() { saveJSON('mp_mock_users', mock.users); }
+
+  /* ==================================================================
+     2b. SAFETY LAYERS (the fake server side)
+     Anonymous posting is where abuse concentrates, so the aim is to make
+     abuse costly WITHOUT being able to identify the honest majority.
+       1. Stop it at the door   : rate limits on hashed contact/device/IP, challenge for bot-like patterns
+       2. Stricter for anonymous: caption rules, auto checks, review queue before wide reach
+       3. Community flags       : Report button, auto-hide at a threshold, human review, appeal
+       4. Ban without identifying: keyed hash (HMAC) of the contact, nothing else kept
+       5. The hard question     : CONFIG.ANON_LINK_MODE (default: true anonymity)
+       6. Run moderation        : response target, moderator tools, stats, status screen for posters
+     Everything here must be re-implemented on your real server.
+     The browser is never trusted: it only gives friendlier early messages.
+     ================================================================== */
+  var SERVER_SECRET = 'demo-only-secret';   // PRODUCTION: lives in a secrets manager on the server, never in client code
+
+  // A random id kept on this phone. It is only ever sent to the server to be hashed for rate limits.
+  var deviceId = loadJSON('mp_device', null) || (function () { var d = uuid(); saveJSON('mp_device', d); return d; })();
+
+  // Keyed hash (HMAC-SHA256). The label gives each purpose its own unrelated hash, so a short-lived
+  // rate-limit hash can never be compared with a long-lived ban hash.
+  function hmacHex(label, text) {
+    var enc = new TextEncoder();
+    if (!(window.crypto && crypto.subtle)) return Promise.resolve(label + ':' + text);
+    return crypto.subtle.importKey('raw', enc.encode(SERVER_SECRET + '|' + label), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+      .then(function (k) { return crypto.subtle.sign('HMAC', k, enc.encode(String(text))); })
+      .then(function (b) { return Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); });
+  }
+
+  // Only live or approved stories reach the public feed. Anything in review, hidden, removed or escalated does not.
+  function visible(s) { return !s.status || s.status === 'live' || s.status === 'approved'; }
+
+  // Layer 1: forget old rate-limit hashes (and the short-lived ban key on each story). They exist only to limit volume.
+  function purgeHashes() {
+    var now = Date.now(), cut = now - CONFIG.ANON_HASH_TTL_MS;
+    Object.keys(mock.rate).forEach(function (k) {
+      mock.rate[k] = mock.rate[k].filter(function (t) { return t > cut; });
+      if (!mock.rate[k].length) delete mock.rate[k];
+    });
+    mock.stories.forEach(function (st) { if (st.banKey && now > st.banKeyExp) { delete st.banKey; delete st.banKeyExp; } });
+  }
+  // The three keys are: contact, device, IP (the IP is faked here). Hitting the daily limit on ANY of them blocks the post.
+  function rateKeys(contactHash, dev) {
+    return Promise.all([hmacHex('rate-device', dev), hmacHex('rate-ip', 'demo-ip')]).then(function (h) { return [contactHash].concat(h); });
+  }
+  function overLimit(keys) {
+    purgeHashes();
+    return keys.some(function (k) { return (mock.rate[k] || []).length >= CONFIG.ANON_DAILY_LIMIT; });
+  }
+  // Runs when an anonymous code is requested: ban check, daily limit, and a bot-pattern check.
+  function screenAnon(purpose, contact, ctx) {
+    if (purpose !== 'anon') return Promise.resolve();
+    var dev = ctx.deviceId || 'none';
+    return Promise.all([hmacHex('ban', contact), hmacHex('rate-contact', contact), hmacHex('rate-device', dev)]).then(function (h) {
+      if (mock.banned[h[0]]) throw apiErr('banned', 'banned');                       // Layer 4: matches a banned contact
+      return rateKeys(h[1], dev).then(function (keys) {
+        if (overLimit(keys)) throw apiErr('daily_limit', 'daily');                  // Layer 1: daily cap
+        // One device asking for codes for 3+ different contacts in 10 minutes looks automated -> ask for a challenge.
+        var now = Date.now(), log = (mock.dev[h[2]] = (mock.dev[h[2]] || []).filter(function (e) { return now - e.t < 600000; }));
+        var seen = {}; log.forEach(function (e) { seen[e.c] = 1; }); seen[h[1]] = 1;
+        if (Object.keys(seen).length >= 3 && !ctx.solved) throw apiErr('challenge', 'challenge');
+        log.push({ t: now, c: h[1] });
+      });
+    });
+  }
+
+  // Layer 2: caption rules. Shared by the browser (friendly early message) and the "server" (the real check).
+  //   reject = never allowed on anonymous stories (links, phone numbers: where scams and harassment live)
+  //   hold   = allowed, but goes to a human first (abusive language, may name a private person: defamation risk)
+  // The word list is a tiny sample. In production use proper Swahili / English / Sheng lists plus a text classifier.
+  var BAD_WORDS = ['idiot', 'stupid', 'mjinga', 'mpumbavu', 'fala'];
+  var RULES = {
+    link: /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|co\.ke|ke|org|net)\b)/i,
+    phone: /((\+?254|\b0)[\s-]?[17]\d{2}[\s-]?\d{3}[\s-]?\d{3}|\d{9,})/,
+    named: /\b(Mr|Mrs|Ms|Mzee|Mama|Bwana|Bw|Bi|Dr|Chief|Mheshimiwa|MCA|MP)\.?\s+[A-Z][a-z]{2,}/   // title + a name
+  };
+  function checkCaption(text, anon) {
+    var out = { reject: null, hold: [] }, t = String(text), low = t.toLowerCase();
+    if (anon && RULES.link.test(t)) out.reject = 'Anonymous stories cannot include links. Please remove the link.';
+    else if (anon && RULES.phone.test(t)) out.reject = 'Anonymous stories cannot include phone numbers. Please remove the number.';
+    if (BAD_WORDS.some(function (w) { return new RegExp('\\b' + w + '\\b').test(low); })) out.hold.push('Possible abusive language');
+    if (anon && RULES.named.test(t)) out.hold.push('May name a private person');
+    return out;
+  }
+  // Layer 2: automatic video check. PLUG IN here: run a nudity / graphic-violence classifier on the TRANSCODED file.
+  function scanVideo(videoKey) { return Promise.resolve({ flags: [] }); }
+
+  // Small helpers used by the flag, appeal and moderator functions below.
+  function findStory(id) { return mock.stories.filter(function (x) { return String(x.id) === String(id); })[0]; }
+  function setStatus(st, status, reason) { st.status = status; st.verified = status === 'approved'; st.reason = reason || null; st.decidedAt = Date.now(); }
+  function isQueued(st) { return st.status === 'review' || st.status === 'hidden' || st.status === 'appeal' || st.status === 'escalated' || st.status === 'live'; }
+  var REMOVED_TEXT = 'It broke our community rules.';
   function hashPw(contact, pw) {
     var data = new TextEncoder().encode(contact + '|' + pw);
     if (!(window.crypto && crypto.subtle)) return Promise.resolve('plain:' + contact + pw);
@@ -373,8 +530,8 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
   }
 
   var api = {
-    requestOtp: function (channel, contact, purpose) {
-      return wait(600).then(function () {
+    requestOtp: function (channel, contact, purpose, ctx) {
+      return screenAnon(purpose, contact, ctx || {}).then(function () { return wait(600); }).then(function () {   // layers 1 and 4 run first
         var now = Date.now();
         var log = (mock.otpLog[contact] = (mock.otpLog[contact] || []).filter(function (t) { return now - t < 10 * 60 * 1000; }));
         if (log.length >= 3) throw apiErr('rate_limited', 'Too many codes requested.', Math.ceil((10 * 60 * 1000 - (now - log[0])) / 1000));
@@ -394,7 +551,14 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
         if (o.code !== code) { o.tries++; throw apiErr('bad_code', 'That code is not right. Check it and try again.'); }
         delete mock.otps[contact];
         var token = 'v_' + Math.random().toString(36).slice(2);
-        if (purpose === 'anon') return { token: token };           // nothing is stored for anonymous posters
+        if (purpose === 'anon') {
+          // No account, nothing stored about the contact itself. The single-use token carries two keyed hashes for a few minutes:
+          // one for rate limits (layer 1) and one for banning if the story is later removed for serious abuse (layer 4).
+          return Promise.all([hmacHex('rate-contact', contact), hmacHex('ban', contact)]).then(function (h) {
+            mock.anonTokens[token] = { ck: h[0], bk: h[1], exp: Date.now() + CONFIG.ANON_TOKEN_MS };
+            return { token: token };
+          });
+        }
         if (purpose === 'signup' && mock.users[contact]) return { exists: true };
         mock.verified[contact] = token;
         return { token: token };
@@ -455,16 +619,112 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
     },
     createStory: function (p) {
       return wait(400).then(function () {
-        var story = { id: Date.now(), county: p.county, ward: p.ward, mood: p.mood, category: p.category, caption: p.caption,
-          when: 'Just now', poster: p.posterName || null, avatar: p.posterAvatar || null, verified: false,
-          likes: 0, comments: 0, scene: 'bridge', video: p.localPreview || null };   // real server returns the CDN URL after transcoding
-        mock.stories.unshift(story);
-        return { story: story };
+        var anon = !!p.anonymous, now = Date.now(), info = null, pre = Promise.resolve();
+        var chk = checkCaption(p.caption, anon);                       // Layer 2: server re-checks, never trusts the browser
+        if (chk.reject) throw apiErr('caption_rule', chk.reject);
+        if (anon) {
+          info = mock.anonTokens[p.token];
+          if (!info || now > info.exp) throw apiErr('unverified', 'Your verification expired. Please verify again.');
+          delete mock.anonTokens[p.token];                             // single use: burn the token now
+          pre = rateKeys(info.ck, p.deviceId || 'none').then(function (keys) {
+            if (overLimit(keys)) throw apiErr('daily_limit', 'daily');
+            keys.forEach(function (k) { (mock.rate[k] = mock.rate[k] || []).push(now); });   // count this story (layer 1)
+          });
+        }
+        return pre.then(function () { return scanVideo(p.videoKey); }).then(function (scan) {
+          var reasons = chk.hold.concat(scan.flags);
+          var trusted = !anon && (mock.trust[p.posterName] || 0) >= CONFIG.TRUSTED_AFTER;
+          // Anonymous (or flagged) -> review queue FIRST, not public yet.
+          // Trusted account with clean checks -> lighter review: auto-checks only.
+          // Everyone else -> public with "Being checked", and still queued for a human.
+          var status = (anon || reasons.length) ? 'review' : (trusted ? 'approved' : 'live');
+          var story = { id: 's_' + uuid().slice(0, 8), county: p.county, ward: p.ward, mood: p.mood, category: p.category, caption: p.caption,
+            when: 'Just now', poster: p.posterName || null, avatar: p.posterAvatar || null, verified: status === 'approved',
+            likes: 0, comments: 0, scene: 'bridge', video: p.localPreview || null,     // real server returns the CDN URL after transcoding
+            status: status, anon: anon, owner: p.posterName || null, reasons: reasons, queuedAt: now, flaggers: [], appealed: false };
+          // Layer 4: a keyed hash of the contact is kept on the story ONLY for the retention window,
+          // so a moderator can still ban the contact if the story is removed for serious abuse. Then it is deleted.
+          if (info) { story.banKey = info.bk; story.banKeyExp = now + CONFIG.ANON_HASH_TTL_MS; }
+          mock.stories.unshift(story);
+          // DEMO only: stand-in for a moderator approving a clean anonymous story.
+          if (CONFIG.DEMO && CONFIG.DEMO_AUTO_APPROVE_MS && status === 'review' && !reasons.length) {
+            setTimeout(function () { if (story.status === 'review') setStatus(story, 'approved'); }, CONFIG.DEMO_AUTO_APPROVE_MS);
+          }
+          return { story: story };
+        });
+      });
+    },
+    // Layer 6: the poster's status screen. Only ids kept on the poster's own phone are looked up; nothing links them to a person.
+    getStatuses: function (ids) {
+      return wait(250).then(function () {
+        return ids.map(findStory).filter(Boolean).map(function (st) {
+          return { id: st.id, caption: st.caption.slice(0, 70), status: st.status || 'approved', reason: st.reason,
+                   canAppeal: (st.status === 'removed' || st.status === 'hidden') && !st.appealed };
+        });
+      });
+    },
+    // Layer 3: community flags. One flag per device, auto-hide at the threshold, then a human reviews it.
+    flagStory: function (id, reason, dev) {
+      return hmacHex('flag-device', dev).then(function (h) {
+        var st = findStory(id);
+        if (!st) throw apiErr('missing', 'That story is no longer available.');
+        st.flaggers = st.flaggers || [];
+        if (st.flaggers.indexOf(h) === -1) st.flaggers.push(h);
+        st.flagReasons = (st.flagReasons || []).concat(reason);
+        var hide = st.flaggers.length >= CONFIG.FLAG_HIDE_THRESHOLD && visible(st);
+        if (hide) { st.status = 'hidden'; st.verified = false; st.queuedAt = Date.now(); st.reasons = ['Reported by the community: ' + st.flagReasons.slice(-3).join(', ')]; }
+        return { ok: true, hidden: hide };
+      });
+    },
+    appeal: function (id) {
+      return wait(200).then(function () {
+        var st = findStory(id);
+        if (!st || st.appealed) throw apiErr('appeal', 'This decision was already appealed.');
+        st.appealed = true; st.status = 'appeal'; st.queuedAt = Date.now();
+        return { ok: true };
+      });
+    },
+    // ---- moderator tools (production: a separate, authenticated console) ----
+    modQueue: function () {
+      return wait(150).then(function () {
+        var limit = CONFIG.REVIEW_TARGET_HOURS * 3600000, now = Date.now();
+        return mock.stories.filter(function (st) { return st.status && isQueued(st); })
+          .sort(function (x, y) { return x.queuedAt - y.queuedAt; })                     // oldest first
+          .map(function (st) { return { id: st.id, caption: st.caption, anon: st.anon, status: st.status, reasons: st.reasons || [],
+                                        ageMs: now - st.queuedAt, overdue: now - st.queuedAt > limit, canBan: !!st.banKey }; });
+      });
+    },
+    modStats: function () {
+      return wait(100).then(function () {
+        var anon = mock.stories.filter(function (st) { return st.anon; });
+        var removed = anon.filter(function (st) { return st.status === 'removed'; }).length;
+        var q = mock.stories.filter(function (st) { return st.status && isQueued(st); });
+        var late = q.filter(function (st) { return Date.now() - st.queuedAt > CONFIG.REVIEW_TARGET_HOURS * 3600000; }).length;
+        return { anonTotal: anon.length, anonRemoved: removed, queue: q.length, overdue: late };
+      });
+    },
+    modAction: function (id, action) {
+      return wait(200).then(function () {
+        var st = findStory(id), banned = false;
+        if (!st) throw apiErr('missing', 'Story not found.');
+        if (action === 'approve' || action === 'restore') {
+          setStatus(st, 'approved');
+          if (st.owner) mock.trust[st.owner] = (mock.trust[st.owner] || 0) + 1;         // a good record earns lighter review
+        } else if (action === 'remove' || action === 'uphold') {
+          setStatus(st, 'removed', REMOVED_TEXT);
+        } else if (action === 'ban') {
+          // Layer 4: remove AND store only the keyed hash of the contact. Future verifications that match it are rejected.
+          setStatus(st, 'removed', REMOVED_TEXT);
+          if (st.banKey) { mock.banned[st.banKey] = true; delete st.banKey; banned = true; }
+        } else if (action === 'escalate') {
+          st.status = 'escalated';                                                      // threats / child safety: senior reviewer
+        }
+        return { banned: banned };
       });
     },
     listStories: function (q) {
       return wait(250).then(function () {
-        var all = mock.stories.filter(function (s) { return inScope(s, q.scope, q.county); });
+        var all = mock.stories.filter(function (s) { return visible(s) && inScope(s, q.scope, q.county); });
         var start = q.cursor ? parseInt(q.cursor, 10) : 0;
         var items = all.slice(start, start + q.limit);
         var next = start + q.limit < all.length ? String(start + q.limit) : null;
@@ -521,6 +781,8 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
       var m = Math.max(1, Math.ceil((e.retryAfter || 60) / 60));
       return 'Too many tries. Please wait ' + m + ' minute' + (m > 1 ? 's' : '') + ' and try again.';
     }
+    if (e && e.code === 'daily_limit') return "You have reached today's limit of " + CONFIG.ANON_DAILY_LIMIT + ' anonymous stories. Try again tomorrow, or create an account to post under your name.';
+    if (e && e.code === 'banned') return 'This email or number cannot be used to post anonymously. If you think this is a mistake, contact support.';
     if (e && e.code === 'network') return e.message;
     return (e && e.message) || 'Something went wrong. Please try again.';
   }
@@ -608,7 +870,8 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
     camera: '<path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>',
     video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/>',
-    upload: '<path d="M12 16V4m0 0L8 8m4-4 4 4M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/>'
+    upload: '<path d="M12 16V4m0 0L8 8m4-4 4 4M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/>',
+    flag: '<path d="M5 21V4m0 0h11l-2 4 2 4H5"/>'
   };
   function icon(name, size, stroke) {
     return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (stroke || 2) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[name] + '</svg>';
@@ -727,6 +990,8 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
           '<div class="rail-item"><button class="round" type="button" aria-label="Comments">' + icon('comment', 22) + '</button><span>' + s.comments + '</span></div>' +
           '<div class="rail-item"><button class="round" type="button" aria-label="Share">' + icon('share', 22) + '</button><span>Share</span></div>' +
           '<div class="rail-item"><button class="round" type="button" aria-label="Save">' + icon('bookmark', 22) + '</button><span>Save</span></div>' +
+          // Layer 3: every story can be reported
+          '<div class="rail-item"><button class="round flagbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Report this story">' + icon('flag', 22) + '</button><span>Report</span></div>' +
         '</div>' +
       '</div>' +
     '</article>';
@@ -830,6 +1095,8 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
 
   feed.addEventListener('click', function (e) {
     if (e.target.closest('.retry')) { feed.innerHTML = loadingHtml(); loadPage(); return; }
+    var fb = e.target.closest('.flagbtn');
+    if (fb) { openFlag(fb.dataset.id); return; }
     var btn = e.target.closest('.more');
     if (!btn) return;
     var cap = $(btn.getAttribute('aria-controls'));
@@ -925,7 +1192,7 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
   }, { passive: false });
 
   function anyPanelOpen() {
-    return sheet.classList.contains('open') || $('authPanel').classList.contains('open') || $('reportPanel').classList.contains('open');
+    return sheet.classList.contains('open') || $('authPanel').classList.contains('open') || $('reportPanel').classList.contains('open') || $('statusPanel').classList.contains('open') || $('modPanel').classList.contains('open') || $('flagSheet').classList.contains('open');
   }
   document.addEventListener('keydown', function (e) {
     if (anyPanelOpen()) return;
@@ -1035,7 +1302,8 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
         '<button class="choice main" type="button" data-act="mode" data-mode="signup" data-focus><strong>Create an account</strong><span>Pick a username, a password and a photo. Your stories carry your name.</span></button>' +
         '<button class="choice" type="button" data-act="mode" data-mode="anon"><strong>Post anonymously</strong><span>No account and no username. We confirm a code sent to your email or phone, and keep nothing that links the story to you.</span></button>' +
       '</div>' +
-      '<div class="center divider"><span class="muted">Already have an account?</span><button class="linkbtn" type="button" data-act="gologin">Log in</button></div>';
+      '<div class="center divider"><span class="muted">Already have an account?</span><button class="linkbtn" type="button" data-act="gologin">Log in</button></div>' +
+      '<div class="center"><button class="linkbtn" type="button" data-act="status">Check my story status</button></div>';
   }
 
   /* --- login: contact + password --- */
@@ -1065,10 +1333,12 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
     authBody.innerHTML =
       '<h1 class="h1">' + h[flow.mode] + '</h1><p class="lede">' + p[flow.mode] + '</p>' +
       channelToggle() + contactField() +
+      // Layer 1: shown only after the server sees a bot-like pattern. Swap for a real CAPTCHA / device check (e.g. Turnstile) in production.
+      (flow.challenge ? '<div class="gap"></div><label class="label" for="chal">Quick check: what is ' + flow.challenge.q + '?</label><div class="field"><input id="chal" type="text" inputmode="numeric" maxlength="3" autocomplete="off"></div>' : '') +
       '<p class="err" id="authErr" role="alert"></p>' +
       '<button class="btn" id="authGo" type="button" data-act="send" data-label="Send code">Send code</button>' +
       (flow.mode === 'signup' ? '<div class="center divider"><span class="muted">Already have an account?</span><button class="linkbtn" type="button" data-act="gologin">Log in</button></div>' : '') +
-      (flow.mode === 'anon' ? '<p class="note">Anonymous posting needs no account and no password. You verify again each time you post.</p>' : '<p class="note">Standard SMS rates may apply.</p>');
+      (flow.mode === 'anon' ? '<p class="note">Anonymous posting needs no account and no password. You verify again each time you post. Up to ' + CONFIG.ANON_DAILY_LIMIT + ' anonymous stories a day.</p>' + policyHtml() : '<p class="note">Standard SMS rates may apply.</p>');
   }
 
   /* --- one-time code --- */
@@ -1142,6 +1412,7 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
       '<div class="avwrap"><div class="avbtn" style="border-style:solid">' + (session.avatar ? '<img src="' + esc(session.avatar) + '" alt="Your profile photo">' : icon('user', 36)) +
       '</div><div class="avmeta"><b style="font-size:20px">@' + esc(session.username) + '</b><br>' + esc(session.contactMask || '') + '</div></div>' +
       '<div class="stack"><button class="btn" type="button" data-act="report-now" data-focus>Report a story</button>' +
+      '<button class="btn ghost" type="button" data-act="status">My story status</button>' +
       '<button class="btn ghost" type="button" data-act="logout">Log out</button></div>';
   }
 
@@ -1172,6 +1443,7 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
     else if (act === 'savepw') savePassword();
     else if (act === 'logout') { setSession(null); closeAuth(); toast('You are logged out'); }
     else if (act === 'report-now') { closeAuth(); openReport(); }
+    else if (act === 'status') { closeAuth(); openStatus(); }
   });
   authBody.addEventListener('input', function (e) {
     var t = e.target;
@@ -1205,8 +1477,13 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
     var c = isResend ? flow.contact : readContact();
     if (!c) { setErr(CONTACT_ERR[flow.channel]); return; }
     flow.contact = c;
+    if (flow.challenge && !isResend) {                                   // Layer 1: check the challenge answer (the server verifies it in production)
+      var ans = ($('chal') || {}).value;
+      if (String(ans).trim() !== String(flow.challenge.a)) { setErr('That answer is not right. Try again.'); return; }
+      flow.solved = true;
+    }
     if (!isResend) setBusy(true, 'Sending…'); else flow.busy = true;
-    api.requestOtp(flow.channel, c, flow.mode).then(function (r) {
+    api.requestOtp(flow.channel, c, flow.mode, { deviceId: deviceId, solved: flow.solved }).then(function (r) {
       flow.busy = false;
       flow.demoCode = r.demoCode;
       showStep('otp');
@@ -1214,8 +1491,14 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
     }).catch(function (err) {
       flow.busy = false;
       if (isResend) { setErr(errMsg(err)); var rb = $('resend'); if (rb) rb.disabled = true; }
-      else { setBusy(false); setErr(errMsg(err)); }
+      else { setBusy(false); if (err.code === 'challenge') askChallenge(); else setErr(errMsg(err)); }
     });
+  }
+  // Layer 1: bot-like pattern detected, so ask for a quick check before sending a code.
+  function askChallenge() {
+    var x = 2 + Math.floor(Math.random() * 8), y = 2 + Math.floor(Math.random() * 8);
+    flow.challenge = { q: x + ' + ' + y, a: x + y };
+    showStep('contact', { noPush: true });
   }
 
   function verifyCode() {
@@ -1402,7 +1685,7 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
       '<div class="sec">Where</div><div class="where" id="where"></div>' +
       '<div class="sec">Posting as</div>' +
       '<div class="who">' + (anon
-        ? '<b>Anonymous reporter</b><br>No account is created, and nothing that links this story to you is kept after you post.'
+        ? '<b>Anonymous reporter</b><br>No account is created, and nothing that links this story to you is kept after you post. Anonymous stories are checked by our team before they go public, and you can post up to ' + CONFIG.ANON_DAILY_LIMIT + ' a day.'
         : '<b>@' + esc(session.username) + '</b>') + '</div>' +
       '<p class="err" id="repErr" role="alert" style="margin-top:14px"></p>' +
       '<div class="prog" id="prog" hidden role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="progBar"></i></div>' +
@@ -1491,6 +1774,7 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
   reportBody.addEventListener('input', function (e) {
     if (e.target.id !== 'cap' || !rep) return;
     rep.caption = e.target.value;
+    repErr(checkCaption(rep.caption, session.type !== 'account').reject || '');   // Layer 2: early, friendly warning (server re-checks)
     $('capCount').textContent = e.target.value.length + ' / ' + CONFIG.CAPTION_MAX;
     validateReport();
   });
@@ -1499,6 +1783,8 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
   function submitReport() {
     if (!rep || rep.uploading) return;
     if (!hasValidSession()) { repErr('Your verification expired. Close this and verify again.'); return; }
+    var pre = checkCaption(rep.caption, session.type !== 'account');
+    if (pre.reject) { repErr(pre.reject); return; }
     rep.uploading = true;
     repErr('');
     var go = $('repGo'), prog = $('prog'), bar = $('progBar');
@@ -1516,6 +1802,7 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
         idempotencyKey: rep.key,                                // a retry cannot create a second post
         token: session.token,                                   // single use for anonymous posters
         anonymous: isAnon,
+        deviceId: deviceId,                                     // hashed on the server for rate limits, never shown to others
         mood: rep.mood, category: rep.category, caption: rep.caption.trim(),
         ward: rep.ward, county: rep.county, videoKey: videoKey, durationSec: Math.round(rep.dur),
         posterName: isAnon ? null : '@' + session.username,
@@ -1524,17 +1811,23 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
       });
     }).then(function (r) {
       var county = r.story.county;
+      rememberStory(r.story.id);                                // ids live only on this phone, so the poster can check status later
       rep.uploading = false;
       rep.url = null;                                           // the feed now owns the preview
       if (isAnon) { session = null; updateLoginButton(); }      // anonymous: nothing remembered
       closeReport();
+      if (r.story.status === 'review') {                        // Layer 2: held in the review queue, so show the status screen, not the feed
+        openStatus();
+        toast('Sent for review. It goes public once it passes our checks.', 3600);
+        return;
+      }
       state.scope = 'county'; state.county = county;
       updateHeader(); resetFeed();
       toast(isAnon ? 'Posted anonymously. We keep nothing that links it to you.' : 'Posted. We will check it before it is marked Verified.', 3400);
     }).catch(function (err) {
       rep.uploading = false;
       prog.hidden = true; go.textContent = 'Post story'; validateReport();
-      repErr(err.code === 'rate_limited' ? errMsg(err) : (err.message || 'Upload failed.') + ' Tap Post story to try again.');
+      repErr(/^(rate_limited|daily_limit|banned|caption_rule|unverified)$/.test(err.code) ? errMsg(err) : (err.message || 'Upload failed.') + ' Tap Post story to try again.');
     });
   }
 
@@ -1548,9 +1841,130 @@ textarea.ta:focus-visible{outline:none;border-color:var(--accent)}
   });
 
   /* ==================================================================
+     10b. SAFETY UI: privacy summary, report-a-story, status screen, moderator console
+     ================================================================== */
+
+  // Layer 5: plain-language summary of the anonymity decision. Keep it in step with CONFIG.ANON_LINK_MODE.
+  // DRAFT: have a lawyer review it against the Kenya Data Protection Act and the Computer Misuse and Cybercrimes Act before launch.
+  function policyHtml() {
+    var hrs = Math.round(CONFIG.ANON_HASH_TTL_MS / 3600000);
+    return '<details class="policy"><summary>How anonymity works</summary>' +
+      '<p>We do not save your email or number with your story. To stop spam we keep a scrambled (hashed) copy for up to ' + hrs + ' hours, then delete it.</p>' +
+      '<p>If a story is removed for serious abuse, we keep a scrambled copy of that contact so it cannot verify again. Everyone else leaves nothing behind.</p>' +
+      (CONFIG.ANON_LINK_MODE === 'none'
+        ? '<p>Because nothing links a story to a person, we cannot identify an anonymous poster, even if asked. We can only act on the story itself.</p>'
+        : '<p>We keep an encrypted link to your contact that can only be opened by a court order.</p>') +
+      '</details>';
+  }
+
+  /* ---------- Layer 3: report this story ---------- */
+  var FLAG_REASONS = ['Nudity or sexual content', 'Graphic violence or threats', 'Abuse or hate', 'Names or exposes a private person', 'Scam, link or phone number', 'Child safety concern', 'False or misleading'];
+  var flagSheet = $('flagSheet'), flagId = null;
+  function openFlag(id) {
+    if (loadJSON('mp_flagged', []).indexOf(String(id)) !== -1) { toast('You already reported this story'); return; }
+    flagId = id;
+    $('flagList').innerHTML = FLAG_REASONS.map(function (r) { return '<li><button type="button" data-reason="' + esc(r) + '">' + esc(r) + '</button></li>'; }).join('');
+    flagSheet.classList.add('open');
+  }
+  function closeFlag() { flagSheet.classList.remove('open'); flagId = null; }
+  $('flagScrim').addEventListener('click', closeFlag);
+  $('flagList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-reason]');
+    if (!b || !flagId) return;
+    var id = flagId; closeFlag();
+    api.flagStory(id, b.dataset.reason, deviceId).then(function (r) {
+      var l = loadJSON('mp_flagged', []); l.push(String(id)); saveJSON('mp_flagged', l);       // stops repeat flags from this phone
+      toast(r.hidden ? 'Thanks. This story is hidden while a person reviews it.' : 'Thanks. We will take a look.', 3200);
+    }).catch(function (err) { toast(errMsg(err)); });
+  });
+
+  /* ---------- Layer 6: poster status screen ---------- */
+  var statusPanel = $('statusPanel'), statusBody = $('statusBody');
+  function myStoryIds() { return loadJSON('mp_my_stories', []); }
+  function rememberStory(id) { var l = myStoryIds(); l.unshift(id); saveJSON('mp_my_stories', l.slice(0, 30)); }
+  var STATUS = {
+    review:    { label: 'Under review', cls: '',    text: 'Not public yet. We aim to finish checking within ' + CONFIG.REVIEW_TARGET_HOURS + ' hours.' },
+    escalated: { label: 'Under review', cls: '',    text: 'Passed to a senior reviewer.' },
+    live:      { label: 'Live',         cls: 'ok',  text: 'Public, and still being checked before it gets the Verified badge.' },
+    approved:  { label: 'Approved',     cls: 'ok',  text: 'Public and Verified.' },
+    hidden:    { label: 'Hidden',       cls: 'bad', text: 'Several people reported this story, so it is hidden while a person reviews it.' },
+    removed:   { label: 'Removed',      cls: 'bad', text: '' },
+    appeal:    { label: 'Appeal received', cls: '', text: 'A different reviewer will look at it again.' }
+  };
+  function openStatus() {
+    lastFocus = document.activeElement;
+    statusPanel.classList.add('open');
+    statusBody.innerHTML = '<p class="lede">Loading…</p>';
+    var ids = myStoryIds();
+    if (!ids.length) { statusBody.innerHTML = '<h1 class="h1">Nothing yet</h1><p class="lede">Stories you post from this phone show up here, with whether they are under review, approved or removed.</p>'; return; }
+    api.getStatuses(ids).then(function (list) {
+      statusBody.innerHTML = '<p class="lede">Only this phone can see this list. We do not link it to your email or number.</p>' +
+        list.map(function (it) {
+          var st = STATUS[it.status] || STATUS.approved;
+          return '<div class="card"><span class="badge ' + st.cls + '">' + st.label + '</span><br><b>' + esc(it.caption) + '</b><div>' + esc(st.text) + (it.reason ? ' ' + esc(it.reason) : '') + '</div>' +
+            (it.canAppeal ? '<div class="row"><button class="btn ghost" type="button" data-s="appeal" data-id="' + esc(it.id) + '">Appeal this decision</button></div>' : '') + '</div>';
+        }).join('') +
+        '<button class="btn ghost" type="button" data-s="refresh">Refresh</button>';
+    }).catch(function () { statusBody.innerHTML = '<p class="lede">Could not load. Check your connection.</p>'; });
+  }
+  function closeStatus() { statusPanel.classList.remove('open'); if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+  $('statusClose').addEventListener('click', closeStatus);
+  statusBody.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-s]');
+    if (!b) return;
+    if (b.dataset.s === 'refresh') openStatus();
+    else api.appeal(b.dataset.id).then(function () { toast('Appeal sent. A different reviewer will look at it.', 3000); openStatus(); }).catch(function (err) { toast(errMsg(err)); });
+  });
+
+  /* ---------- Layer 6: moderator console (DEMO only) ----------
+     Production: a separate, authenticated tool with an audit log, never part of the public app.
+     It shows what proper moderation needs: oldest-first queue, a response target, an escalation
+     route for threats and child safety, and the share of anonymous stories removed. */
+  var modPanel = $('modPanel'), modBody = $('modBody');
+  function ago(ms) { var m = Math.max(1, Math.round(ms / 60000)); return m < 60 ? m + ' min' : Math.round(m / 60) + ' h'; }
+  function openMod() {
+    if (!CONFIG.DEMO) return;
+    modPanel.classList.add('open');
+    Promise.all([api.modStats(), api.modQueue()]).then(function (r) {
+      var st = r[0], q = r[1], pct = st.anonTotal ? Math.round(st.anonRemoved / st.anonTotal * 100) : 0;
+      modBody.innerHTML =
+        '<div class="card"><b>Anonymous stories removed: ' + pct + '%</b> (' + st.anonRemoved + ' of ' + st.anonTotal + ')<br>' +
+        'In queue: ' + st.queue + '. Past the ' + CONFIG.REVIEW_TARGET_HOURS + '-hour target: ' + st.overdue + '.<br>' +
+        '<span class="muted">If this share climbs, tighten the limits. If it is near zero, check the filters are working.</span></div>' +
+        '<div class="card"><b>Take care of yourself.</b> Take a break after each batch of disturbing material. Use Escalate for threats and child-safety content. Do not forward it.</div>' +
+        (q.length ? q.map(function (it) {
+          return '<div class="card' + (it.overdue ? ' late' : '') + '"><span class="badge' + (it.overdue ? ' bad' : '') + '">' + esc(it.status) + '</span>' +
+            (it.anon ? '<span class="badge">Anonymous</span>' : '') + '<span class="muted">waiting ' + ago(it.ageMs) + '</span><br>' +
+            '<b>' + esc(it.caption) + '</b>' +
+            (it.reasons.length ? '<div>' + it.reasons.map(esc).join('. ') + '</div>' : '') +
+            '<div class="row">' +
+              ((it.status === 'appeal') ? '<button class="btn" type="button" data-m="restore" data-id="' + esc(it.id) + '">Restore</button><button class="btn ghost" type="button" data-m="uphold" data-id="' + esc(it.id) + '">Uphold removal</button>'
+                : '<button class="btn" type="button" data-m="approve" data-id="' + esc(it.id) + '">Approve</button><button class="btn ghost" type="button" data-m="remove" data-id="' + esc(it.id) + '">Remove</button>') +
+              (it.canBan && it.status !== 'appeal' ? '<button class="btn ghost" type="button" data-m="ban" data-id="' + esc(it.id) + '">Remove and block contact</button>' : '') +
+              '<button class="btn ghost" type="button" data-m="escalate" data-id="' + esc(it.id) + '">Escalate</button>' +
+            '</div></div>';
+        }).join('') : '<p class="lede">The queue is empty.</p>');
+    });
+  }
+  $('modClose').addEventListener('click', function () { modPanel.classList.remove('open'); resetFeed(); });
+  modBody.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-m]');
+    if (!b) return;
+    api.modAction(b.dataset.id, b.dataset.m).then(function (r) { if (r.banned) toast('Removed. Contact blocked.'); openMod(); });
+  });
+  window.addEventListener('hashchange', function () { if (location.hash === '#mod') openMod(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (flagSheet.classList.contains('open')) closeFlag();
+    else if (statusPanel.classList.contains('open')) closeStatus();
+    else if (modPanel.classList.contains('open')) modPanel.classList.remove('open');
+  });
+
+  /* ==================================================================
      11. START
      ================================================================== */
   hydrateIcons();
+  if (location.hash === '#mod') openMod();       // demo moderator console
   updateHeader();
   updateLoginButton();
   resetFeed();
