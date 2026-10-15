@@ -165,8 +165,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .rectimer i{width:10px;height:10px;border-radius:50%;background:#ff4d4d}
 .wheelwrap{position:relative;height:132px;overflow:hidden}
 .wheel{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;touch-action:pan-y;padding:44px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(transparent,#000 38%,#000 62%,transparent);mask-image:linear-gradient(transparent,#000 38%,#000 62%,transparent)}
+.wheel{pointer-events:none}
 .wheel::-webkit-scrollbar{display:none}
-.wi{display:flex;align-items:center;justify-content:center;width:100%;height:44px;padding:0 16px;scroll-snap-align:center;scroll-snap-stop:always;font-size:15px;font-weight:500;color:var(--muted);opacity:.7;text-align:center}
+.wi{pointer-events:auto;display:flex;align-items:center;justify-content:flex-start;width:fit-content;max-width:100%;height:44px;padding:0;scroll-snap-align:center;scroll-snap-stop:always;font-size:15px;font-weight:500;color:var(--muted);opacity:.7;text-align:left}
+.flipbtn{position:absolute;top:10px;right:10px;z-index:3;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;background:rgba(7,31,42,.72);border:1px solid rgba(232,244,250,.28);color:#fff}
 .wi[aria-selected="true"]{color:#fff;font-weight:700;font-size:18px;opacity:1}
 .chk{display:flex;align-items:flex-start;gap:12px;margin-top:12px;min-height:44px;cursor:pointer;color:#fff}
 .chk input{flex:none;width:22px;height:22px;margin:2px 0 0;accent-color:var(--accent)}
@@ -427,7 +429,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   };
 
   var MOODS = ["Affectionate", "Amazed", "Amused", "Angry", "Annoyed", "Anxious", "Appreciative", "Ashamed", "Awestruck", "Betrayed", "Bored", "Brave", "Calm", "Cautious", "Cheerful", "Concerned", "Confident", "Confused", "Content", "Curious", "Defeated", "Delighted", "Depressed", "Determined", "Disappointed", "Disgusted", "Distressed", "Doubtful", "Eager", "Embarrassed", "Empowered", "Encouraged", "Energetic", "Enthusiastic", "Envious", "Excited", "Exhausted", "Fearful", "Frustrated", "Furious", "Grateful", "Grieving", "Guilty", "Happy", "Heartbroken", "Helpless", "Hooray", "Hopeful", "Hopeless", "Horrified", "Humbled", "Hurt", "Impatient", "Inspired", "Irritated", "Jealous", "Joyful", "Lonely", "Loved", "Moved", "Nervous", "Nostalgic", "Optimistic", "Outraged", "Overwhelmed", "Panicked", "Peaceful", "Pleased", "Proud", "Reassured", "Regretful", "Relaxed", "Relieved", "Resentful", "Restless", "Sad", "Safe", "Satisfied", "Scared", "Shocked", "Shy", "Stressed", "Surprised", "Suspicious", "Sympathetic", "Tense", "Terrified", "Thankful", "Thrilled", "Tired", "Touched", "Troubled", "Uncertain", "Uneasy", "Unsafe", "Upset", "Worried"];
-  var CATEGORIES = ["Agriculture and crops", "Livestock and dairy", "Fisheries and aquaculture", "Forestry", "Mining and quarrying", "Manufacturing and industry", "Construction and housing", "Roads and bridges", "Transport and logistics", "Aviation", "Railways", "Ports and maritime", "Energy and power", "Oil and gas", "Water and sanitation", "Waste management", "Environment and climate", "Wildlife and conservation", "Tourism and hospitality", "Trade and markets", "Retail and wholesale", "Small business and jobs", "Banking and finance", "Insurance", "Mobile money and fintech", "Technology and internet", "Telecommunications", "Media and entertainment", "Arts and culture", "Sports and recreation", "Education and schools", "Health and hospitals", "Security and policing", "Justice and courts", "Government services", "Land and property", "Real estate", "Cooperatives and savings groups", "Professional services", "Social support and welfare", "Youth and employment", "Women and families", "Disability and inclusion", "Religion and community", "Disaster and emergency", "Other"];
+  var CATEGORIES = ["Crop farming", "Livestock", "Dairy", "Fisheries", "Aquaculture", "Water bodies", "Forestry", "Mining", "Quarrying", "Manufacturing", "Construction", "Housing", "Roads", "Bridges", "Transport", "Logistics", "Aviation", "Railways", "Ports", "Electricity", "Petroleum", "Renewable energy", "Water supply", "Sanitation", "Waste", "Environment", "Climate", "Wildlife", "Conservation", "Tourism", "Hospitality", "Trade", "Markets", "Retail", "Wholesale", "Small business", "Employment", "Banking", "Insurance", "Mobile money", "Technology", "Internet", "Telecommunications", "Media", "Entertainment", "Arts", "Culture", "Sports", "Education", "Health", "Security", "Justice", "Government", "Land", "Real estate", "Cooperatives", "Professional services", "Welfare", "Youth", "Women", "Families", "Disability", "Religion", "Community", "Disaster", "Emergency", "Other"];
 
   /* ==================================================================
      2. API LAYER
@@ -1069,7 +1071,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     camera: '<path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>',
     video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/>',
     upload: '<path d="M12 16V4m0 0L8 8m4-4 4 4M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/>',
-    flag: '<path d="M5 21V4m0 0h11l-2 4 2 4H5"/>'
+    flag: '<path d="M5 21V4m0 0h11l-2 4 2 4H5"/>',
+    flip: '<path d="M20 11V9a3 3 0 0 0-3-3H7"/><path d="m10 3-3 3 3 3"/><path d="M4 13v2a3 3 0 0 0 3 3h10"/><path d="m14 21 3-3-3-3"/>'
   };
   function icon(name, size, stroke) {
     return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (stroke || 2) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[name] + '</svg>';
@@ -2127,7 +2130,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     var AC = window.AudioContext || window.webkitAudioContext, ac = null;
     try { if (AC) { ac = new AC(); if (ac.resume) ac.resume(); } } catch (e) { ac = null; }   // created inside the tap so phones allow it
     r.opening = true; r.locState = 'busy'; renderWhere(); updateRecUI(); validateReport();
-    var vc = { facingMode: { exact: 'environment' } };
+    r.facing = 'environment';
+    var vc = { facingMode: { ideal: 'environment' } };            // prefers the back camera, but any camera (like a laptop webcam) works
     var cam = md.getUserMedia({ video: vc, audio: true })
       .catch(function () { return md.getUserMedia({ video: vc }); })     // microphone refused: still record video with background sound
       .then(function (s) { return { s: s }; }, function (e) { return { e: e }; });
@@ -2139,7 +2143,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       if (rep !== r) { dropCam(); return; }
       r.opening = false;
       if (locR.e) r.locState = 'fail'; else { r.lat = locR.c.latitude; r.lng = locR.c.longitude; }
-      if (camR.e) repErr('We could not open the back camera. Allow camera access for this site, then tap Record again.');
+      if (camR.e) repErr('We could not open the camera. Allow camera access for this site, then tap Record again.');
       if (locR.e || camR.e) { dropCam(); if (!locR.e) r.locState = 'idle'; renderWhere(); updateRecUI(); validateReport(); return; }
       resolveWard(r.lat, r.lng).then(function (w) {
         if (rep !== r) return;
@@ -2177,7 +2181,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
         r.mr.onstop = function () { finishRecording(r); };
         var box = $('vidBox'); box.innerHTML = '';
         box.appendChild(r.cv);
-        box.insertAdjacentHTML('beforeend', '<div class="rectimer"><i></i><span id="recClock">0:00 / ' + fmtClock(CONFIG.VIDEO_MAX_SEC) + '</span></div><div class="facewarn" id="faceWarn" hidden>A person is in focus. Point the camera at nature and your surroundings.</div>');
+        box.insertAdjacentHTML('beforeend', '<button class="flipbtn" type="button" data-r="flip" aria-label="Flip camera">' + icon('flip', 22) + '</button><div class="rectimer"><i></i><span id="recClock">0:00 / ' + fmtClock(CONFIG.VIDEO_MAX_SEC) + '</span></div><div class="facewarn" id="faceWarn" hidden>A person is in focus. Point the camera at nature and your surroundings.</div>');
         r.loop = true; drawLoop(r);
         decodeBgFile(r).then(function () { applyBg(r); });
         r.counting = true; updateRecUI(); validateReport();
@@ -2193,6 +2197,38 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
         });
       });
     });
+  }
+  // Switches between front and back camera (or the next camera on a laptop) without stopping the recording.
+  // The video is drawn onto a canvas, so only the source track is swapped. Voice and background sound keep running.
+  function flipCamera() {
+    var r = rep, md = navigator.mediaDevices;
+    if (!r || !r.src || !r.stream || r.flipping || r.uploading) return;
+    r.flipping = true;
+    var next = r.facing === 'environment' ? 'user' : 'environment';
+    var oldTrack = r.stream.getVideoTracks()[0], oldId = oldTrack && oldTrack.getSettings ? oldTrack.getSettings().deviceId : null;
+    md.enumerateDevices().then(function (list) {
+      var cams = list.filter(function (d) { return d.kind === 'videoinput'; });
+      if (cams.length < 2 && !(oldTrack && oldTrack.getCapabilities && oldTrack.getCapabilities().facingMode && oldTrack.getCapabilities().facingMode.length)) {
+        toast('Only one camera found on this device'); return null;
+      }
+      // Phones: switch by facing mode. Laptops with two cameras: go to the other device.
+      var c = { facingMode: { exact: next } };
+      return md.getUserMedia({ video: c }).catch(function () {
+        var other = cams.filter(function (d) { return d.deviceId !== oldId; })[0];
+        if (!other) throw new Error('none');
+        return md.getUserMedia({ video: { deviceId: { exact: other.deviceId } } });
+      });
+    }).then(function (ns) {
+      r.flipping = false;
+      if (!ns) return;
+      if (rep !== r || !r.src) { ns.getTracks().forEach(function (t) { t.stop(); }); return; }
+      var nt = ns.getVideoTracks()[0];
+      if (oldTrack) { r.stream.removeTrack(oldTrack); oldTrack.stop(); }
+      r.stream.addTrack(nt);                                   // teardown() stops everything in r.stream
+      r.src.srcObject = new MediaStream([nt]);
+      var p = r.src.play(); if (p && p.catch) p.catch(function () {});
+      r.facing = next;
+    }).catch(function () { r.flipping = false; toast('Could not switch the camera'); });
   }
   function runCountdown(r, cb) {
     var n = 3, el = document.createElement('div');
@@ -2249,6 +2285,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     var a = el.dataset.r;
     if (a === 'record') startRecording();
     else if (a === 'stop') stopRecording(false);
+    else if (a === 'flip') flipCamera();
     else if (a === 'wheel') {
       var w = el.parentNode, idx = Array.prototype.indexOf.call(w.children, el);
       selectWheel(w, idx);
