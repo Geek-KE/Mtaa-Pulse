@@ -2766,12 +2766,12 @@ body.nocap .caption,body.nocap .more{display:none}
       paintBadges(who, r.following);
       if (r.following) toast('Following ' + who, 2400);
       else toast('Unfollowed ' + who);
-      if (profSheet.classList.contains('open') && profWho === who) renderProfile(r);
+      if (profSheet.classList.contains('open') && profWho === who) renderProfSheet(r);
     }).catch(function (e) { toast(errMsg(e)); });
   }
 
   var profSheet = $('profSheet'), profWho = null;
-  function renderProfile(r) {
+  function renderProfSheet(r) {
     var mutual = r.following && r.followsYou;
     $('profFollow').textContent = r.following ? 'Following' : 'Follow';
     $('profFollow').classList.toggle('ghost', r.following);
@@ -2788,8 +2788,8 @@ body.nocap .caption,body.nocap .more{display:none}
     $('profStatus').textContent = ''; $('profNote').textContent = 'Messaging is coming soon.';
     $('profMsg').disabled = true; $('profFollow').textContent = 'Follow'; $('profFollow').classList.remove('ghost');
     profSheet.classList.add('open');
-    if (session && session.type === 'account') api.getRelation(myHandle(), who).then(function (r) { if (profWho === who) renderProfile(r); });
-    else renderProfile({ following: false, followsYou: false });
+    if (session && session.type === 'account') api.getRelation(myHandle(), who).then(function (r) { if (profWho === who) renderProfSheet(r); });
+    else renderProfSheet({ following: false, followsYou: false });
   }
   function closeProfile() { profSheet.classList.remove('open'); profWho = null; }
   $('profScrim').addEventListener('click', closeProfile);
