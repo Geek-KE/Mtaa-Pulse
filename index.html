@@ -481,6 +481,7 @@ body.nocap .caption,body.nocap .more{display:none}
      ================================================================== */
   var CONFIG = {
     DEMO: true,                 // true = fake backend, OTP shown on screen. Set false when your real backend is connected.
+    VIDEO_LIVE: true,           // true = story videos really upload to Bunny Stream through mtaa-pulse-server, even while DEMO is still true.
     OTP_LENGTH: 6,
     OTP_RESEND_SEC: 30,
     ANON_TOKEN_MS: 15 * 60 * 1000,          // a verified anonymous poster has 15 minutes to post, one story per verification
@@ -530,7 +531,7 @@ body.nocap .caption,body.nocap .more{display:none}
     // Layer 6 - run moderation properly
     // Video: Bunny Stream (encoding + delivery), checked by GetStream on the server. Only used when DEMO is false.
     // These two are public values. The secret keys live in mtaa-pulse-server, never here.
-    API_BASE: '',                                       // e.g. 'https://api.mtaapulse.com' (where mtaa-pulse-server runs)
+    API_BASE: 'https://mtaa-pulse-server.onrender.com',                                       // e.g. 'https://api.mtaapulse.com' (where mtaa-pulse-server runs)
     TUS_ENDPOINT: 'https://video.bunnycdn.com/tusupload',
     TUS_JS: 'https://cdn.jsdelivr.net/npm/tus-js-client@4.1.0/dist/tus.min.js',
     HLS_JS: 'https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js',   // only loaded on phones that cannot play HLS natively
@@ -938,7 +939,7 @@ body.nocap .caption,body.nocap .more{display:none}
       });
     },
     getUploadTarget: function (kind, meta) {
-      if (!CONFIG.DEMO && kind === 'video') {       // Bunny Stream: the server creates the video and signs a resumable upload
+      if (CONFIG.VIDEO_LIVE && kind === 'video') {       // Bunny Stream: the server creates the video and signs a resumable upload
         return fetch(CONFIG.API_BASE + '/v1/uploads/video', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ size: meta.size, duration: meta.duration }) })
           .then(function (r) { if (!r.ok) throw apiErr(r.status === 429 ? 'rate_limited' : 'upload_failed', 'We could not start the upload. Please try again.', 60); return r.json(); })
           .then(function (c) { return { tus: c, objectKey: c.videoId }; }, function (e) { throw e.code ? e : apiErr('network', 'No connection. Please try again.'); });
@@ -948,7 +949,7 @@ body.nocap .caption,body.nocap .more{display:none}
       });
     },
     putObject: function (target, blob, onProgress) {
-      if (!CONFIG.DEMO && target.tus) return tusUpload(target.tus, blob, onProgress);
+      if (target.tus) return tusUpload(target.tus, blob, onProgress);
       if (!CONFIG.DEMO) return xhrPut(target.uploadUrl, blob, onProgress, target.headers);
       return new Promise(function (resolve) {
         var pct = 0;
