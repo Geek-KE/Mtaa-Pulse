@@ -55,11 +55,40 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .chip.verified{font-weight:700}
 .muted{color:var(--muted)}
 .poster{display:inline-flex;align-items:center;gap:6px;font-weight:500;color:var(--sky)}
+.namerow{margin-bottom:4px}
+.namerow .poster{font-size:15px;font-weight:700;color:#fff}
+.whererow{margin-top:6px}
+.tags{margin:8px 0 0}
+.pfp{width:44px;height:44px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(232,244,250,.14);border:2px solid #fff;color:var(--muted);filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))}
+.pfp img{width:100%;height:100%;object-fit:cover;display:block}
+.pfp svg{fill:currentColor;stroke:none}
+.pfpwrap{position:relative;width:44px;height:44px;margin-bottom:10px}
+button.pfp{padding:0;cursor:pointer}
+.pfp.big{width:64px;height:64px;flex:none;filter:none}
+.pfp.big svg{width:44px;height:44px}
+.fbadge{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.fbadge::after{content:'';position:absolute;inset:-8px}
+.fbadge.on{background:#fff;color:var(--accent)}
+.profhead{display:flex;align-items:center;gap:14px;margin:14px 0 14px}
+.profhead h2{margin:0}
+.profhead .hint{margin:3px 0 0}
+.msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:6px 0;min-height:140px}
+.msg{max-width:78%;padding:8px 12px;border-radius:16px;font-size:14px;line-height:1.35;background:rgba(232,244,250,.14);color:#fff;align-self:flex-start;overflow-wrap:anywhere}
+.msg.me{align-self:flex-end;background:var(--accent);color:var(--ink)}
+.fcheck{display:inline-flex;flex:none;vertical-align:middle}
+.inlist{margin:0;padding:0;list-style:none}
+.inrow{display:flex;align-items:center;gap:12px;width:100%;padding:10px 0;border-top:1px solid rgba(232,244,250,.12);text-align:left}
+.inrow .pfp{width:46px;height:46px;flex:none;filter:none}
+.inrow .meta{flex:1;min-width:0}
+.inrow b{display:flex;align-items:center;gap:5px;font-size:15px;color:#fff}
+.inrow .snip{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:13px;color:var(--muted)}
+.inrow .when{flex:none;font-size:12px;color:var(--muted)}
 .av{width:20px;height:20px;border-radius:50%;object-fit:cover;background:var(--trust)}
 
-.rail{display:flex;flex-direction:column;align-items:center;gap:8px;width:48px;font-size:11px;color:var(--sky)}
+.rail{display:flex;flex-direction:column;align-items:center;gap:16px;width:48px;font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .rail-item{display:flex;flex-direction:column;align-items:center;gap:2px}
-.round{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;background:rgba(232,244,250,.14);color:var(--sky)}
+.round{display:flex;align-items:center;justify-content:center;width:44px;height:44px;background:none;color:#fff;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))}
+.round svg{fill:currentColor}
 
 .empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0 32px;text-align:center}
 .empty strong{font-size:22px;color:#fff}
@@ -67,7 +96,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .empty .btn{width:auto;padding:0 28px;margin-top:10px}
 
 /* ---------- top ---------- */
-.top{position:absolute;left:0;right:0;top:0;z-index:5;height:var(--top-h);padding-top:env(safe-area-inset-top);background:rgba(7,31,42,.95);border-bottom:1px solid rgba(232,244,250,.12)}
+.top{position:absolute;left:0;right:0;top:0;z-index:5;height:var(--top-h);padding-top:env(safe-area-inset-top);background:transparent;border-bottom:0}
 .brand{padding:5px 16px 0;font-size:17px;line-height:1.2;font-weight:700;letter-spacing:-.01em;color:#fff}
 .brand span{color:var(--accent)}
 .bar{display:flex;align-items:center;gap:6px;padding:3px 16px 0}
@@ -88,7 +117,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:64px;height:48px;font-size:11px;font-weight:500;color:var(--muted)}
 .nav-item[aria-current="page"]{font-weight:700;color:#fff}
 .nav-av{width:24px;height:24px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)}
-.report{display:flex;align-items:center;justify-content:center;width:56px;height:38px;border-radius:14px;background:var(--accent);color:var(--ink)}
+.report{display:flex;align-items:center;justify-content:center;width:44px;height:30px;margin:0 3px;border-radius:9px;background:#fff;color:var(--ink);box-shadow:-3px 0 0 var(--accent),3px 0 0 var(--signal)}
 
 /* ---------- toast ---------- */
 .toast{position:absolute;left:50%;top:calc(var(--top-h) + 10px);z-index:60;transform:translateX(-50%);max-width:92%;padding:10px 18px;border-radius:999px;background:rgba(7,31,42,.94);border:1px solid rgba(232,244,250,.28);font-size:14px;font-weight:500;color:#fff;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s ease}
@@ -214,7 +243,20 @@ details.policy{margin-top:14px;font-size:13px;line-height:1.45;color:var(--body)
 details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(--accent)}
 
 
-.round[aria-pressed="true"]{background:var(--accent);color:var(--ink)}
+/* share sheet (TikTok style) */
+.sharesheet{padding-top:10px}
+.sharesheet h2{margin:10px 0 6px;text-align:center;font-size:16px}
+.srow{display:flex;gap:14px;overflow-x:auto;padding:12px 2px;scrollbar-width:none}
+.srow::-webkit-scrollbar{display:none}
+.srow+.srow{border-top:1px solid rgba(232,244,250,.12)}
+.sitem{flex:0 0 66px;display:flex;flex-direction:column;align-items:center;gap:7px;font-size:11px;line-height:1.2;text-align:center;color:var(--body)}
+.sitem .sc{display:flex;align-items:center;justify-content:center;width:54px;height:54px;border-radius:50%;background:rgba(232,244,250,.14);color:#fff;font-weight:700;font-size:20px}
+.sitem .sc svg{fill:none}
+.sitem .sc.fill svg{fill:currentColor}
+.sitem[aria-pressed="true"] .sc{color:var(--accent)}
+.sclose{width:100%;height:48px;margin-top:6px;border-top:1px solid rgba(232,244,250,.12);font-size:15px;font-weight:700;color:var(--sky)}
+body.nocap .caption,body.nocap .more{display:none}
+.round[aria-pressed="true"],.round.clicked{background:none;color:var(--accent)}
 .cmt-in{margin-top:10px}
 .cmt{padding:8px 0;font-size:14px;line-height:1.4;color:var(--body)}
 .cmt b{color:#fff}
@@ -245,8 +287,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
 
   <nav class="nav" aria-label="Main">
     <button class="nav-item" id="homeBtn" type="button" aria-current="page"><span data-icon="home"></span>Home</button>
-    <button class="nav-item" id="mapBtn" type="button"><span data-icon="map"></span>Map</button>
-    <button class="report" id="reportBtn" type="button" aria-label="Report" data-icon="plus" data-size="24" data-stroke="2.5"></button>
+    <button class="nav-item" id="inboxBtn" type="button"><span data-icon="inboxI"></span>Inbox</button>
+    <button class="report" id="reportBtn" type="button" aria-label="Report" data-icon="plus" data-size="20" data-stroke="3"></button>
     <button class="nav-item" id="savedBtn" type="button"><span data-icon="bookmark"></span>Saved</button>
     <button class="nav-item" id="loginBtn" type="button"><span id="loginIcon" data-icon="user"></span><span id="loginLabel">Log in</span></button>
   </nav>
@@ -285,13 +327,48 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     <div class="panel-body" id="reportBody"></div>
   </section>
 
+  <!-- poster profile sheet: follow, and message only when you follow each other -->
+  <div class="sheet-wrap" id="profSheet">
+    <button class="scrim" id="profScrim" type="button" aria-label="Close profile"></button>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="profName">
+      <div class="grab"></div>
+      <div class="profhead"><div class="pfp big" id="profAv"></div><div><h2 id="profName"></h2><p class="hint" id="profStatus"></p></div></div>
+      <div class="stack"><button class="btn" id="profFollow" type="button">Follow</button><button class="btn ghost" id="profMsg" type="button" disabled>Message (coming soon)</button></div>
+      <p class="hint" id="profNote"></p>
+    </div>
+  </div>
+
+  <!-- chat sheet (only opens for people who follow you back) -->
+  <div class="sheet-wrap" id="chatSheet" style="z-index:50">
+    <button class="scrim" id="chatScrim" type="button" aria-label="Close messages"></button>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="chatTitle" style="min-height:55%">
+      <div class="grab"></div>
+      <h2 id="chatTitle">Messages</h2>
+      <div class="msgs" id="chatList"></div>
+      <div class="field cmt-in"><input id="chatInput" type="text" maxlength="500" placeholder="Send a message" autocomplete="off" aria-label="Send a message"><button class="tgl" id="chatSend" type="button">Send</button></div>
+      <p class="err" id="chatErr" role="alert" style="margin:6px 0 0"></p>
+    </div>
+  </div>
+
+  <!-- share sheet -->
+  <div class="sheet-wrap" id="shareSheet">
+    <button class="scrim" id="shareScrim" type="button" aria-label="Close share menu"></button>
+    <div class="sheet sharesheet" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+      <div class="grab"></div>
+      <h2 id="shareTitle">Share to</h2>
+      <div class="srow" id="shareApps"></div>
+      <div class="srow" id="shareActs"></div>
+      <button class="sclose" id="shareClose" type="button">Cancel</button>
+    </div>
+  </div>
+
   <!-- Layer 3: "Report this story" sheet (opened from the flag button on each story) -->
   <div class="sheet-wrap" id="flagSheet">
     <button class="scrim" id="flagScrim" type="button" aria-label="Close report menu"></button>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="flagTitle">
       <div class="grab"></div>
-      <h2 id="flagTitle">Report this story</h2>
-      <p class="hint">Pick the closest reason. Reports are anonymous. Stories with several reports are hidden until a person reviews them.</p>
+      <h2 id="flagTitle">Report</h2>
+      <p class="hint">Why are you reporting this? Pick the closest reason. Reports are anonymous. Stories with several reports are hidden until a person reviews them.</p>
       <ul class="list" id="flagList"></ul>
     </div>
   </div>
@@ -346,10 +423,20 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   <section class="panel" id="mapPanel" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
     <div class="panel-head">
       <span class="hbtn" aria-hidden="true"></span>
-      <h2 id="mapTitle">Map</h2>
+      <h2 id="mapTitle">Admin: map and reports</h2>
       <button class="hbtn" id="mapClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
     </div>
     <div class="panel-body" id="mapBody"></div>
+  </section>
+
+  <!-- Inbox tab: messages with people who follow you back -->
+  <section class="panel" id="inboxPanel" role="dialog" aria-modal="true" aria-labelledby="inboxTitle">
+    <div class="panel-head">
+      <span class="hbtn" aria-hidden="true"></span>
+      <h2 id="inboxTitle">Inbox</h2>
+      <button class="hbtn" id="inboxClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
+    </div>
+    <div class="panel-body" id="inboxBody"></div>
   </section>
 
   <!-- Saved tab -->
@@ -476,6 +563,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
        PUT  <uploadUrl>         (bytes straight to object storage)
        POST /v1/stories         { idempotencyKey, token, anonymous, ..., videoKey } -> { story }
        GET  /v1/stories?scope=&county=&cursor=&limit=                 -> { items, nextCursor }   (only live/approved stories)
+       GET/PUT /v1/users/:name/follow, GET/POST /v1/users/:name/messages   (messages refused unless both follow each other)
+       POST /v1/stories/:id/share                                     -> { shares }              (counted each time someone shares)
        POST /v1/stories/:id/like  { on }                              -> { likes }               (one like per account or device)
        GET  /v1/stories/:id/comments, POST same { text }              -> [{ user, text, when }] / { comment, count }   (accounts only)
        GET  /v1/stories?q=                                            -> search by place, topic or word
@@ -512,6 +601,19 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
          production), cached per county at the edge.
      ================================================================== */
   function apiErr(code, msg, retryAfter) { var e = new Error(msg); e.code = code; e.retryAfter = retryAfter || 0; return e; }
+  var FOUNDER_LIMIT = 200;      // the first 200 accounts get the orange check (real server: an atomic counter, so it can never go past 200)
+  function isFounderHandle(h) {
+    if (!h) return false;
+    var n = String(h).replace(/^@/, '');
+    if (n === 'amina_k') return true;                      // demo seed poster, so the badge is visible
+    return Object.keys(mock.users).some(function (k) { return mock.users[k].username === n && mock.users[k].founder > 0; });
+  }
+  function pairKey(a, b) { return [a, b].sort().join('|'); }
+  function theyFollowBack(who) { var n = 0; for (var i = 0; i < who.length; i++) n += who.charCodeAt(i); return n % 2 === 0; }
+  function relationOf(me, who) {
+    var following = ((loadJSON('mp_follows', {})[me]) || []).indexOf(who) !== -1;
+    return { following: following, followsYou: following && theyFollowBack(who), founder: isFounderHandle(who) };
+  }
   function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
   /* ----- fake data for the demo backend ----- */
@@ -528,15 +630,15 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   var WHENS = ['2 days ago', '5 hours ago', '1 day ago', '3 days ago', '40 minutes ago'];
   function seedStories() {
     var list = [
-      { id: 1, county: 'Kisii County', ward: 'Nyanchwa Ward', mood: 'Hooray!', category: 'Roads and bridges', caption: TEMPLATES[0].caption, when: '2 days ago', poster: null, verified: true, likes: 248, comments: 31, scene: 'bridge', video: null },
-      { id: 2, county: 'Nyamira County', ward: 'Township Ward', mood: 'Relief!', category: 'Water', caption: TEMPLATES[1].caption, when: '5 hours ago', poster: null, verified: true, likes: 96, comments: 12, scene: 'tower', video: null },
-      { id: 3, county: 'Nyeri County', ward: 'Mweiga Ward', mood: 'Proud!', category: 'Farms', caption: TEMPLATES[2].caption, when: '1 day ago', poster: null, verified: true, likes: 180, comments: 24, scene: 'terraces', video: null }
+      { id: 1, county: 'Kisii County', ward: 'Nyanchwa Ward', mood: 'Hooray!', category: 'Roads and bridges', caption: TEMPLATES[0].caption, when: '2 days ago', poster: null, verified: true, likes: 248, comments: 31, shares: 18, scene: 'bridge', video: null },
+      { id: 2, county: 'Nyamira County', ward: 'Township Ward', mood: 'Relief!', category: 'Water', caption: TEMPLATES[1].caption, when: '5 hours ago', poster: null, verified: true, likes: 96, comments: 12, shares: 7, scene: 'tower', video: null },
+      { id: 3, county: 'Nyeri County', ward: 'Mweiga Ward', mood: 'Proud!', category: 'Farms', caption: TEMPLATES[2].caption, when: '1 day ago', poster: null, verified: true, likes: 180, comments: 24, shares: 12, scene: 'terraces', video: null }
     ];
     for (var i = 0; i < 36; i++) {
       var t = TEMPLATES[i % 3], p = PLACES[i % 5];
       list.push({ id: 100 + i, county: p.county, ward: p.ward, mood: t.mood, category: t.category, caption: t.caption,
         when: WHENS[i % 5], poster: i % 2 ? '@amina_k' : null, avatar: null, verified: true,
-        likes: 10 + i * 7, comments: i % 13, scene: t.scene, video: null });
+        likes: 10 + i * 7, comments: i % 13, shares: 1 + i % 9, scene: t.scene, video: null });
     }
     return list;
   }
@@ -659,6 +761,38 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     if (anon && RULES.named.test(t)) out.hold.push('May name a private person');
     return out;
   }
+  // Comments and messages: no offensive, violent or sexual words, and no phone numbers in comments.
+  // Sample lists (English, Swahili, Sheng). In production use full lists plus a text classifier, and run the same check on the server.
+  var OFFENSIVE_WORDS = [
+    'kill', 'murder', 'rape', 'raped', 'raping', 'rapist', 'stab', 'stabbed', 'stabbing', 'slaughter', 'strangle', 'behead', 'lynch',
+    'kuua', 'nitakuua', 'kubaka', 'kuchinja',
+    'sex', 'sexual', 'sexually', 'sext', 'porn', 'porno', 'nude', 'nudes', 'naked', 'dick', 'penis', 'vagina', 'pussy', 'boob', 'boobs', 'tits',
+    'horny', 'cum', 'blowjob', 'handjob', 'orgasm', 'erotic', 'masturbate', 'masturbation', 'nipple',
+    'fuck', 'motherfucker', 'shit', 'bitch', 'bastard', 'asshole', 'cunt', 'slut', 'whore', 'idiot', 'stupid', 'moron',
+    'malaya', 'kuma', 'ngono', 'mboro', 'mwanaharamu', 'mpumbavu', 'mjinga', 'fala', 'shoga'
+  ];
+  var OFFENSIVE_RE = OFFENSIVE_WORDS.map(function (w) {
+    return new RegExp('\\b' + w.split('').map(function (c) { return c + '+'; }).join('[._\\-*,]*') + '(?:s|es|ed|ing|er|ers|y)?\\b', 'i');
+  });
+  var LEET = { '0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's', '7': 't', '@': 'a', '$': 's' };
+  function cleanForWords(text) {
+    var t = String(text).normalize('NFKD').replace(/[\u0300-\u036f\u200b-\u200d\ufeff]/g, '').toLowerCase();
+    t = t.replace(/[013457@$]/g, function (c) { return LEET[c]; });
+    return t.replace(/\b(?:[a-z]\s+){2,}[a-z]\b/g, function (m) { return m.replace(/\s+/g, ''); });     // "k i l l" -> "kill"
+  }
+  function hasOffensive(text) { var t = cleanForWords(text); return OFFENSIVE_RE.some(function (re) { return re.test(t); }); }
+  var NUM_WORDS = '(?:zero|oh|one|two|three|four|five|six|seven|eight|nine|sifuri|moja|mbili|tatu|nne|tano|sita|saba|nane|tisa)';
+  var NUM_WORDS_RE = new RegExp('\\b(?:' + NUM_WORDS + '[\\s,.\\-]+){5,}' + NUM_WORDS + '\\b', 'i');
+  function hasNumberSharing(text) {
+    var t = String(text);
+    return /(\+?\d[\s().\-]*){7,}/.test(t) || RULES.phone.test(t) || NUM_WORDS_RE.test(t);        // 7+ digits (even spaced out), Kenyan numbers, or digits spelled out
+  }
+  function screenText(text, kind) {
+    var t = String(text);
+    if (hasOffensive(t)) return (kind === 'comment' ? 'Comments' : 'Messages') + ' cannot include offensive, violent or sexual words.';
+    if (kind === 'comment' && (RULES.link.test(t) || hasNumberSharing(t))) return 'Comments cannot include phone numbers, long numbers or links.';
+    return null;
+  }
   // Layer 2: automatic video check. PLUG IN here: run a nudity / graphic-violence classifier on the TRANSCODED file.
   // The phone already blurs background faces and rejects clips with a person in focus, but the server must repeat it, because the phone cannot be trusted:
   // run face detection (for example MediaPipe / YuNet, or a cloud service) on the transcoded file, blur every face, reject clips with a person in focus.
@@ -772,7 +906,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
         return hashPw(contact, password).then(function (h) {
           if (!u || u.pw !== h) { mock.fails[contact] = (mock.fails[contact] || 0) + 1; throw apiErr('bad_credentials', 'bad'); }
           mock.fails[contact] = 0;
-          return { token: 'tok_' + Math.random().toString(36).slice(2), profile: { username: u.username, avatar: u.avatar } };
+          return { token: 'tok_' + Math.random().toString(36).slice(2), profile: { username: u.username, avatar: u.avatar, founder: u.founder || 0 } };
         });
       });
     },
@@ -796,9 +930,10 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
         if (mock.verified[p.contact] !== p.token) throw apiErr('unverified', 'Please verify your code again.');
         delete mock.verified[p.contact];
         return hashPw(p.contact, p.password).then(function (h) {
-          mock.users[p.contact] = { username: p.username, avatar: p.avatarUrl || null, pw: h };
+          var n = Object.keys(mock.users).length, founder = n < FOUNDER_LIMIT ? n + 1 : 0;      // number 1 to 200, or 0 when the offer is over
+          mock.users[p.contact] = { username: p.username, avatar: p.avatarUrl || null, pw: h, founder: founder };
           saveUsers();
-          return { token: 'tok_' + Math.random().toString(36).slice(2), profile: { username: p.username, avatar: p.avatarUrl || null } };
+          return { token: 'tok_' + Math.random().toString(36).slice(2), profile: { username: p.username, avatar: p.avatarUrl || null, founder: founder } };
         });
       });
     },
@@ -850,7 +985,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
           var status = (anon || reasons.length) ? 'review' : (trusted ? 'approved' : 'live');
           var story = { id: 's_' + uuid().slice(0, 8), county: p.county, ward: p.ward, mood: p.mood, category: p.category, caption: p.caption,
             when: 'Just now', poster: p.posterName || null, avatar: p.posterAvatar || null, verified: status === 'approved',
-            likes: 0, comments: 0, scene: 'bridge', video: p.localPreview || null,     // real server returns the CDN URL after transcoding
+            likes: 0, comments: 0, shares: 0, scene: 'bridge', video: p.localPreview || null,     // real server returns the CDN URL after transcoding
             lat: blurCoord(p.lat), lng: blurCoord(p.lng), status: status, anon: anon, owner: p.posterName || null, reasons: reasons, queuedAt: now, flaggers: [], appealed: false };
           // Layer 4: a keyed hash of the contact is kept on the story ONLY while the story waits for a decision (hard cap CONFIG.BAN_HASH_MAX_MS),
           // so a moderator can still ban the contact if it is removed for serious abuse. Deleted at the decision unless it is a ban.
@@ -950,6 +1085,81 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
         return { likes: st.likes };
       });
     },
+    // ---- follows and messages (demo: kept on this device; real server stores them per account) ----
+    // Rule: two people can message each other ONLY when both follow each other.
+    // Demo stand-in for "do they follow me back?": decided by the poster's name, so some follow back and some do not.
+    getRelation: function (me, who) {
+      return wait(100).then(function () { return relationOf(me, who); });
+    },
+    setFollow: function (me, who, on) {
+      return wait(120).then(function () {
+        var m = loadJSON('mp_follows', {}), l = m[me] || [], i = l.indexOf(who);
+        if (on && i === -1) l.push(who);
+        if (!on && i !== -1) l.splice(i, 1);
+        m[me] = l; saveJSON('mp_follows', m);
+        return relationOf(me, who);
+      });
+    },
+    listMessages: function (me, who) {
+      return wait(100).then(function () { return loadJSON('mp_msgs', {})[pairKey(me, who)] || []; });
+    },
+    sendMessage: function (me, who, text) {
+      return wait(120).then(function () {
+        var r = relationOf(me, who);
+        if (!(r.following && r.followsYou)) throw apiErr('mutual', 'You can only message each other when you both follow each other.');
+        var bad = screenText(text, 'message');
+        if (bad) throw apiErr('message_rule', bad);
+        var all = loadJSON('mp_msgs', {}), k = pairKey(me, who);
+        (all[k] = all[k] || []).push({ from: me, text: text, at: Date.now() });
+        saveJSON('mp_msgs', all);
+        return all[k].slice();
+      });
+    },
+    inbox: function (me) {
+      return wait(120).then(function () {
+        var all = loadJSON('mp_msgs', {}), threads = [], seen = {};
+        Object.keys(all).forEach(function (k) {
+          var p = k.split('|'); if (p.indexOf(me) === -1 || !all[k].length) return;
+          var who = p[0] === me ? p[1] : p[0], last = all[k][all[k].length - 1];
+          seen[who] = true;
+          threads.push({ who: who, text: last.text, mine: last.from === me, at: last.at, founder: isFounderHandle(who) });
+        });
+        threads.sort(function (a, b) { return b.at - a.at; });
+        var friends = ((loadJSON('mp_follows', {})[me]) || []).filter(function (w) { return theyFollowBack(w) && !seen[w]; })
+          .map(function (w) { return { who: w, founder: isFounderHandle(w) }; });
+        return { threads: threads, friends: friends };
+      });
+    },
+    // ---- admin: aggregated report over all public stories (real server: admin role required) ----
+    adminReport: function () {
+      return wait(150).then(function () {
+        var st = mock.stories.filter(visible), byCat = {}, byMood = {}, rows = {}, posters = {};
+        var t = { total: st.length, verified: 0, anonymous: 0, likes: 0, comments: 0, shares: 0 };
+        st.forEach(function (x) {
+          if (x.verified) t.verified++;
+          if (x.poster) posters[x.poster] = 1; else t.anonymous++;
+          t.likes += x.likes || 0; t.comments += x.comments || 0; t.shares += x.shares || 0;
+          byCat[x.category] = (byCat[x.category] || 0) + 1;
+          byMood[x.mood] = (byMood[x.mood] || 0) + 1;
+          var k = [x.county, x.category, x.mood].join('|');
+          var r = rows[k] = rows[k] || { county: x.county, category: x.category, mood: x.mood, stories: 0, likes: 0, comments: 0, shares: 0 };
+          r.stories++; r.likes += x.likes || 0; r.comments += x.comments || 0; r.shares += x.shares || 0;
+        });
+        t.creators = Object.keys(posters).length;
+        t.founders = Object.keys(mock.users).filter(function (k) { return mock.users[k].founder > 0; }).length;
+        t.byCategory = byCat; t.byMood = byMood;
+        t.rows = Object.keys(rows).map(function (k) { return rows[k]; }).sort(function (a, b) { return a.county < b.county ? -1 : a.county > b.county ? 1 : b.stories - a.stories; });
+        return t;
+      });
+    },
+    shareStory: function (id) {
+      return wait(120).then(function () {
+        var st = findStory(id);
+        if (!st) throw apiErr('missing', 'Story not found.');
+        st.shares = (st.shares || 0) + 1;                   // real server: POST /v1/stories/:id/share -> { shares }
+        return { shares: st.shares };
+      });
+    },
     listComments: function (id) {
       return wait(200).then(function () {
         var st = findStory(id);
@@ -962,9 +1172,9 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     },
     addComment: function (id, text, user) {
       return wait(250).then(function () {
-        var st = findStory(id), chk = checkCaption(text, true);       // same link / phone / abuse rules as stories
+        var st = findStory(id), bad = screenText(text, 'comment');    // server re-checks: offensive words, phone numbers, links
         if (!st) throw apiErr('missing', 'Story not found.');
-        if (chk.reject || chk.hold.indexOf('Possible abusive language') !== -1) throw apiErr('comment_rule', 'Comments cannot include links, phone numbers or abusive language.');
+        if (bad) throw apiErr('comment_rule', bad);
         var c = { user: user, text: text, when: 'Just now' };
         (mock.comments[id] = mock.comments[id] || []).push(c);
         st.comments++;
@@ -1041,7 +1251,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       return wait(250).then(function () {
         var all = mock.stories.filter(function (s) { return visible(s) && inScope(s, q.scope, q.county) && matchQuery(s, q.query); });
         var start = q.cursor ? parseInt(q.cursor, 10) : 0;
-        var items = all.slice(start, start + q.limit);
+        var items = all.slice(start, start + q.limit).map(function (s) { var c = Object.assign({}, s); c.founder = isFounderHandle(s.poster); return c; });
         var next = start + q.limit < all.length ? String(start + q.limit) : null;
         return { items: items, nextCursor: next };
       });
@@ -1188,6 +1398,23 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     upload: '<path d="M12 16V4m0 0L8 8m4-4 4 4M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/>',
     flag: '<path d="M5 21V4m0 0h11l-2 4 2 4H5"/>',
     trash: '<path d="M4 7h16M10 11v6m4-6v6M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3"/>',
+    commentD: '<path fill-rule="evenodd" d="M21 12a8 8 0 0 1-11.7 7.1L4 20l1-4.3A8 8 0 1 1 21 12zM8 10.8a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4zm4 0a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4zm4 0a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4z"/>',
+    face: '<circle cx="12" cy="8.5" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z"/>',
+    inboxI: '<path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-6.5L8 21v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M8 9.5h8M8 13h5"/>',
+    shareT: '<path d="M14 3.5v4.6C8 8.3 4 12 3.5 19.5c2.4-3.7 6-5.3 10.5-5.3v4.6l7.2-7.6z"/>',
+    trashS: '<path d="M9 3h6l1 2h4v2H4V5h4zM6 9h12l-1 11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z"/>',
+    notint: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
+    download: '<path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/>',
+    cast: '<path d="M3 8V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"/><path d="M3 12a8 8 0 0 1 8 8M3 16a4 4 0 0 1 4 4"/>',
+    why: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17v.01"/>',
+    caps: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 11h3M7 15h6M14 11h3"/>',
+    duet: '<rect x="3" y="6" width="8" height="12" rx="1.5"/><rect x="13" y="6" width="8" height="12" rx="1.5"/>',
+    stitch: '<rect x="3" y="5" width="7" height="14" rx="1.5"/><rect x="14" y="5" width="7" height="14" rx="1.5"/><path d="M11 12h2"/>',
+    speed: '<path d="M12 4a9 9 0 1 0 9 9"/><path d="M12 13l5-5"/>',
+    wall: '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/>',
+    link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+    chat: '<path d="M21 12a8 8 0 0 1-11.7 7.1L4 20l1-4.3A8 8 0 1 1 21 12z"/>',
     flip: '<path d="M20 11V9a3 3 0 0 0-3-3H7"/><path d="m10 3-3 3 3 3"/><path d="M4 13v2a3 3 0 0 0 3 3h10"/><path d="m14 21 3-3-3-3"/>'
   };
   function icon(name, size, stroke) {
@@ -1294,26 +1521,24 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       '<div class="scene">' + media + '</div>' +
       '<div class="slide-body">' +
         '<div class="info">' +
-          '<div class="tags"><span class="tag tag-mood">' + esc(moodText(s.mood)) + '</span><span class="tag tag-cat">' + esc(s.category) + '</span></div>' +
+          '<div class="chiprow namerow">' +
+            (s.poster ? '' : (s.verified ? '<span class="chip verified">' + icon('shield', 14, 2.2) + 'Verified</span>' : '<span class="chip">Being checked</span>')) +   // only anonymous stories show a check status
+            '<span class="poster">' + esc(s.poster || 'Anonymous') + '</span>' + (s.founder ? founderBadge() : '') +
+          '</div>' +
           '<p class="caption" id="cap-' + s.id + '">' + esc(s.caption) + '</p>' +
           '<button class="more" type="button" aria-expanded="false" aria-controls="cap-' + s.id + '">Show more</button>' +
-          '<div class="chips">' +
-            '<div class="chiprow"><span class="chip">' + icon('pin', 14, 2.2) + esc(s.ward) + '</span><span class="muted">' + esc(s.when) + '</span></div>' +
-            '<div class="chiprow">' +
-              (s.verified ? '<span class="chip verified">' + icon('shield', 14, 2.2) + 'Verified</span>' : '<span class="chip">Being checked</span>') +
-              '<span class="poster">' + avatar + esc(s.poster || 'Anonymous') + '</span>' +
-            '</div>' +
-          '</div>' +
+          '<div class="chiprow whererow"><span class="chip">' + icon('pin', 14, 2.2) + esc(s.ward) + '</span><span class="muted">' + esc(s.when) + '</span></div>' +
+          '<div class="tags"><span class="tag tag-mood">' + esc(moodText(s.mood)) + '</span><span class="tag tag-cat">' + esc(s.category) + '</span></div>' +
         '</div>' +
         '<div class="rail">' +
-          '<div class="rail-item"><button class="round likebtn" type="button" data-id="' + esc(s.id) + '" aria-pressed="' + isLiked(s.id) + '" aria-label="Like">' + icon('thumb', 22) + '</button><span>' + s.likes + '</span></div>' +
-          '<div class="rail-item"><button class="round cmtbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Comments">' + icon('comment', 22) + '</button><span>' + s.comments + '</span></div>' +
-          '<div class="rail-item"><button class="round sharebtn" type="button" data-id="' + esc(s.id) + '" aria-label="Share">' + icon('share', 22) + '</button><span>Share</span></div>' +
-          '<div class="rail-item"><button class="round savebtn" type="button" data-id="' + esc(s.id) + '" aria-pressed="' + isSaved(s.id) + '" aria-label="Save">' + icon('bookmark', 22) + '</button><span>Save</span></div>' +
+          '<div class="rail-item"><button class="round likebtn" type="button" data-id="' + esc(s.id) + '" aria-pressed="' + isLiked(s.id) + '" aria-label="Like">' + icon('thumb', 30, 1.5) + '</button><span>' + s.likes + '</span></div>' +
+          '<div class="rail-item"><button class="round cmtbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Comments">' + icon('commentD', 30, 0.01) + '</button><span>' + s.comments + '</span></div>' +
+          '<div class="rail-item"><button class="round sharebtn" type="button" data-id="' + esc(s.id) + '" aria-label="Share">' + icon('shareT', 30, 1.5) + '</button><span>' + (s.shares || 0) + '</span></div>' +
+          '<div class="rail-item"><button class="round savebtn" type="button" data-id="' + esc(s.id) + '" aria-pressed="' + isSaved(s.id) + '" aria-label="Save">' + icon('bookmark', 30, 1.5) + '</button></div>' +
           // Layer 3: every story can be reported
           (isMine(s)    // your own story: Delete instead of Report
-            ? '<div class="rail-item"><button class="round delbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Delete your story">' + icon('trash', 22) + '</button><span>Delete</span></div>'
-            : '<div class="rail-item"><button class="round flagbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Report this story">' + icon('flag', 22) + '</button><span>Report</span></div>') +
+            ? '<div class="rail-item"><button class="round delbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Delete your story">' + icon('trashS', 30, 1.5) + '</button></div>'
+            : posterHtml(s)) +
         '</div>' +
       '</div>' +
     '</article>';
@@ -1442,7 +1667,11 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     var dbtn = e.target.closest('.delbtn');
     if (dbtn) { askDeleteStory(dbtn.dataset.id); return; }
     var fb = e.target.closest('.flagbtn');
-    if (fb) { openFlag(fb.dataset.id); return; }
+    if (fb) { fb.classList.add('clicked'); openFlag(fb.dataset.id); return; }
+    var po = e.target.closest('.pfpopen');
+    if (po) { openProfile(po.dataset.poster, po.dataset.id); return; }
+    var fbd = e.target.closest('.fbadge');
+    if (fbd) { toggleFollow(fbd.dataset.poster); return; }
     var rb = e.target.closest('.likebtn,.savebtn,.sharebtn,.cmtbtn');
     if (rb) { railAction(rb); return; }
     var btn = e.target.closest('.more');
@@ -1536,7 +1765,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   }, { passive: false });
 
   function anyPanelOpen() {
-    return sheet.classList.contains('open') || $('authPanel').classList.contains('open') || $('reportPanel').classList.contains('open') || $('statusPanel').classList.contains('open') || $('modPanel').classList.contains('open') || $('flagSheet').classList.contains('open') || $('confirmSheet').classList.contains('open') || $('termsPanel').classList.contains('open') || overlayOpen();
+    return sheet.classList.contains('open') || $('authPanel').classList.contains('open') || $('reportPanel').classList.contains('open') || $('statusPanel').classList.contains('open') || $('modPanel').classList.contains('open') || $('flagSheet').classList.contains('open') || $('shareSheet').classList.contains('open') || $('profSheet').classList.contains('open') || $('chatSheet').classList.contains('open') || $('confirmSheet').classList.contains('open') || $('termsPanel').classList.contains('open') || overlayOpen();
   }
   document.addEventListener('keydown', function (e) {
     if (anyPanelOpen()) return;
@@ -1757,8 +1986,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     authBody.innerHTML =
       '<div class="avwrap"><div class="avbtn" style="border-style:solid">' + (session.avatar ? '<img src="' + esc(session.avatar) + '" alt="Your profile photo">' : icon('user', 36)) +
       '</div><div class="avmeta"><b style="font-size:20px">@' + esc(session.username) + '</b><br>' + esc(session.contactMask || '') + '</div></div>' +
-      '<div class="stack"><button class="btn" type="button" data-act="report-now" data-focus>Report a story</button>' +
-      '<button class="btn ghost" type="button" data-act="status">My story status</button>' +
+      '<div class="stack"><button class="btn ghost" type="button" data-act="status" data-focus>My story status</button>' +
       '<button class="btn ghost" type="button" data-act="terms">Terms and conditions</button>' +
       '<button class="btn ghost" type="button" data-act="contact">Contact support</button>' +
       '<button class="btn ghost" type="button" data-act="logout">Log out</button>' +
@@ -1921,7 +2149,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     setBusy(true, 'Logging in…');
     api.login(flow.channel, c, pw).then(function (r) {
       flow.busy = false;
-      setSession({ type: 'account', token: r.token, username: r.profile.username, avatar: r.profile.avatar, contactMask: maskContact(flow.channel, c) });
+      setSession({ type: 'account', token: r.token, username: r.profile.username, avatar: r.profile.avatar, founder: r.profile.founder || 0, contactMask: maskContact(flow.channel, c) });
       finishAuth('Welcome back, @' + r.profile.username);
     }).catch(function (err) {
       flow.busy = false; setBusy(false);
@@ -1982,8 +2210,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     }).then(function (avatarUrl) {
       return api.createAccount({ token: flow.verifyToken, contact: flow.contact, username: name, password: flow.password, avatarUrl: avatarUrl }).then(function (r) {
         flow.busy = false;
-        setSession({ type: 'account', token: r.token, username: name, avatar: avatarUrl, contactMask: maskContact(flow.channel, flow.contact) });
-        finishAuth('Account created. Welcome, @' + name);
+        setSession({ type: 'account', token: r.token, username: name, avatar: avatarUrl, founder: r.profile.founder || 0, contactMask: maskContact(flow.channel, flow.contact) });
+        finishAuth(r.profile.founder ? 'Welcome, @' + name + '! You are one of the first ' + FOUNDER_LIMIT + ' creators, so you get the orange check.' : 'Account created. Welcome, @' + name);
       });
     }).catch(function (err) { flow.busy = false; setBusy(false); setErr(errMsg(err)); });
   }
@@ -2759,12 +2987,12 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   $('termsClose').addEventListener('click', closeTerms);
 
   /* ---------- Layer 3: report this story ---------- */
-  var FLAG_REASONS = ['Nudity or sexual content', 'Graphic violence or threats', 'Abuse or hate', 'Names or exposes a private person', 'Scam, link or phone number', 'Child safety concern', 'False or misleading'];
+  var FLAG_REASONS = ['Minor safety', 'Dangerous activities and challenges', 'Suicide, self-harm, and disordered eating', 'Adult nudity and sexual activities', 'Hateful behavior', 'Violent and graphic content', 'Violent extremism', 'Harassment and bullying', 'Illegal activities and regulated goods', 'Misinformation', 'Sharing personal information', 'Intellectual property infringement', 'Spam and fake engagement', 'Scams and fraud', 'Other'];
   var flagSheet = $('flagSheet'), flagId = null;
   function openFlag(id) {
     if (loadJSON('mp_flagged', []).indexOf(String(id)) !== -1) { toast('You already reported this story'); return; }
     flagId = id;
-    $('flagList').innerHTML = FLAG_REASONS.map(function (r) { return '<li><button type="button" data-reason="' + esc(r) + '">' + esc(r) + '</button></li>'; }).join('');
+    $('flagList').innerHTML = FLAG_REASONS.map(function (r) { return '<li><button type="button" data-reason="' + esc(r) + '"><span>' + esc(r) + '</span><span aria-hidden="true">&rsaquo;</span></button></li>'; }).join('');
     flagSheet.classList.add('open');
   }
   function closeFlag() { flagSheet.classList.remove('open'); flagId = null; }
@@ -2923,9 +3151,13 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     if (e.key !== 'Escape') return;
     if (cmtSheet.classList.contains('open')) closeComments();
     else if (searchSheet.classList.contains('open')) searchSheet.classList.remove('open');
+    else if (inboxPanel.classList.contains('open')) inboxPanel.classList.remove('open');
     else if (mapPanel.classList.contains('open')) mapPanel.classList.remove('open');
     else if (savedPanel.classList.contains('open')) savedPanel.classList.remove('open');
     else if (termsPanel.classList.contains('open')) closeTerms();
+    else if (chatSheet.classList.contains('open')) closeChat();
+    else if (profSheet.classList.contains('open')) closeProfile();
+    else if (shareSheet.classList.contains('open')) closeShare();
     else if (flagSheet.classList.contains('open')) closeFlag();
     else if (statusPanel.classList.contains('open')) closeStatus();
     else if (modPanel.classList.contains('open')) modPanel.classList.remove('open');
@@ -2940,14 +3172,14 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   function isLiked(id) { return loadJSON('mp_likes', []).indexOf(String(id)) !== -1; }
   function isSaved(id) { return loadJSON('mp_saved', []).some(function (x) { return String(x.id) === String(id); }); }
   function findItem(id) { return fs.items.filter(function (x) { return String(x.id) === String(id); })[0]; }
-  function overlayOpen() { return cmtSheet.classList.contains('open') || searchSheet.classList.contains('open') || mapPanel.classList.contains('open') || savedPanel.classList.contains('open'); }
+  function overlayOpen() { return cmtSheet.classList.contains('open') || searchSheet.classList.contains('open') || mapPanel.classList.contains('open') || inboxPanel.classList.contains('open') || savedPanel.classList.contains('open'); }
 
   function railAction(b) {
     var id = b.dataset.id;
     if (b.classList.contains('likebtn')) toggleLike(b, id);
     else if (b.classList.contains('savebtn')) toggleSave(b, id);
-    else if (b.classList.contains('sharebtn')) shareStory(id);
-    else openComments(id);
+    else if (b.classList.contains('sharebtn')) { b.classList.add('clicked'); shareStory(id); }
+    else { b.classList.add('clicked'); openComments(id); }
   }
 
   /* ---------- like ---------- */
@@ -2992,14 +3224,227 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   $('savedBtn').addEventListener('click', openSaved);
   $('savedClose').addEventListener('click', function () { savedPanel.classList.remove('open'); });
 
-  /* ---------- share: phone share sheet, or copy the link ---------- */
-  function shareStory(id) {
-    var st = findItem(id), url = location.href.split('#')[0] + '#story=' + id;   // backend: GET /v1/stories/:id opens it from this link
-    var data = { title: 'Mtaa Pulse', text: st ? st.caption.slice(0, 100) : '', url: url };
-    if (navigator.share) { navigator.share(data).catch(function () {}); return; }
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { toast('Link copied'); }).catch(function () { toast(url, 4000); });
-    else toast(url, 4000);
+  /* ---------- inbox: your conversations ---------- */
+  var inboxPanel = $('inboxPanel'), inboxBody = $('inboxBody');
+  function avatarFor(who) { var it = fs.items.filter(function (x) { return x.poster === who; })[0]; return it ? faceHtml(it) : icon('face', 30, 0); }
+  function inRow(who, snip, when, founder) {
+    return '<li><button class="inrow" type="button" data-who="' + esc(who) + '"><div class="pfp">' + avatarFor(who) + '</div><div class="meta"><b>' + esc(who) + (founder ? founderBadge() : '') + '</b><div class="snip">' + esc(snip) + '</div></div>' + (when ? '<span class="when">' + esc(when) + '</span>' : '') + '</button></li>';
   }
+  function openInbox() {
+    inboxPanel.classList.add('open');
+    inboxBody.innerHTML = '<h1 class="h1">Messaging coming soon</h1>';
+    return;
+    if (!inboxBody.firstChild) inboxBody.innerHTML = '<p class="note">Loading…</p>';
+    api.inbox(myHandle()).then(function (r) {
+      var html = '';
+      if (r.threads.length) html += '<ul class="inlist">' + r.threads.map(function (t) { return inRow(t.who, (t.mine ? 'You: ' : '') + t.text, ago(Date.now() - t.at), t.founder); }).join('') + '</ul>';
+      if (r.friends.length) html += '<p class="lede" style="margin-top:18px">Start a chat</p><ul class="inlist">' + r.friends.map(function (f) { return inRow(f.who, 'You follow each other. Say hello.', '', f.founder); }).join('') + '</ul>';
+      inboxBody.innerHTML = html || '<h1 class="h1">No messages yet</h1><p class="lede">Follow a poster. When they follow you back, you can message each other here.</p>';
+    }).catch(function () { inboxBody.innerHTML = '<p class="note">Could not load your inbox.</p>'; });
+  }
+  inboxBody.addEventListener('click', function (e) { var b = e.target.closest('[data-who]'); if (b) openChat(b.dataset.who); });
+  $('inboxBtn').addEventListener('click', openInbox);
+  $('inboxClose').addEventListener('click', function () { inboxPanel.classList.remove('open'); });
+
+  /* ---------- follow + message (messaging only when both follow each other) ---------- */
+  function founderBadge() {
+    return '<span class="fcheck" role="img" aria-label="Founding creator" title="Founding creator"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#F2A33C"/><path d="m7 12.4 3.2 3.2L17 8.8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+  }
+  function myHandle() { return session && session.type === 'account' ? '@' + session.username : null; }
+  function isFollowing(p) { var me = myHandle(); return !!(me && p && (loadJSON('mp_follows', {})[me] || []).indexOf(p) !== -1); }
+  function faceHtml(s) { return s.avatar ? '<img src="' + esc(s.avatar) + '" alt="" width="44" height="44" loading="lazy" decoding="async">' : icon('face', 30, 0); }
+  function posterHtml(s) {
+    if (!s.poster) return '<div class="rail-item"><div class="pfp" aria-label="Anonymous">' + faceHtml(s) + '</div></div>';   // anonymous posters cannot be followed
+    var on = isFollowing(s.poster);
+    return '<div class="rail-item"><div class="pfpwrap">' +
+      '<button class="pfp pfpopen" type="button" data-poster="' + esc(s.poster) + '" data-id="' + esc(s.id) + '" aria-label="' + esc(s.poster) + ' profile">' + faceHtml(s) + '</button>' +
+      '<button class="fbadge' + (on ? ' on' : '') + '" type="button" data-poster="' + esc(s.poster) + '" aria-label="' + (on ? 'Unfollow ' : 'Follow ') + esc(s.poster) + '">' + icon(on ? 'check' : 'plus', 12, 3) + '</button>' +
+    '</div></div>';
+  }
+  function paintBadges(who, on) {
+    document.querySelectorAll('.fbadge').forEach(function (n) {
+      if (n.dataset.poster !== who) return;
+      n.classList.toggle('on', on);
+      n.innerHTML = icon(on ? 'check' : 'plus', 12, 3);
+      n.setAttribute('aria-label', (on ? 'Unfollow ' : 'Follow ') + who);
+    });
+  }
+  function needLogin(msg) {
+    if (session && session.type === 'account' && hasValidSession()) return false;
+    toast(msg); openAuth('login', null, 'login'); return true;
+  }
+  function toggleFollow(who, from) {
+    if (needLogin('Log in to follow')) return;
+    var me = myHandle(), now = isFollowing(who);
+    api.setFollow(me, who, !now).then(function (r) {
+      paintBadges(who, r.following);
+      if (r.following) toast('Following ' + who, 2400);
+      else toast('Unfollowed ' + who);
+      if (profSheet.classList.contains('open') && profWho === who) renderProfile(r);
+    }).catch(function (e) { toast(errMsg(e)); });
+  }
+
+  var profSheet = $('profSheet'), profWho = null;
+  function renderProfile(r) {
+    var mutual = r.following && r.followsYou;
+    $('profFollow').textContent = r.following ? 'Following' : 'Follow';
+    $('profFollow').classList.toggle('ghost', r.following);
+    $('profName').innerHTML = esc(profWho) + (r.founder ? ' ' + founderBadge() : '');
+    $('profStatus').textContent = [r.founder ? 'Founding creator' : '', mutual ? 'You follow each other' : (r.following ? 'You follow them' : '')].filter(Boolean).join(' · ');
+    $('profMsg').disabled = true;
+    $('profNote').textContent = 'Messaging is coming soon.';
+  }
+  function openProfile(who, id) {
+    var st = findItem(id);
+    profWho = who;
+    $('profName').innerHTML = esc(who) + (st && st.founder ? ' ' + founderBadge() : '');
+    $('profAv').innerHTML = st ? faceHtml(st) : icon('face', 30, 0);
+    $('profStatus').textContent = ''; $('profNote').textContent = 'Messaging is coming soon.';
+    $('profMsg').disabled = true; $('profFollow').textContent = 'Follow'; $('profFollow').classList.remove('ghost');
+    profSheet.classList.add('open');
+    if (session && session.type === 'account') api.getRelation(myHandle(), who).then(function (r) { if (profWho === who) renderProfile(r); });
+    else renderProfile({ following: false, followsYou: false });
+  }
+  function closeProfile() { profSheet.classList.remove('open'); profWho = null; }
+  $('profScrim').addEventListener('click', closeProfile);
+  $('profFollow').addEventListener('click', function () { if (profWho) toggleFollow(profWho); });
+  $('profMsg').addEventListener('click', function () { if (profWho && !this.disabled) openChat(profWho); });
+
+  var chatSheet = $('chatSheet'), chatWho = null;
+  function renderChat(list) {
+    var me = myHandle(), box = $('chatList');
+    box.innerHTML = list.length ? list.map(function (m) {
+      return '<div class="msg' + (m.from === me ? ' me' : '') + '">' + esc(m.text) + '</div>';
+    }).join('') : '<p class="note">No messages yet. Say hello to ' + esc(chatWho) + '.</p>';
+    box.scrollTop = box.scrollHeight;
+  }
+  function openChat(who) {
+    toast('Messaging is coming soon', 2600); return;
+    if (needLogin('Log in to message')) return;
+    api.getRelation(myHandle(), who).then(function (r) {
+      if (!(r.following && r.followsYou)) { toast('You can message each other only when you both follow each other.', 3200); return; }
+      closeProfile();
+      chatWho = who; $('chatTitle').textContent = who; $('chatErr').textContent = ''; $('chatInput').value = '';
+      $('chatList').innerHTML = '<p class="note">Loading…</p>';
+      chatSheet.classList.add('open');
+      api.listMessages(myHandle(), who).then(renderChat);
+    });
+  }
+  function closeChat() { chatSheet.classList.remove('open'); chatWho = null; if (inboxPanel.classList.contains('open')) openInbox(); }
+  $('chatScrim').addEventListener('click', closeChat);
+  function sendChat() {
+    var text = $('chatInput').value.trim(), err = $('chatErr');
+    if (!chatWho) return;
+    if (needLogin('Log in to message')) { closeChat(); return; }
+    if (!text) { err.textContent = 'Write a message first.'; return; }
+    var badM = screenText(text, 'message'); if (badM) { err.textContent = badM; return; }
+    var btn = $('chatSend'); btn.disabled = true; err.textContent = '';
+    api.sendMessage(myHandle(), chatWho, text).then(function (list) { btn.disabled = false; $('chatInput').value = ''; renderChat(list); })
+      .catch(function (e) { btn.disabled = false; err.textContent = errMsg(e); });
+  }
+  $('chatSend').addEventListener('click', sendChat);
+  $('chatInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); sendChat(); } });
+
+  /* ---------- share: TikTok-style sheet (apps on row 1, actions on row 2) ---------- */
+  var shareSheet = $('shareSheet'), shareId = null, speedSteps = [1, 1.5, 2, 0.5], speedAt = 0;
+  function storyUrl(id) { return location.href.split('#')[0] + '#story=' + id; }   // backend: GET /v1/stories/:id opens it from this link
+  function sItem(key, label, inner, cls, style) {
+    return '<button class="sitem" type="button" data-s="' + key + '"><span class="sc ' + (cls || '') + '"' + (style ? ' style="' + style + '"' : '') + '>' + inner + '</span>' + label + '</button>';
+  }
+  function openShare(id) {
+    shareId = id;
+    $('shareApps').innerHTML =
+      sItem('wa', 'WhatsApp', icon('chat', 26, 2), 'fill', 'background:#25D366') +
+      sItem('fb', 'Facebook', 'f', '', 'background:#1877F2') +
+      sItem('x', 'X', 'X', '', 'background:#000;border:1px solid rgba(232,244,250,.3)') +
+      sItem('tg', 'Telegram', icon('shareT', 24, 1.5), 'fill', 'background:#229ED9') +
+      sItem('sms', 'SMS', icon('chat', 26, 2), '', 'background:#34C759') +
+      sItem('mail', 'Email', icon('mail', 26, 2), '', 'background:#6B7C85') +
+      sItem('copy', 'Copy link', icon('link', 26, 2)) +
+      (navigator.share ? sItem('more', 'More', '&middot;&middot;&middot;') : '');
+    $('shareActs').innerHTML =
+      sItem('report', 'Report', icon('flag', 26, 2)) +
+      sItem('notint', 'Not interested', icon('notint', 26, 2)) +
+      sItem('download', 'Download', icon('download', 26, 2)) +
+      sItem('cast', 'Cast', icon('cast', 26, 2)) +
+      sItem('why', 'Why this post', icon('why', 26, 2)) +
+      sItem('caps', 'Captions', icon('caps', 26, 2)) +
+      sItem('duet', 'Duet', icon('duet', 26, 2)) +
+      sItem('stitch', 'Stitch', icon('stitch', 26, 2)) +
+      sItem('speed', 'Playback speed', icon('speed', 26, 2)) +
+      sItem('gif', 'Share as GIF', '<svg width="26" height="26" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><text x="12" y="15" font-size="7" text-anchor="middle" fill="currentColor" font-weight="700" font-family="sans-serif">GIF</text></svg>') +
+      sItem('wall', 'Set as wallpaper', icon('wall', 26, 2));
+    $('shareApps').scrollLeft = 0; $('shareActs').scrollLeft = 0;
+    shareSheet.classList.add('open');
+  }
+  function countShare(id) {
+    api.shareStory(id).then(function (r) {
+      var it = findItem(id); if (it) it.shares = r.shares;
+      document.querySelectorAll('.sharebtn').forEach(function (n) {
+        if (n.dataset.id === String(id)) n.parentNode.querySelector('span').textContent = r.shares;
+      });
+    }).catch(function () {});
+  }
+  function closeShare() { shareSheet.classList.remove('open'); shareId = null; }
+  function shareStory(id) { openShare(id); }
+  function slideVideo(id) {
+    var i = fs.items.indexOf(findItem(id)), slides = feed.querySelectorAll('.slide');
+    return slides[i] ? slides[i].querySelector('video') : null;
+  }
+  $('shareScrim').addEventListener('click', closeShare);
+  $('shareClose').addEventListener('click', closeShare);
+  $('shareActs').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-s]'); if (!b || !shareId) return;
+    var k = b.dataset.s, id = shareId, st = findItem(id), v = slideVideo(id);
+    if (k === 'report') { closeShare(); openFlag(id); }
+    else if (k === 'notint') {
+      var n = loadJSON('mp_notint', []); n.push(String(id)); saveJSON('mp_notint', n);
+      closeShare(); toast('Got it. You will see fewer stories like this.', 2600); animateTo(currentIndex() + 1);
+    }
+    else if (k === 'download') {
+      closeShare();
+      if (st && st.video) { var a = document.createElement('a'); a.href = st.video; a.download = 'mtaa-pulse-' + id + '.mp4'; document.body.appendChild(a); a.click(); a.remove(); toast('Downloading video'); }
+      else toast('This story has no video to download');
+    }
+    else if (k === 'cast') {
+      closeShare();
+      if (v && v.remote && v.remote.prompt) v.remote.prompt().catch(function () { toast('No cast devices found'); });
+      else toast('Casting is not supported on this browser');
+    }
+    else if (k === 'why') {
+      closeShare();
+      toast(st ? 'Shown because it is a ' + String(st.category).toLowerCase() + ' story from ' + st.ward + ', ' + st.county + '.' : 'Shown because it is recent and near you.', 4200);
+    }
+    else if (k === 'caps') {
+      var off = document.body.classList.toggle('nocap');
+      b.setAttribute('aria-pressed', String(!off));
+      toast(off ? 'Captions off' : 'Captions on');
+    }
+    else if (k === 'speed') {
+      speedAt = (speedAt + 1) % speedSteps.length;
+      feed.querySelectorAll('video').forEach(function (x) { x.playbackRate = speedSteps[speedAt]; });
+      toast('Playback speed ' + speedSteps[speedAt] + 'x');
+    }
+    else { closeShare(); toast(b.textContent.trim() + ' is coming soon'); }
+  });
+  $('shareApps').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-s]'); if (!b || !shareId) return;
+    var k = b.dataset.s, id = shareId, st = findItem(id), url = storyUrl(id);
+    var text = (st ? st.caption.slice(0, 100) : 'Mtaa Pulse'), u = encodeURIComponent(url), t = encodeURIComponent(text);
+    function go(href) { closeShare(); countShare(id); window.open(href, '_blank', 'noopener'); }
+    if (k === 'wa') go('https://wa.me/?text=' + encodeURIComponent(text + ' ' + url));
+    else if (k === 'fb') go('https://www.facebook.com/sharer/sharer.php?u=' + u);
+    else if (k === 'x') go('https://twitter.com/intent/tweet?text=' + t + '&url=' + u);
+    else if (k === 'tg') go('https://t.me/share/url?url=' + u + '&text=' + t);
+    else if (k === 'sms') { closeShare(); countShare(id); location.href = 'sms:?&body=' + encodeURIComponent(text + ' ' + url); }
+    else if (k === 'mail') { closeShare(); countShare(id); location.href = 'mailto:?subject=' + encodeURIComponent('Mtaa Pulse') + '&body=' + encodeURIComponent(text + '\n' + url); }
+    else if (k === 'more') { closeShare(); countShare(id); navigator.share({ title: 'Mtaa Pulse', text: text, url: url }).catch(function () {}); }
+    else if (k === 'copy') {
+      closeShare(); countShare(id);
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { toast('Link copied'); }).catch(function () { toast(url, 4000); });
+      else toast(url, 4000);
+    }
+  });
 
   /* ---------- comments (accounts only) ---------- */
   var cmtSheet = $('cmtSheet'), cmtId = null;
@@ -3020,6 +3465,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     var text = $('cmtInput').value.trim(), err = $('cmtErr');
     if (!(session && session.type === 'account')) { closeComments(); toast('Log in to comment'); openAuth('login', null, 'login'); return; }
     if (text.length < 2) { err.textContent = 'Write a comment first.'; return; }
+    var badC = screenText(text, 'comment'); if (badC) { err.textContent = badC; return; }
     var id = cmtId, btn = $('cmtPost');
     btn.disabled = true; err.textContent = '';
     api.addComment(id, text, '@' + session.username).then(function (r) {
@@ -3094,14 +3540,41 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       if ($('mapNote')) $('mapNote').textContent = 'Check your connection. The county list below still works.';
     });
   }
-  function openMap() {
+  var adminRows = [];
+  function csvCell(v) { var t = String(v == null ? '' : v); if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; }
+  function downloadReport() {
+    var head = ['County', 'Category', 'Mood', 'Stories', 'Likes', 'Comments', 'Shares'];
+    var lines = [head.map(csvCell).join(',')].concat(adminRows.map(function (r) { return [r.county, r.category, r.mood, r.stories, r.likes, r.comments, r.shares].map(csvCell).join(','); }));
+    var blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'mtaa-pulse-report-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+  function countLines(o) {
+    var k = Object.keys(o).sort(function (x, y) { return o[y] - o[x]; });
+    return k.length ? k.map(function (n) { return esc(n) + ': <b>' + o[n] + '</b>'; }).join('<br>') : 'None yet';
+  }
+  function reportHtml(t) {
+    return '<div class="card"><b>Report summary</b><br>Stories: <b>' + t.total + '</b>. Verified: <b>' + t.verified + '</b>. Anonymous: <b>' + t.anonymous + '</b>. Creators: <b>' + t.creators + '</b>.<br>' +
+      'Likes: <b>' + t.likes + '</b>. Comments: <b>' + t.comments + '</b>. Shares: <b>' + t.shares + '</b>.<br>' +
+      'Founding creators (orange check): <b>' + t.founders + '</b> of ' + FOUNDER_LIMIT + '.</div>' +
+      '<div class="card"><b>Stories by category</b><br>' + countLines(t.byCategory) + '</div>' +
+      '<div class="card"><b>Stories by mood</b><br>' + countLines(t.byMood) + '</div>' +
+      '<button class="btn" id="reportCsv" type="button" style="margin-bottom:6px">Download report (CSV)</button>';
+  }
+  // Admin only. Demo: open with #admin in the address. Production: a separate, authenticated admin console (server checks the admin role).
+  function openAdmin() {
+    if (!CONFIG.DEMO) return;
     if (mapObj) { mapObj.remove(); mapObj = null; }
-    mapBody.innerHTML = '<div id="mapBox" style="height:48vh;min-height:260px;border-radius:18px;overflow:hidden;background:rgba(232,244,250,.07)"></div>' +
+    mapBody.innerHTML = '<div id="adminReport"><p class="note">Loading the report…</p></div>' +
+      '<div id="mapBox" style="height:48vh;min-height:260px;margin-top:14px;border-radius:18px;overflow:hidden;background:rgba(232,244,250,.07)"></div>' +
       '<p class="note" id="mapNote">Loading the map…</p><div id="mapList"></div>';
     mapPanel.classList.add('open');
+    api.adminReport().then(function (t) { adminRows = t.rows; if ($('adminReport')) $('adminReport').innerHTML = reportHtml(t); });
     Promise.all([api.countyCounts(), api.mapPoints()]).then(function (r) {
       var c = r[0], names = Object.keys(c).sort(function (x, y) { return c[y] - c[x]; });
-      $('mapList').innerHTML = '<p class="lede" style="margin-top:14px">Stories by county. Tap one to see its stories.</p>' +
+      $('mapList').innerHTML = '<p class="lede" style="margin-top:14px">Stories by county.</p>' +
         (names.length ? '<ul class="list">' + names.map(function (n) {
           return '<li><button type="button" data-county="' + esc(n) + '"><span>' + esc(n) + '</span><span class="muted">' + c[n] + ' stories</span></button></li>';
         }).join('') + '</ul>' : '<p class="lede">No stories yet.</p>');
@@ -3110,9 +3583,9 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   }
   mapBody.addEventListener('click', function (e) {                    // the county list below the map
     var b = e.target.closest('#mapList [data-county]');
-    if (b) pickCounty(b.dataset.county);
+    if (b) { mapPanel.classList.remove('open'); pickCounty(b.dataset.county); }
+    if (e.target.closest('#reportCsv')) downloadReport();
   });
-  $('mapBtn').addEventListener('click', openMap);
   $('mapClose').addEventListener('click', function () { mapPanel.classList.remove('open'); });
 
   /* ==================================================================
@@ -3120,6 +3593,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
      ================================================================== */
   hydrateIcons();
   if (location.hash === '#mod') openMod();       // demo moderator console
+  if (location.hash === '#admin') openAdmin();   // demo admin map and reports
+  window.addEventListener('hashchange', function () { if (location.hash === '#admin') openAdmin(); else if (location.hash === '#mod') openMod(); });
   updateHeader();
   updateLoginButton();
   resetFeed();
