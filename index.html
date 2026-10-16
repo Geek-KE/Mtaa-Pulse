@@ -982,11 +982,15 @@ body.nocap .caption,body.nocap .more{display:none}
   var NEARBY = {
     'Kisii County': ['Nyamira County', 'Migori County', 'Homa Bay County', 'Kericho County', 'Narok County'],
     'Nyamira County': ['Kisii County', 'Kericho County', 'Homa Bay County', 'Bomet County'],
-    'Nyeri County': ['Kirinyaga County', "Murang'a County", 'Laikipia County', 'Nyandarua County', 'Meru County']
+    'Nyeri County': ['Kirinyaga County', "Murang'a County", 'Laikipia County', 'Nyandarua County', 'Meru County'],
+    'Nairobi County': ['Kiambu County', 'Kajiado County', 'Machakos County', "Murang'a County"],
+    'Kiambu County': ['Nairobi County', "Murang'a County", 'Nyandarua County', 'Nakuru County', 'Machakos County']
   };
   var COUNTIES = ['Baringo','Bomet','Bungoma','Busia','Elgeyo-Marakwet','Embu','Garissa','Homa Bay','Isiolo','Kajiado','Kakamega','Kericho','Kiambu','Kilifi','Kirinyaga','Kisii','Kisumu','Kitui','Kwale','Laikipia','Lamu','Machakos','Makueni','Mandera','Marsabit','Meru','Migori','Mombasa',"Murang'a",'Nairobi','Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri','Samburu','Siaya','Taita-Taveta','Tana River','Tharaka-Nithi','Trans-Nzoia','Turkana','Uasin Gishu','Vihiga','Wajir','West Pokot'].map(function (n) { return n + ' County'; });
 
-  var state = { scope: 'nearby', home: 'Kisii County', county: 'Kisii County', query: '' };
+  // Fallback county only, used when the phone's location cannot be read. The real default is found from the phone's location at start.
+  var DEFAULT_COUNTY = 'Nairobi County';
+  var state = { scope: 'nearby', home: DEFAULT_COUNTY, county: DEFAULT_COUNTY, query: '' };
 
   /* session = { type:'account', token, username, avatar, contactMask }  (saved on device)
              | { type:'anon', token, exp }                                (memory only) */
@@ -3144,9 +3148,40 @@ body.nocap .caption,body.nocap .more{display:none}
   if (location.hash === '#mod') openMod();       // moderator console (needs the moderator key)
   if (location.hash === '#admin') openAdmin();   // admin map and reports (needs the moderator key)
   window.addEventListener('hashchange', function () { if (location.hash === '#admin') openAdmin(); else if (location.hash === '#mod') openMod(); });
-  updateHeader();
   updateLoginButton();
-  resetFeed();
+
+  /* Default county = where the person is. The last found county is remembered on the phone so the feed opens at once next time,
+     and is quietly re-checked in the background. If location is blocked, DEFAULT_COUNTY is used. */
+  function detectCounty() {
+    return new Promise(function (res) {
+      if (!navigator.geolocation) { res(null); return; }
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        var lat = pos.coords.latitude, lng = pos.coords.longitude;
+        resolveWard(lat, lng).then(function (w) { res(w.county); }, function () {
+          wardFromNominatim(lat, lng).then(function (n) { res(n.county || null); }, function () { res(null); });
+        });
+      }, function () { res(null); }, { enableHighAccuracy: false, timeout: 9000, maximumAge: 600000 });
+    });
+  }
+  function applyHome(c) { state.home = c; state.county = c; updateHeader(); resetFeed(); }
+  (function startWithLocation() {
+    var cached = loadJSON('mp_home', null);
+    if (cached && COUNTIES.indexOf(cached) !== -1) {
+      applyHome(cached);
+      detectCounty().then(function (c) {
+        if (!c || c === cached) return;
+        saveJSON('mp_home', c);
+        if (state.county === cached && state.scope === 'nearby' && !state.query) applyHome(c);   // only move them if they have not picked something else
+        else state.home = c;
+      });
+      return;
+    }
+    countyName.textContent = 'Locating…';
+    detectCounty().then(function (c) {
+      if (c) saveJSON('mp_home', c);
+      applyHome(c || DEFAULT_COUNTY);
+    });
+  })();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { updateMoreButtons(); });
   var resizeRaf = 0;
   window.addEventListener('resize', function () {
