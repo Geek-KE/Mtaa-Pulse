@@ -169,6 +169,7 @@ button.pfp{padding:0;cursor:pointer}
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin-bottom:14px;border-radius:24px;background:rgba(232,244,250,.08)}
 .seg button{height:40px;border-radius:20px;font-size:14px;font-weight:500;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--trust);color:#fff;font-weight:700}
+.seg button[aria-disabled="true"]{opacity:.4;cursor:not-allowed;font-weight:500}
 .label{display:block;margin:0 0 6px;font-size:13px;font-weight:500;color:var(--muted)}
 .gap{height:14px}
 .field{display:flex;align-items:center;height:52px;border-radius:14px;border:1px solid rgba(232,244,250,.28);background:rgba(232,244,250,.08);overflow:hidden}
@@ -180,7 +181,6 @@ button.pfp{padding:0;cursor:pointer}
 .field .tgl{flex:none;height:100%;padding:0 14px;font-size:13px;font-weight:700;color:var(--accent)}
 .err{min-height:20px;margin:8px 0 12px;font-size:14px;line-height:1.35;color:var(--danger)}
 .note{margin:12px 0 0;font-size:13px;line-height:1.4;color:var(--muted)}
-.demo{margin:0 0 14px;padding:10px 12px;border-radius:12px;background:rgba(242,163,60,.14);border:1px dashed var(--accent);font-size:13px;color:var(--sky)}
 .otp{width:100%;height:60px;border-radius:14px;border:1px solid rgba(232,244,250,.28);background:rgba(232,244,250,.08);color:#fff;font:inherit;font-size:30px;font-weight:700;letter-spacing:.5em;text-align:center;padding-left:.5em}
 .otp:focus-visible{outline:none;border-color:var(--accent)}
 .avwrap{display:flex;align-items:center;gap:16px;margin:4px 0 18px}
@@ -459,11 +459,11 @@ body.nocap .caption,body.nocap .more{display:none}
     <div class="panel-body" id="termsBody"></div>
   </section>
 
-  <!-- Layer 6: moderator console (DEMO only, open with #mod in the address) -->
+  <!-- Layer 6: moderator console (open with #mod in the address; needs the moderator key) -->
   <section class="panel" id="modPanel" role="dialog" aria-modal="true" aria-labelledby="modTitle">
     <div class="panel-head">
       <span class="hbtn" aria-hidden="true"></span>
-      <h2 id="modTitle">Moderator console (demo)</h2>
+      <h2 id="modTitle">Moderator console</h2>
       <button class="hbtn" id="modClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
     </div>
     <div class="panel-body" id="modBody"></div>
@@ -480,8 +480,6 @@ body.nocap .caption,body.nocap .more{display:none}
      server) without touching the logic below.
      ================================================================== */
   var CONFIG = {
-    DEMO: true,                 // true = fake backend, OTP shown on screen. Set false when your real backend is connected.
-    VIDEO_LIVE: true,           // true = story videos really upload to Bunny Stream through mtaa-pulse-server, even while DEMO is still true.
     OTP_LENGTH: 6,
     OTP_RESEND_SEC: 30,
     ANON_TOKEN_MS: 15 * 60 * 1000,          // a verified anonymous poster has 15 minutes to post, one story per verification
@@ -496,7 +494,7 @@ body.nocap .caption,body.nocap .more{display:none}
     AVATAR_TARGET_BYTES: 30 * 1024,
     AVATAR_SIZES: [320, 256, 192, 128],
     AVATAR_QUALITIES: [0.86, 0.78, 0.70, 0.60, 0.50],
-    // Story video (the server transcodes it, see notes in the API section)
+    // Story video (Bunny Stream transcodes it after upload)
     VIDEO_MAX_SEC: 60,
     VIDEO_MAX_BYTES: 50 * 1024 * 1024,
     CAPTION_MIN: 10,
@@ -515,7 +513,6 @@ body.nocap .caption,body.nocap .more{display:none}
     ANON_HASH_TTL_MS: 24 * 3600 * 1000,     // how long rate-limit hashes live (24 hours to a week). They limit volume, then are deleted.
     // Layer 2 - stricter standard for anonymous stories
     TRUSTED_AFTER: 3,                       // approved stories before an account gets lighter review (auto-checks only)
-    DEMO_AUTO_APPROVE_MS: 20000,            // DEMO only: pretend a moderator approves clean anonymous stories after 20s. 0 = off, use #mod instead.
     // Layer 3 - community flags
     FLAG_HIDE_THRESHOLD: 3,                 // distinct reports that auto-hide a story until a human reviews it
     // Layer 5 - the hard question (a legal and ethical decision, decide BEFORE launch)
@@ -529,7 +526,7 @@ body.nocap .caption,body.nocap .more{display:none}
     SEALED_RETENTION_MS: 365 * 86400000,    // how long the locked contact is kept (decide with your lawyer)
     BAN_HASH_MAX_MS: 7 * 86400000,          // layer 4: a ban hash lives only while the story awaits a decision, never longer than this
     // Layer 6 - run moderation properly
-    // Video: Bunny Stream (encoding + delivery), checked by GetStream on the server. Only used when DEMO is false.
+    // Video: Bunny Stream (encoding + delivery), checked by GetStream on the server.
     // These two are public values. The secret keys live in mtaa-pulse-server, never here.
     API_BASE: 'https://mtaa-pulse-server.onrender.com',                                       // e.g. 'https://api.mtaapulse.com' (where mtaa-pulse-server runs)
     TUS_ENDPOINT: 'https://video.bunnycdn.com/tusupload',
@@ -549,205 +546,74 @@ body.nocap .caption,body.nocap .more{display:none}
 
   /* ==================================================================
      2. API LAYER
-     The screens only ever call `api`. Below is a working fake so every
-     flow can be tried. To go live, replace each function body with a
-     request, keep the return shapes, and set CONFIG.DEMO = false.
+     Every call goes to mtaa-pulse-server (CONFIG.API_BASE). The screens only ever
+     call `api`, so nothing else in the app knows about URLs or headers.
 
-     Endpoints (all JSON, all behind your CDN/WAF):
-       POST /v1/otp/request     { channel, contact, purpose }         -> { ok }                    429 + Retry-After when limited
-       POST /v1/otp/verify      { channel, contact, code, purpose }   -> { token, exists? }
-       POST /v1/auth/login      { contact, password }                 -> { token, profile }
-       POST /v1/auth/reset      { token, contact, password }          -> { ok }
-       GET  /v1/usernames/:name                                       -> { available }
+     Endpoints (all JSON):
+       POST /v1/otp/request     { channel, contact, purpose, deviceId, solved } -> { ok }        429 + Retry-After when limited
+       POST /v1/otp/verify      { channel, contact, code, purpose }             -> { token, exists? }
+       POST /v1/auth/login      { contact, password }                           -> { token, profile }
+       POST /v1/auth/reset      { token, contact, password }                    -> { ok }
+       GET  /v1/usernames/:name                                                 -> { available }
        POST /v1/accounts        { token, contact, username, password, avatarUrl } -> { token, profile }
-       POST /v1/uploads         { kind, type, size }                  -> { uploadUrl, objectKey, publicUrl, headers }
-       PUT  <uploadUrl>         (bytes straight to object storage)
-       POST /v1/stories         { idempotencyKey, token, anonymous, ..., videoKey } -> { story }
-       GET  /v1/stories?scope=&county=&cursor=&limit=                 -> { items, nextCursor }   (only live/approved stories)
-       GET/PUT /v1/users/:name/follow, GET/POST /v1/users/:name/messages   (messages refused unless both follow each other)
-       POST /v1/stories/:id/share                                     -> { shares }              (counted each time someone shares)
-       POST /v1/stories/:id/like  { on }                              -> { likes }               (one like per account or device)
-       GET  /v1/stories/:id/comments, POST same { text }              -> [{ user, text, when }] / { comment, count }   (accounts only)
-       GET  /v1/stories?q=                                            -> search by place, topic or word
-       GET  /v1/stats/counties                                        -> { "Kisii County": 12, ... }   (Map tab)
-       GET  /v1/stories/geo?bbox=                                     -> [{ id, lat, lng, caption, ward, county, mood, category }]   (Map dots; cluster on the server when zoomed out)
-       Saved stories are kept on the device; later sync with GET/PUT /v1/me/saved for logged-in accounts.
-       POST /v1/stories/status  { ids }                               -> [{ id, status, reason, canAppeal }]
-       POST /v1/stories/:id/flag   { reason, deviceId }               -> { ok, hidden }          (layer 3)
-       POST /v1/stories/:id/appeal                                    -> { ok }
-       POST /v1/uploads/video                                         -> { videoId, libraryId, expirationTime, signature, endpoint }   (mtaa-pulse-server: creates the Bunny video and signs a TUS upload)
-       POST /webhooks/bunny, GET /v1/videos/:guid                     (Bunny tells the server when encoding is done, GetStream scans it. Any flag sends the story to review)
-       DELETE /v1/stories/:id                                         -> { ok }                  (account stories only, owner taken from the auth token. Anonymous stories: 403, support only)
-       DELETE /v1/me            { password }                          -> { ok, ids }             (deletes the account, its stories and its comments. Anonymous stories are not linked, so they stay)
-       POST /v1/mod/:id/delete-on-request { reference }              -> { ok }                  (support removes an anonymous story when the poster's reference matches the stored hash)
-       GET  /v1/mod/queue, GET /v1/mod/stats, POST /v1/mod/:id/:action    (separate, authenticated moderator tool)
+       POST /v1/uploads/video   { size, duration }                              -> signed Bunny Stream TUS upload
+       POST /v1/stories         { idempotencyKey, token?, anonymous, ..., videoKey } -> { story, proof }
+       GET  /v1/stories?scope=&county=&counties=&q=&cursor=&limit=              -> { items, nextCursor }   (public, ready videos only)
+       POST /v1/stories/:id/like | share | flag | appeal, GET/POST /v1/stories/:id/comments
+       POST /v1/stories/status  { ids }                                         -> [{ id, status, reason, canAppeal }]
+       DELETE /v1/stories/:id, DELETE /v1/me { password }
+       GET/PUT /v1/users/:name/follow, GET/POST /v1/users/:name/messages, GET /v1/me/inbox
+       GET  /v1/stories/geo, GET /v1/stats/counties                             (map)
+       /v1/mod/*                                                                (moderator key in X-Mod-Key, legal key in X-Legal-Key)
 
-     Rules the server must follow for 10M users:
-       - Phone numbers and emails are salted-hashed before storage or lookup,
-         and never returned to other people.
-       - OTP requests are rate limited per contact AND per IP (and per device),
-         with a short lock after repeated wrong codes. Reply 429 + Retry-After.
-       - Passwords use argon2id or bcrypt. Login attempts are rate limited.
-       - Videos and photos go browser -> object storage (presigned URL) -> CDN.
-         Your servers only see small JSON. Use resumable uploads (tus or S3
-         multipart) for video on weak networks.
-       - Video is transcoded on the server after upload (HLS/MP4 ladder, short
-         thumbnails) by a queue worker. The story shows "Being checked" until
-         transcoding and review finish. Do not re-encode on the phone.
-       - Anonymous posts: the verification token is single use and expires in
-         minutes. When the story is created, burn the token and keep nothing
-         that links the post to the email or number. Keep only a short-lived
-         salted hash for rate limiting, then discard it.
-       - Feed uses cursor paging (opaque cursor, never page numbers/offsets in
-         production), cached per county at the edge.
+     The server re-checks every rule. The browser only gives friendlier early messages.
+     Account sessions send "Authorization: Bearer <token>" automatically.
      ================================================================== */
   function apiErr(code, msg, retryAfter) { var e = new Error(msg); e.code = code; e.retryAfter = retryAfter || 0; return e; }
-  var FOUNDER_LIMIT = 200;      // the first 200 accounts get the orange check (real server: an atomic counter, so it can never go past 200)
-  function isFounderHandle(h) {
-    if (!h) return false;
-    var n = String(h).replace(/^@/, '');
-    if (n === 'amina_k') return true;                      // demo seed poster, so the badge is visible
-    return Object.keys(mock.users).some(function (k) { return mock.users[k].username === n && mock.users[k].founder > 0; });
-  }
-  function pairKey(a, b) { return [a, b].sort().join('|'); }
-  function theyFollowBack(who) { var n = 0; for (var i = 0; i < who.length; i++) n += who.charCodeAt(i); return n % 2 === 0; }
-  function relationOf(me, who) {
-    var following = ((loadJSON('mp_follows', {})[me]) || []).indexOf(who) !== -1;
-    return { following: following, followsYou: following && theyFollowBack(who), founder: isFounderHandle(who) };
-  }
+  var FOUNDER_LIMIT = 200;      // the first 200 accounts get the orange check (the server hands out the numbers)
   function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
-  /* ----- fake data for the demo backend ----- */
-  var TEMPLATES = [
-    { mood: 'Hooray!', category: 'Roads and bridges', scene: 'bridge', caption: 'Children can now cross to school even when the river is full. Work finished last week.' },
-    { mood: 'Relief!', category: 'Water', scene: 'tower', caption: 'The borehole near the market is pumping again after the repair. Queues are much shorter this morning.' },
-    { mood: 'Proud!', category: 'Farms', scene: 'terraces', caption: 'Soil now stays on the slope after heavy rain. Beans and maize look strong this season. The terraces were built together over two weekends.' }
-  ];
-  var PLACES = [
-    { county: 'Kisii County', ward: 'Nyanchwa Ward' }, { county: 'Nyamira County', ward: 'Township Ward' },
-    { county: 'Nyeri County', ward: 'Mweiga Ward' }, { county: 'Migori County', ward: 'Suna East Ward' },
-    { county: 'Kericho County', ward: 'Kapsoit Ward' }
-  ];
-  var WHENS = ['2 days ago', '5 hours ago', '1 day ago', '3 days ago', '40 minutes ago'];
-  function seedStories() {
-    var list = [
-      { id: 1, county: 'Kisii County', ward: 'Nyanchwa Ward', mood: 'Hooray!', category: 'Roads and bridges', caption: TEMPLATES[0].caption, when: '2 days ago', poster: null, verified: true, likes: 248, comments: 31, shares: 18, scene: 'bridge', video: null },
-      { id: 2, county: 'Nyamira County', ward: 'Township Ward', mood: 'Relief!', category: 'Water', caption: TEMPLATES[1].caption, when: '5 hours ago', poster: null, verified: true, likes: 96, comments: 12, shares: 7, scene: 'tower', video: null },
-      { id: 3, county: 'Nyeri County', ward: 'Mweiga Ward', mood: 'Proud!', category: 'Farms', caption: TEMPLATES[2].caption, when: '1 day ago', poster: null, verified: true, likes: 180, comments: 24, shares: 12, scene: 'terraces', video: null }
-    ];
-    for (var i = 0; i < 36; i++) {
-      var t = TEMPLATES[i % 3], p = PLACES[i % 5];
-      list.push({ id: 100 + i, county: p.county, ward: p.ward, mood: t.mood, category: t.category, caption: t.caption,
-        when: WHENS[i % 5], poster: i % 2 ? '@amina_k' : null, avatar: null, verified: true,
-        likes: 10 + i * 7, comments: i % 13, shares: 1 + i % 9, scene: t.scene, video: null });
-    }
-    return list;
-  }
-  // Demo only: give the seed stories a map position near their county. Real stories use the poster's phone location.
-  function addSeedCoords(list) {
-    var C = { 'Kisii County': [-0.68, 34.78], 'Nyamira County': [-0.57, 34.95], 'Nyeri County': [-0.42, 36.95], 'Migori County': [-1.07, 34.47], 'Kericho County': [-0.37, 35.28] };
-    list.forEach(function (st, i) {
-      var c = C[st.county];
-      if (!c) return;
-      st.lat = Math.round((c[0] + (((i * 37) % 21) - 10) / 100) * 100) / 100;
-      st.lng = Math.round((c[1] + (((i * 53) % 21) - 10) / 100) * 100) / 100;
-    });
-    return list;
-  }
-  var mock = { otps: {}, otpLog: {}, fails: {}, verified: {}, users: loadJSON('mp_mock_users', {}), stories: addSeedCoords(seedStories()),
-              rate: {}, dev: {}, banned: {}, anonTokens: {}, trust: {}, sealed: {}, audit: [], comments: {} };   // safety state, see section 2b
-  function saveUsers() { saveJSON('mp_mock_users', mock.users); }
-
-  /* ==================================================================
-     2b. SAFETY LAYERS (the fake server side)
-     Anonymous posting is where abuse concentrates, so the aim is to make
-     abuse costly WITHOUT being able to identify the honest majority.
-       1. Stop it at the door   : rate limits on hashed contact/device/IP, challenge for bot-like patterns
-       2. Stricter for anonymous: caption rules, auto checks, review queue before wide reach
-       3. Community flags       : Report button, auto-hide at a threshold, human review, appeal
-       4. Ban without identifying: keyed hash (HMAC) of the contact, nothing else kept
-       5. The hard question     : CONFIG.ANON_LINK_MODE ('none' = true anonymity, 'sealed' = contact locked, opened only by court order)
-       6. Run moderation        : response target, moderator tools, stats, status screen for posters
-     Everything here must be re-implemented on your real server.
-     The browser is never trusted: it only gives friendlier early messages.
-     ================================================================== */
-  var SERVER_SECRET = 'demo-only-secret';   // PRODUCTION: lives in a secrets manager on the server, never in client code
-
-  // A random id kept on this phone. It is only ever sent to the server to be hashed for rate limits.
+  // A random id kept on this phone. It is only ever sent to the server, which hashes it for rate limits.
   var deviceId = loadJSON('mp_device', null) || (function () { var d = uuid(); saveJSON('mp_device', d); return d; })();
 
-  // Keyed hash (HMAC-SHA256). The label gives each purpose its own unrelated hash, so a short-lived
-  // rate-limit hash can never be compared with a long-lived ban hash.
-  function hmacHex(label, text) {
-    var enc = new TextEncoder();
-    if (!(window.crypto && crypto.subtle)) return Promise.resolve(label + ':' + text);
-    return crypto.subtle.importKey('raw', enc.encode(SERVER_SECRET + '|' + label), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
-      .then(function (k) { return crypto.subtle.sign('HMAC', k, enc.encode(String(text))); })
-      .then(function (b) { return Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); });
-  }
-
-  // Layer 5 ('sealed' mode): AES-GCM encryption of the contact. The key comes from the server secret here;
-  // in production it lives in a KMS and decrypting is a separate, audited permission.
-  function sealKey() {
-    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(SERVER_SECRET + '|seal')).then(function (d) { return crypto.subtle.importKey('raw', d, 'AES-GCM', false, ['encrypt', 'decrypt']); });
-  }
-  function b64(buf) { return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))); }
-  function unb64(t) { return Uint8Array.from(atob(t), function (c) { return c.charCodeAt(0); }); }
-  function sealContact(contact) {
-    if (CONFIG.ANON_LINK_MODE !== 'sealed' || !(window.crypto && crypto.subtle)) return Promise.resolve(null);   // 'none' mode: nothing is kept
-    var iv = crypto.getRandomValues(new Uint8Array(12));
-    return sealKey().then(function (k) { return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, new TextEncoder().encode(contact)); })
-      .then(function (ct) { return b64(iv) + '.' + b64(ct); });
-  }
-  function unsealContact(blob) {
-    var part = blob.split('.');
-    return sealKey().then(function (k) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(part[0]) }, k, unb64(part[1])); })
-      .then(function (b) { return new TextDecoder().decode(b); });
-  }
-
-  // Only live or approved stories reach the public feed. Anything in review, hidden, removed or escalated does not.
-  function visible(s) { return !s.status || s.status === 'live' || s.status === 'approved'; }
-
-  // Layer 1: forget old rate-limit hashes (and the short-lived ban key on each story). They exist only to limit volume.
-  function purgeHashes() {
-    var now = Date.now(), cut = now - CONFIG.ANON_HASH_TTL_MS;
-    Object.keys(mock.rate).forEach(function (k) {
-      mock.rate[k] = mock.rate[k].filter(function (t) { return t > cut; });
-      if (!mock.rate[k].length) delete mock.rate[k];
-    });
-    // Layer 5: locked contacts expire after the retention period, unless the story is on legal hold.
-    Object.keys(mock.sealed).forEach(function (id) { var r = mock.sealed[id]; if (!r.hold && now > r.exp) delete mock.sealed[id]; });
-    mock.stories.forEach(function (st) { if (st.banKey && now > st.banKeyExp) { delete st.banKey; delete st.banKeyExp; } });
-  }
-  // The three keys are: contact, device, IP (the IP is faked here). Hitting the daily limit on ANY of them blocks the post.
-  function rateKeys(contactHash, dev) {
-    return Promise.all([hmacHex('rate-device', dev), hmacHex('rate-ip', 'demo-ip')]).then(function (h) { return [contactHash].concat(h); });
-  }
-  function overLimit(keys) {
-    purgeHashes();
-    return keys.some(function (k) { return (mock.rate[k] || []).length >= CONFIG.ANON_DAILY_LIMIT; });
-  }
-  // Runs when an anonymous code is requested: ban check, daily limit, and a bot-pattern check.
-  function screenAnon(purpose, contact, ctx) {
-    if (purpose !== 'anon') return Promise.resolve();
-    var dev = ctx.deviceId || 'none';
-    return Promise.all([hmacHex('ban', contact), hmacHex('rate-contact', contact), hmacHex('rate-device', dev)]).then(function (h) {
-      if (mock.banned[h[0]]) throw apiErr('banned', 'banned');                       // Layer 4: matches a banned contact
-      return rateKeys(h[1], dev).then(function (keys) {
-        if (overLimit(keys)) throw apiErr('daily_limit', 'daily');                  // Layer 1: daily cap
-        // One device asking for codes for 3+ different contacts in 10 minutes looks automated -> ask for a challenge.
-        var now = Date.now(), log = (mock.dev[h[2]] = (mock.dev[h[2]] || []).filter(function (e) { return now - e.t < 600000; }));
-        var seen = {}; log.forEach(function (e) { seen[e.c] = 1; }); seen[h[1]] = 1;
-        if (Object.keys(seen).length >= 3 && !ctx.solved) throw apiErr('challenge', 'challenge');
-        log.push({ t: now, c: h[1] });
+  function request(method, path, body, opts) {
+    opts = opts || {};
+    var headers = {}, sentAuth = false;
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    if (!opts.noAuth && session && session.type === 'account' && session.token) { headers.Authorization = 'Bearer ' + session.token; sentAuth = true; }
+    Object.keys(opts.headers || {}).forEach(function (k) { headers[k] = opts.headers[k]; });
+    return fetch(CONFIG.API_BASE + path, { method: method, headers: headers, body: body !== undefined ? JSON.stringify(body) : undefined }).then(function (r) {
+      return r.text().then(function (txt) {
+        var data = null;
+        try { data = txt ? JSON.parse(txt) : null; } catch (e) { data = null; }
+        if (r.ok) return data;
+        var code = (data && data.error) || 'http_' + r.status;
+        if (sentAuth && code === 'unauthorized') {                      // the saved login no longer works (expired or account removed)
+          setSession(null);
+          throw apiErr('unauthorized', 'Your login expired. Please log in again.');
+        }
+        throw apiErr(code, data && data.message, parseInt(r.headers.get('Retry-After'), 10) || (data && data.retryAfter) || 0);
       });
-    });
+    }, function () { throw apiErr('network', 'No connection. Please try again.'); });
+  }
+  function qs(o) {
+    var p = Object.keys(o).filter(function (k) { return o[k] !== undefined && o[k] !== null && o[k] !== ''; })
+      .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(o[k]); });
+    return p.length ? '?' + p.join('&') : '';
+  }
+  function userPath(who) { return '/v1/users/' + encodeURIComponent(String(who).replace(/^@/, '')); }
+  // Follow state is cached on this phone so the follow badges in the feed show the right state without a request per story.
+  function cacheFollow(me, who, on) {
+    if (!me) return;
+    var m = loadJSON('mp_follows', {}), l = m[me] || [], i = l.indexOf(who);
+    if (on && i === -1) l.push(who);
+    if (!on && i !== -1) l.splice(i, 1);
+    m[me] = l; saveJSON('mp_follows', m);
   }
 
-  // Layer 2: caption rules. Shared by the browser (friendly early message) and the "server" (the real check).
+  /* ----- text rules (early, friendly warnings only; the server repeats every one of them) ----- */
   //   reject = never allowed on anonymous stories (links, phone numbers: where scams and harassment live)
-  //   hold   = allowed, but goes to a human first (abusive language, may name a private person: defamation risk)
-  // The word list is a tiny sample. In production use proper Swahili / English / Sheng lists plus a text classifier.
+  //   hold   = allowed, but goes to a human first (abusive language, may name a private person)
   var BAD_WORDS = ['idiot', 'stupid', 'mjinga', 'mpumbavu', 'fala'];
   var RULES = {
     link: /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|co\.ke|ke|org|net)\b)/i,
@@ -763,7 +629,6 @@ body.nocap .caption,body.nocap .more{display:none}
     return out;
   }
   // Comments and messages: no offensive, violent or sexual words, and no phone numbers in comments.
-  // Sample lists (English, Swahili, Sheng). In production use full lists plus a text classifier, and run the same check on the server.
   var OFFENSIVE_WORDS = [
     'kill', 'murder', 'rape', 'raped', 'raping', 'rapist', 'stab', 'stabbed', 'stabbing', 'slaughter', 'strangle', 'behead', 'lynch',
     'kuua', 'nitakuua', 'kubaka', 'kuchinja',
@@ -777,7 +642,7 @@ body.nocap .caption,body.nocap .more{display:none}
   });
   var LEET = { '0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's', '7': 't', '@': 'a', '$': 's' };
   function cleanForWords(text) {
-    var t = String(text).normalize('NFKD').replace(/[\u0300-\u036f\u200b-\u200d\ufeff]/g, '').toLowerCase();
+    var t = String(text).normalize('NFKD').replace(/[̀-ͯ​-‍﻿]/g, '').toLowerCase();
     t = t.replace(/[013457@$]/g, function (c) { return LEET[c]; });
     return t.replace(/\b(?:[a-z]\s+){2,}[a-z]\b/g, function (m) { return m.replace(/\s+/g, ''); });     // "k i l l" -> "kill"
   }
@@ -794,39 +659,7 @@ body.nocap .caption,body.nocap .more{display:none}
     if (kind === 'comment' && (RULES.link.test(t) || hasNumberSharing(t))) return 'Comments cannot include phone numbers, long numbers or links.';
     return null;
   }
-  // Layer 2: automatic video check. PLUG IN here: run a nudity / graphic-violence classifier on the TRANSCODED file.
-  // The phone already blurs background faces and rejects clips with a person in focus, but the server must repeat it, because the phone cannot be trusted:
-  // run face detection (for example MediaPipe / YuNet, or a cloud service) on the transcoded file, blur every face, reject clips with a person in focus.
-  function scanVideo(videoKey) { return Promise.resolve({ flags: [] }); }
 
-  // Small helpers used by the flag, appeal and moderator functions below.
-  // Removes a story and its comments. Under a legal hold (layer 5) it is hidden now and kept only until the case closes.
-  function removeStory(st) {
-    delete mock.comments[st.id];
-    if (st.hold) { st.status = 'removed'; st.verified = false; st.reason = null; st.deletedByUser = true; }
-    else { mock.stories.splice(mock.stories.indexOf(st), 1); delete mock.sealed[st.id]; }
-    return st.id;
-  }
-  function findStory(id) { return mock.stories.filter(function (x) { return String(x.id) === String(id); })[0]; }
-  function setStatus(st, status, reason) { st.status = status; st.verified = status === 'approved'; st.reason = reason || null; st.decidedAt = Date.now();
-    delete st.banKey; delete st.banKeyExp; }   // decision made: the ban key is no longer needed ('ban' reads it first)
-  // Map privacy: a story's dot is only ever shown to about 1 km (2 decimal places), never the exact spot.
-  // This matters most for anonymous posters. Real server: round (and jitter) before saving, and never return exact coordinates.
-  function blurCoord(v) { return typeof v === 'number' ? Math.round(v * 100) / 100 : null; }
-  // Search: matches place, topic, mood or any word in the caption. Real server: a search index.
-  function matchQuery(st, q) {
-    if (!q) return true;
-    return [st.caption, st.ward, st.county, st.category, st.mood].join(' ').toLowerCase().indexOf(q.toLowerCase()) !== -1;
-  }
-  function isQueued(st) { return st.status === 'review' || st.status === 'hidden' || st.status === 'appeal' || st.status === 'escalated' || st.status === 'live'; }
-  var REMOVED_TEXT = 'It broke our community rules.';
-  function hashPw(contact, pw) {
-    var data = new TextEncoder().encode(contact + '|' + pw);
-    if (!(window.crypto && crypto.subtle)) return Promise.resolve('plain:' + contact + pw);
-    return crypto.subtle.digest('SHA-256', data).then(function (b) {
-      return Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
-    });
-  }
   var scripts = {};
   function loadScript(src) {
     if (!scripts[src]) scripts[src] = new Promise(function (ok, no) { var t = document.createElement('script'); t.src = src; t.onload = ok; t.onerror = function () { delete scripts[src]; no(new Error('script')); }; document.head.appendChild(t); });
@@ -848,414 +681,105 @@ body.nocap .caption,body.nocap .more{display:none}
       });
     }, function () { throw apiErr('network', 'No connection. Please try again.'); });
   }
-  function xhrPut(url, blob, onProgress, headers) {
-    return new Promise(function (res, rej) {
-      var x = new XMLHttpRequest();
-      x.open('PUT', url);
-      Object.keys(headers || {}).forEach(function (k) { x.setRequestHeader(k, headers[k]); });
-      x.upload.onprogress = function (e) { if (e.lengthComputable) onProgress(e.loaded / e.total * 100); };
-      x.onload = function () { x.status >= 200 && x.status < 300 ? res() : rej(apiErr('upload_failed', 'The upload did not finish. Please try again.')); };
-      x.onerror = function () { rej(apiErr('network', 'No connection. Please try again.')); };
-      x.send(blob);
-    });
-  }
-  function inScope(s, scope, county) {
-    if (scope === 'kenya') return true;
-    if (s.county === county) return true;
-    return scope === 'nearby' && (NEARBY[county] || []).indexOf(s.county) !== -1;
+
+  // Moderator and admin tools. The keys are typed in and held in memory only, never saved.
+  var modKey = '';
+  function modReq(method, path, body, extra) {
+    var h = { 'X-Mod-Key': modKey };
+    Object.keys(extra || {}).forEach(function (k) { h[k] = extra[k]; });
+    return request(method, path, body, { noAuth: true, headers: h });
   }
 
   var api = {
     requestOtp: function (channel, contact, purpose, ctx) {
-      return screenAnon(purpose, contact, ctx || {}).then(function () { return wait(600); }).then(function () {   // layers 1 and 4 run first
-        var now = Date.now();
-        var log = (mock.otpLog[contact] = (mock.otpLog[contact] || []).filter(function (t) { return now - t < 10 * 60 * 1000; }));
-        if (log.length >= 3) throw apiErr('rate_limited', 'Too many codes requested.', Math.ceil((10 * 60 * 1000 - (now - log[0])) / 1000));
-        log.push(now);
-        var code = String(Math.floor(Math.random() * Math.pow(10, CONFIG.OTP_LENGTH))).padStart(CONFIG.OTP_LENGTH, '0');
-        mock.otps[contact] = { code: code, exp: now + 5 * 60 * 1000, tries: 0 };
-        if (window.console) console.info('[demo] code for ' + contact + ': ' + code);
-        return { ok: true, demoCode: CONFIG.DEMO ? code : null };
-      });
+      ctx = ctx || {};
+      return request('POST', '/v1/otp/request', { channel: channel, contact: contact, purpose: purpose, deviceId: ctx.deviceId, solved: !!ctx.solved }, { noAuth: true });
     },
     verifyOtp: function (channel, contact, code, purpose) {
-      return wait(500).then(function () {
-        var o = mock.otps[contact];
-        if (!o) throw apiErr('no_code', 'Request a new code first.');
-        if (Date.now() > o.exp) { delete mock.otps[contact]; throw apiErr('expired', 'That code has expired. Request a new one.'); }
-        if (o.tries >= 5) throw apiErr('locked', 'Too many wrong tries. Request a new code.');
-        if (o.code !== code) { o.tries++; throw apiErr('bad_code', 'That code is not right. Check it and try again.'); }
-        delete mock.otps[contact];
-        var token = 'v_' + Math.random().toString(36).slice(2);
-        if (purpose === 'anon') {
-          // No account, nothing stored about the contact itself. The single-use token carries two keyed hashes for a few minutes:
-          // one for rate limits (layer 1) and one for banning if the story is later removed for serious abuse (layer 4).
-          return Promise.all([hmacHex('rate-contact', contact), hmacHex('ban', contact), sealContact(contact)]).then(function (h) {
-            mock.anonTokens[token] = { ck: h[0], bk: h[1], sl: h[2], exp: Date.now() + CONFIG.ANON_TOKEN_MS };
-            return { token: token };
-          });
-        }
-        if (purpose === 'signup' && mock.users[contact]) return { exists: true };
-        mock.verified[contact] = token;
-        return { token: token };
-      });
+      return request('POST', '/v1/otp/verify', { channel: channel, contact: contact, code: code, purpose: purpose }, { noAuth: true });
     },
     login: function (channel, contact, password) {
-      return wait(600).then(function () {
-        if ((mock.fails[contact] || 0) >= 5) throw apiErr('rate_limited', 'Too many tries.', 300);
-        var u = mock.users[contact];
-        return hashPw(contact, password).then(function (h) {
-          if (!u || u.pw !== h) { mock.fails[contact] = (mock.fails[contact] || 0) + 1; throw apiErr('bad_credentials', 'bad'); }
-          mock.fails[contact] = 0;
-          return { token: 'tok_' + Math.random().toString(36).slice(2), profile: { username: u.username, avatar: u.avatar, founder: u.founder || 0 } };
-        });
-      });
+      return request('POST', '/v1/auth/login', { contact: contact, password: password }, { noAuth: true });
     },
     resetPassword: function (token, contact, password) {
-      return wait(500).then(function () {
-        if (mock.verified[contact] !== token) throw apiErr('unverified', 'Please verify your code again.');
-        delete mock.verified[contact];
-        if (!mock.users[contact]) return { ok: true };            // same reply whether or not an account exists
-        return hashPw(contact, password).then(function (h) { mock.users[contact].pw = h; saveUsers(); mock.fails[contact] = 0; return { ok: true }; });
-      });
+      return request('POST', '/v1/auth/reset', { token: token, contact: contact, password: password }, { noAuth: true });
     },
-    checkUsername: function (name) {
-      return wait(250).then(function () {
-        var taken = ['admin', 'mtaa', 'mtaapulse', 'support', 'moderator'];
-        Object.keys(mock.users).forEach(function (k) { taken.push(mock.users[k].username); });
-        return { available: taken.indexOf(name) === -1 };
-      });
-    },
+    checkUsername: function (name) { return request('GET', '/v1/usernames/' + encodeURIComponent(name), undefined, { noAuth: true }); },
     createAccount: function (p) {
-      return wait(500).then(function () {
-        if (mock.verified[p.contact] !== p.token) throw apiErr('unverified', 'Please verify your code again.');
-        delete mock.verified[p.contact];
-        return hashPw(p.contact, p.password).then(function (h) {
-          var n = Object.keys(mock.users).length, founder = n < FOUNDER_LIMIT ? n + 1 : 0;      // number 1 to 200, or 0 when the offer is over
-          mock.users[p.contact] = { username: p.username, avatar: p.avatarUrl || null, pw: h, founder: founder };
-          saveUsers();
-          return { token: 'tok_' + Math.random().toString(36).slice(2), profile: { username: p.username, avatar: p.avatarUrl || null, founder: founder } };
-        });
-      });
+      return request('POST', '/v1/accounts', { token: p.token, contact: p.contact, username: p.username, password: p.password, avatarUrl: p.avatarUrl || null }, { noAuth: true });
     },
+    // Videos go from the phone straight to Bunny Stream. The server only creates the video and signs the upload.
     getUploadTarget: function (kind, meta) {
-      if (CONFIG.VIDEO_LIVE && kind === 'video') {       // Bunny Stream: the server creates the video and signs a resumable upload
-        return fetch(CONFIG.API_BASE + '/v1/uploads/video', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ size: meta.size, duration: meta.duration }) })
-          .then(function (r) { if (!r.ok) throw apiErr(r.status === 429 ? 'rate_limited' : 'upload_failed', 'We could not start the upload. Please try again.', 60); return r.json(); })
-          .then(function (c) { return { tus: c, objectKey: c.videoId }; }, function (e) { throw e.code ? e : apiErr('network', 'No connection. Please try again.'); });
-      }
-      return wait(200).then(function () {
-        return { uploadUrl: 'https://storage.example.invalid/' + kind + '/' + uuid(), objectKey: kind + '/' + uuid(), publicUrl: null, headers: { 'Content-Type': meta.type } };
-      });
-    },
-    putObject: function (target, blob, onProgress) {
-      if (target.tus) return tusUpload(target.tus, blob, onProgress);
-      if (!CONFIG.DEMO) return xhrPut(target.uploadUrl, blob, onProgress, target.headers);
-      return new Promise(function (resolve) {
-        var pct = 0;
-        var t = setInterval(function () {
-          pct = Math.min(100, pct + 8 + Math.random() * 10);
-          onProgress(pct);
-          if (pct >= 100) { clearInterval(t); resolve(); }
-        }, 140);
-      });
-    },
-    createStory: function (p) {
-      return wait(400).then(function () {
-        var anon = !!p.anonymous, now = Date.now(), info = null, pre = Promise.resolve(), proof = null, proofKey = null;
-        var chk = checkCaption(p.caption, anon);                       // Layer 2: server re-checks, never trusts the browser
-        if (chk.reject) throw apiErr('caption_rule', chk.reject);
-        if (anon) {
-          info = mock.anonTokens[p.token];
-          if (!info || now > info.exp) throw apiErr('unverified', 'Your verification expired. Please verify again.');
-          delete mock.anonTokens[p.token];                             // single use: burn the token now
-          pre = rateKeys(info.ck, p.deviceId || 'none').then(function (keys) {
-            if (overLimit(keys)) throw apiErr('daily_limit', 'daily');
-            keys.forEach(function (k) { (mock.rate[k] = mock.rate[k] || []).push(now); });   // count this story (layer 1)
-          });
-        }
-        // Anonymous posters get a reference code, shown only on their phone. The server keeps just a hash of it, so support can
-        // check a delete request really comes from the poster without the story being linked to a person.
-        if (anon) { proof = uuid().replace(/-/g, '').slice(0, 10).toUpperCase(); pre = pre.then(function () { return hmacHex('anon-proof', proof); }).then(function (h) { proofKey = h; }); }
-        return pre.then(function () { return scanVideo(p.videoKey); }).then(function (scan) {
-          var reasons = chk.hold.concat(scan.flags, p.faceCheck === 'done' ? [] : ['Face check was not done on the phone']);
-          var trusted = !anon && (mock.trust[p.posterName] || 0) >= CONFIG.TRUSTED_AFTER;
-          // Anonymous (or flagged) -> review queue FIRST, not public yet.
-          // Trusted account with clean checks -> lighter review: auto-checks only.
-          // Everyone else -> public with "Being checked", and still queued for a human.
-          var status = (anon || reasons.length) ? 'review' : (trusted ? 'approved' : 'live');
-          var story = { id: 's_' + uuid().slice(0, 8), county: p.county, ward: p.ward, mood: p.mood, category: p.category, caption: p.caption,
-            when: 'Just now', poster: p.posterName || null, avatar: p.posterAvatar || null, verified: status === 'approved',
-            likes: 0, comments: 0, shares: 0, scene: 'bridge', video: p.localPreview || null,     // real server returns the CDN URL after transcoding
-            lat: blurCoord(p.lat), lng: blurCoord(p.lng), status: status, anon: anon, owner: p.posterName || null, reasons: reasons, queuedAt: now, flaggers: [], appealed: false };
-          // Layer 4: a keyed hash of the contact is kept on the story ONLY while the story waits for a decision (hard cap CONFIG.BAN_HASH_MAX_MS),
-          // so a moderator can still ban the contact if it is removed for serious abuse. Deleted at the decision unless it is a ban.
-          if (info) { story.banKey = info.bk; story.banKeyExp = now + CONFIG.BAN_HASH_MAX_MS; }
-          // Layer 5: in 'sealed' mode keep the locked contact against the story id, for the retention period only.
-          if (info && info.sl) mock.sealed[story.id] = { blob: info.sl, exp: now + CONFIG.SEALED_RETENTION_MS, hold: false };
-          if (anon) story.proofKey = proofKey;
-          mock.stories.unshift(story);
-          // DEMO only: stand-in for a moderator approving a clean anonymous story.
-          if (CONFIG.DEMO && CONFIG.DEMO_AUTO_APPROVE_MS && status === 'review' && !reasons.length) {
-            setTimeout(function () { if (story.status === 'review') setStatus(story, 'approved'); }, CONFIG.DEMO_AUTO_APPROVE_MS);
-          }
-          return { story: story, proof: proof };
+      return request('POST', '/v1/uploads/video', { size: meta.size, duration: meta.duration }, { noAuth: true })
+        .then(function (c) { return { tus: c, objectKey: c.videoId }; }, function (e) {
+          throw e.code === 'rate_limited' || e.code === 'network' ? e : apiErr('upload_failed', 'We could not start the upload. Please try again.');
         });
-      });
+    },
+    putObject: function (target, blob, onProgress) { return tusUpload(target.tus, blob, onProgress); },
+    createStory: function (p) {
+      var body = { idempotencyKey: p.idempotencyKey, anonymous: !!p.anonymous, lat: p.lat, lng: p.lng, deviceId: p.deviceId, mood: p.mood, category: p.category,
+        caption: p.caption, ward: p.ward, county: p.county, videoKey: p.videoKey, durationSec: p.durationSec, faceCheck: p.faceCheck };
+      if (p.anonymous) body.token = p.token;                          // the single-use verification token; account posts use the login instead
+      return request('POST', '/v1/stories', body);
     },
     // ---- deleting ----
-    // Account stories: the owner can delete them. Anonymous stories: never from the app. The poster agreed to post without an
-    // account, so nothing proves the story is theirs. They ask support and quote the reference kept on their phone.
-    deleteStory: function (id, username) {
-      return wait(350).then(function () {
-        var st = findStory(id);
-        if (!st) throw apiErr('missing', 'That story is already gone.');
-        if (st.anon) throw apiErr('anon_delete', 'Anonymous stories can only be deleted by our support team.');
-        if (!username || st.owner !== '@' + username) throw apiErr('forbidden', 'You can only delete your own stories.');   // real server: the owner comes from the auth token
-        return { ok: true, ids: [removeStory(st)] };
-      });
-    },
-    deleteAccount: function (username, password) {
-      return wait(600).then(function () {
-        var contact = Object.keys(mock.users).filter(function (k) { return mock.users[k].username === username; })[0];
-        if (!contact) throw apiErr('missing', 'This account is already deleted.');
-        if ((mock.fails[contact] || 0) >= 5) throw apiErr('rate_limited', 'Too many tries.', 300);
-        return hashPw(contact, password).then(function (h) {
-          if (mock.users[contact].pw !== h) { mock.fails[contact] = (mock.fails[contact] || 0) + 1; throw apiErr('bad_credentials', 'bad'); }
-          var me = '@' + username;
-          var ids = mock.stories.filter(function (st) { return !st.anon && st.owner === me; }).map(function (st) { return removeStory(st); });
-          Object.keys(mock.comments).forEach(function (sid) {            // their comments on other stories go too
-            var n = mock.comments[sid].length, st = findStory(sid);
-            mock.comments[sid] = mock.comments[sid].filter(function (c) { return c.user !== me; });
-            if (st) st.comments = Math.max(0, st.comments - (n - mock.comments[sid].length));
-          });
-          delete mock.trust[me]; delete mock.fails[contact]; delete mock.users[contact]; saveUsers();
-          return { ok: true, ids: ids };
-        });
-      });
-    },
+    // Account stories: the owner can delete them. Anonymous stories: never from the app, only support, with the poster's reference.
+    deleteStory: function (id) { return request('DELETE', '/v1/stories/' + encodeURIComponent(id)); },
+    deleteAccount: function (username, password) { return request('DELETE', '/v1/me', { password: password }); },
     // Support tool: delete an anonymous story when the poster's reference matches.
-    supportDelete: function (id, proof) {
-      return wait(250).then(function () {
-        var st = findStory(id);
-        if (!st) throw apiErr('missing', 'No story with that id.');
-        return hmacHex('anon-proof', String(proof || '').trim().toUpperCase()).then(function (h) {
-          if (!st.anon || !st.proofKey || st.proofKey !== h) throw apiErr('proof', 'That reference does not match this story. Nothing was deleted.');
-          mock.audit.push({ at: Date.now(), id: id, op: 'deleted on poster request', ref: 'reference matched' });
-          removeStory(st);
-          return { ok: true };
-        });
-      });
-    },
-    // Layer 6: the poster's status screen. Only ids kept on the poster's own phone are looked up; nothing links them to a person.
-    getStatuses: function (ids) {
-      return wait(250).then(function () {
-        return ids.map(findStory).filter(Boolean).map(function (st) {
-          return { id: st.id, caption: st.caption.slice(0, 70), status: st.status || 'approved', reason: st.reason,
-                   canAppeal: (st.status === 'removed' || st.status === 'hidden') && !st.appealed, anon: !!st.anon, owner: st.owner || null };
-        });
-      });
-    },
-    // Layer 3: community flags. One flag per device, auto-hide at the threshold, then a human reviews it.
-    flagStory: function (id, reason, dev) {
-      return hmacHex('flag-device', dev).then(function (h) {
-        var st = findStory(id);
-        if (!st) throw apiErr('missing', 'That story is no longer available.');
-        st.flaggers = st.flaggers || [];
-        if (st.flaggers.indexOf(h) === -1) st.flaggers.push(h);
-        st.flagReasons = (st.flagReasons || []).concat(reason);
-        var hide = st.flaggers.length >= CONFIG.FLAG_HIDE_THRESHOLD && visible(st);
-        if (hide) { st.status = 'hidden'; st.verified = false; st.queuedAt = Date.now(); st.reasons = ['Reported by the community: ' + st.flagReasons.slice(-3).join(', ')]; }
-        return { ok: true, hidden: hide };
-      });
-    },
-    appeal: function (id) {
-      return wait(200).then(function () {
-        var st = findStory(id);
-        if (!st || st.appealed) throw apiErr('appeal', 'This decision was already appealed.');
-        st.appealed = true; st.status = 'appeal'; st.queuedAt = Date.now();
-        return { ok: true };
-      });
-    },
-    // ---- everyday actions: likes, comments, map counts ----
-    likeStory: function (id, on) {
-      return wait(120).then(function () {
-        var st = findStory(id);
-        if (!st) throw apiErr('missing', 'Story not found.');
-        st.likes = Math.max(0, st.likes + (on ? 1 : -1));   // real server: one like per account/device, stored and de-duplicated
-        return { likes: st.likes };
-      });
-    },
-    // ---- follows and messages (demo: kept on this device; real server stores them per account) ----
-    // Rule: two people can message each other ONLY when both follow each other.
-    // Demo stand-in for "do they follow me back?": decided by the poster's name, so some follow back and some do not.
+    supportDelete: function (id, proof) { return modReq('POST', '/v1/mod/' + encodeURIComponent(id) + '/delete-on-request', { reference: proof }); },
+    // The poster's status screen. Only ids kept on the poster's own phone are looked up; nothing links them to a person.
+    getStatuses: function (ids) { return request('POST', '/v1/stories/status', { ids: ids }, { noAuth: true }); },
+    flagStory: function (id, reason, dev) { return request('POST', '/v1/stories/' + encodeURIComponent(id) + '/flag', { reason: reason, deviceId: dev }, { noAuth: true }); },
+    appeal: function (id) { return request('POST', '/v1/stories/' + encodeURIComponent(id) + '/appeal', {}, { noAuth: true }); },
+    // ---- everyday actions ----
+    likeStory: function (id, on) { return request('POST', '/v1/stories/' + encodeURIComponent(id) + '/like', { on: !!on, deviceId: deviceId }); },
+    shareStory: function (id) { return request('POST', '/v1/stories/' + encodeURIComponent(id) + '/share', {}, { noAuth: true }); },
+    listComments: function (id) { return request('GET', '/v1/stories/' + encodeURIComponent(id) + '/comments', undefined, { noAuth: true }); },
+    addComment: function (id, text) { return request('POST', '/v1/stories/' + encodeURIComponent(id) + '/comments', { text: text }); },
+    // ---- follows and messages (two people can message only when both follow each other) ----
     getRelation: function (me, who) {
-      return wait(100).then(function () { return relationOf(me, who); });
+      return request('GET', userPath(who) + '/follow').then(function (r) { cacheFollow(me, who, r.following); return r; });
     },
     setFollow: function (me, who, on) {
-      return wait(120).then(function () {
-        var m = loadJSON('mp_follows', {}), l = m[me] || [], i = l.indexOf(who);
-        if (on && i === -1) l.push(who);
-        if (!on && i !== -1) l.splice(i, 1);
-        m[me] = l; saveJSON('mp_follows', m);
-        return relationOf(me, who);
-      });
+      return request('PUT', userPath(who) + '/follow', { on: !!on }).then(function (r) { cacheFollow(me, who, r.following); return r; });
     },
-    listMessages: function (me, who) {
-      return wait(100).then(function () { return loadJSON('mp_msgs', {})[pairKey(me, who)] || []; });
+    listMessages: function (me, who) { return request('GET', userPath(who) + '/messages'); },
+    sendMessage: function (me, who, text) { return request('POST', userPath(who) + '/messages', { text: text }); },
+    inbox: function () { return request('GET', '/v1/me/inbox'); },
+    // ---- map ----
+    mapPoints: function () { return request('GET', '/v1/stories/geo', undefined, { noAuth: true }); },
+    countyCounts: function () { return request('GET', '/v1/stats/counties', undefined, { noAuth: true }); },
+    // ---- feed ----
+    listStories: function (q) {
+      var p = { scope: q.scope, limit: q.limit, cursor: q.cursor, q: q.query };
+      if (q.scope !== 'kenya') p.county = q.county;
+      if (q.scope === 'nearby') p.counties = (NEARBY[q.county] || []).join('|');
+      return request('GET', '/v1/stories' + qs(p), undefined, { noAuth: true });
     },
-    sendMessage: function (me, who, text) {
-      return wait(120).then(function () {
-        var r = relationOf(me, who);
-        if (!(r.following && r.followsYou)) throw apiErr('mutual', 'You can only message each other when you both follow each other.');
-        var bad = screenText(text, 'message');
-        if (bad) throw apiErr('message_rule', bad);
-        var all = loadJSON('mp_msgs', {}), k = pairKey(me, who);
-        (all[k] = all[k] || []).push({ from: me, text: text, at: Date.now() });
-        saveJSON('mp_msgs', all);
-        return all[k].slice();
-      });
-    },
-    inbox: function (me) {
-      return wait(120).then(function () {
-        var all = loadJSON('mp_msgs', {}), threads = [], seen = {};
-        Object.keys(all).forEach(function (k) {
-          var p = k.split('|'); if (p.indexOf(me) === -1 || !all[k].length) return;
-          var who = p[0] === me ? p[1] : p[0], last = all[k][all[k].length - 1];
-          seen[who] = true;
-          threads.push({ who: who, text: last.text, mine: last.from === me, at: last.at, founder: isFounderHandle(who) });
-        });
-        threads.sort(function (a, b) { return b.at - a.at; });
-        var friends = ((loadJSON('mp_follows', {})[me]) || []).filter(function (w) { return theyFollowBack(w) && !seen[w]; })
-          .map(function (w) { return { who: w, founder: isFounderHandle(w) }; });
-        return { threads: threads, friends: friends };
-      });
-    },
-    // ---- admin: aggregated report over all public stories (real server: admin role required) ----
+    // ---- admin report: totals worked out from the grouped rows the server returns ----
     adminReport: function () {
-      return wait(150).then(function () {
-        var st = mock.stories.filter(visible), byCat = {}, byMood = {}, rows = {}, posters = {};
-        var t = { total: st.length, verified: 0, anonymous: 0, likes: 0, comments: 0, shares: 0 };
-        st.forEach(function (x) {
-          if (x.verified) t.verified++;
-          if (x.poster) posters[x.poster] = 1; else t.anonymous++;
+      return modReq('GET', '/v1/mod/report').then(function (r) {
+        var t = { total: 0, verified: 0, anonymous: 0, likes: 0, comments: 0, shares: 0, creators: 0, founders: 0, byCategory: {}, byMood: {}, rows: r.rows || [] };
+        t.rows.forEach(function (x) {
+          t.total += x.stories; t.verified += x.verified || 0; t.anonymous += x.anonymous || 0;
           t.likes += x.likes || 0; t.comments += x.comments || 0; t.shares += x.shares || 0;
-          byCat[x.category] = (byCat[x.category] || 0) + 1;
-          byMood[x.mood] = (byMood[x.mood] || 0) + 1;
-          var k = [x.county, x.category, x.mood].join('|');
-          var r = rows[k] = rows[k] || { county: x.county, category: x.category, mood: x.mood, stories: 0, likes: 0, comments: 0, shares: 0 };
-          r.stories++; r.likes += x.likes || 0; r.comments += x.comments || 0; r.shares += x.shares || 0;
+          t.byCategory[x.category] = (t.byCategory[x.category] || 0) + x.stories;
+          t.byMood[x.mood] = (t.byMood[x.mood] || 0) + x.stories;
         });
-        t.creators = Object.keys(posters).length;
-        t.founders = Object.keys(mock.users).filter(function (k) { return mock.users[k].founder > 0; }).length;
-        t.byCategory = byCat; t.byMood = byMood;
-        t.rows = Object.keys(rows).map(function (k) { return rows[k]; }).sort(function (a, b) { return a.county < b.county ? -1 : a.county > b.county ? 1 : b.stories - a.stories; });
+        if (r.totals) { t.creators = r.totals.creators || 0; t.founders = r.totals.founders || 0; }
         return t;
       });
     },
-    shareStory: function (id) {
-      return wait(120).then(function () {
-        var st = findStory(id);
-        if (!st) throw apiErr('missing', 'Story not found.');
-        st.shares = (st.shares || 0) + 1;                   // real server: POST /v1/stories/:id/share -> { shares }
-        return { shares: st.shares };
-      });
-    },
-    listComments: function (id) {
-      return wait(200).then(function () {
-        var st = findStory(id);
-        if (!mock.comments[id]) {                           // demo only: make a few sample comments for the seed stories
-          var sample = [{ user: '@amina_k', text: 'Great to see this finally done.', when: '1 day ago' }, { user: '@otieno_m', text: 'Thanks for sharing. Is it open to motorbikes too?', when: '5 hours ago' }, { user: '@wanjiru', text: 'Please keep us updated.', when: '2 hours ago' }];
-          mock.comments[id] = sample.slice(0, Math.min(3, st ? st.comments : 0));
-        }
-        return mock.comments[id].slice();
-      });
-    },
-    addComment: function (id, text, user) {
-      return wait(250).then(function () {
-        var st = findStory(id), bad = screenText(text, 'comment');    // server re-checks: offensive words, phone numbers, links
-        if (!st) throw apiErr('missing', 'Story not found.');
-        if (bad) throw apiErr('comment_rule', bad);
-        var c = { user: user, text: text, when: 'Just now' };
-        (mock.comments[id] = mock.comments[id] || []).push(c);
-        st.comments++;
-        return { comment: c, count: st.comments };
-      });
-    },
-    mapPoints: function () {                                // only public stories appear on the map
-      return wait(150).then(function () {
-        return mock.stories.filter(function (st) { return visible(st) && typeof st.lat === 'number'; }).map(function (st) {
-          return { id: st.id, lat: st.lat, lng: st.lng, caption: st.caption.slice(0, 90), ward: st.ward, county: st.county, mood: st.mood, category: st.category };
-        });
-      });
-    },
-    countyCounts: function () {
-      return wait(150).then(function () {
-        var out = {};
-        mock.stories.filter(visible).forEach(function (st) { out[st.county] = (out[st.county] || 0) + 1; });
-        return out;
-      });
-    },
-    // ---- moderator tools (production: a separate, authenticated console) ----
-    modQueue: function () {
-      return wait(150).then(function () {
-        var limit = CONFIG.REVIEW_TARGET_HOURS * 3600000, now = Date.now();
-        return mock.stories.filter(function (st) { return st.status && isQueued(st); })
-          .sort(function (x, y) { return x.queuedAt - y.queuedAt; })                     // oldest first
-          .map(function (st) { return { id: st.id, caption: st.caption, anon: st.anon, status: st.status, reasons: st.reasons || [],
-                                        ageMs: now - st.queuedAt, overdue: now - st.queuedAt > limit, canBan: !!st.banKey }; });
-      });
-    },
-    modStats: function () {
-      return wait(100).then(function () {
-        var anon = mock.stories.filter(function (st) { return st.anon; });
-        var removed = anon.filter(function (st) { return st.status === 'removed'; }).length;
-        var q = mock.stories.filter(function (st) { return st.status && isQueued(st); });
-        var late = q.filter(function (st) { return Date.now() - st.queuedAt > CONFIG.REVIEW_TARGET_HOURS * 3600000; }).length;
-        return { anonTotal: anon.length, anonRemoved: removed, queue: q.length, overdue: late };
-      });
-    },
-    // Layer 5: legal requests. Needs a case reference, and EVERY use is logged.
-    //   hold   = legal hold: stops the locked contact and the story's video from being deleted while a case is open
-    //   unseal = decrypt the contact (court order only; production: two-person approval, legal officer only)
-    legalAction: function (id, op, ref) {
-      return wait(200).then(function () {
-        if (!ref || ref.length < 4) throw apiErr('legal_ref', 'Enter the court order or case reference.');
-        var rec = mock.sealed[id], st = findStory(id);
-        mock.audit.push({ at: Date.now(), id: id, op: op, ref: ref });
-        if (op === 'hold') { if (st) st.hold = true; if (rec) rec.hold = true; return { held: true, sealed: !!rec }; }
-        if (!rec) return { contact: null };
-        return unsealContact(rec.blob).then(function (c) { return { contact: c }; });
-      });
-    },
-    modAction: function (id, action) {
-      return wait(200).then(function () {
-        var st = findStory(id), banned = false;
-        if (!st) throw apiErr('missing', 'Story not found.');
-        if (action === 'approve' || action === 'restore') {
-          setStatus(st, 'approved');
-          if (st.owner) mock.trust[st.owner] = (mock.trust[st.owner] || 0) + 1;         // a good record earns lighter review
-        } else if (action === 'remove' || action === 'uphold') {
-          setStatus(st, 'removed', REMOVED_TEXT);
-        } else if (action === 'ban') {
-          // Layer 4: remove AND store only the keyed hash of the contact. Future verifications that match it are rejected.
-          var bk = st.banKey;                                   // grab it first: setStatus() deletes it
-          setStatus(st, 'removed', REMOVED_TEXT);
-          if (bk) { mock.banned[bk] = true; banned = true; }    // the ONLY hash kept permanently
-        } else if (action === 'escalate') {
-          st.status = 'escalated';                                                      // threats / child safety: senior reviewer
-        }
-        return { banned: banned };
-      });
-    },
-    listStories: function (q) {
-      return wait(250).then(function () {
-        var all = mock.stories.filter(function (s) { return visible(s) && inScope(s, q.scope, q.county) && matchQuery(s, q.query); });
-        var start = q.cursor ? parseInt(q.cursor, 10) : 0;
-        var items = all.slice(start, start + q.limit).map(function (s) { var c = Object.assign({}, s); c.founder = isFounderHandle(s.poster); return c; });
-        var next = start + q.limit < all.length ? String(start + q.limit) : null;
-        return { items: items, nextCursor: next };
-      });
+    // ---- moderator tools ----
+    modQueue: function () { return modReq('GET', '/v1/mod/queue'); },
+    modStats: function () { return modReq('GET', '/v1/mod/stats'); },
+    modAction: function (id, action) { return modReq('POST', '/v1/mod/' + encodeURIComponent(id) + '/' + encodeURIComponent(action), {}); },
+    // Legal requests need a case reference and the legal officer's key. Every use is logged on the server.
+    //   hold   = legal hold: stops the locked contact from being deleted while a case is open
+    //   unseal = decrypt the contact (court order only)
+    legalAction: function (id, op, ref, legalKey) {
+      return modReq('POST', '/v1/mod/' + encodeURIComponent(id) + '/legal', { op: op, ref: ref }, { 'X-Legal-Key': legalKey || '' });
     }
   };
 
@@ -1461,48 +985,6 @@ body.nocap .caption,body.nocap .more{display:none}
   }
 
   /* ==================================================================
-     7. ILLUSTRATIONS (stand in for video)
-     ================================================================== */
-  function scene(i, label, extra) {
-    return '<svg viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" role="img" aria-label="' + label + '">' +
-      '<defs>' +
-      '<linearGradient id="sky' + i + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#05161F"/><stop offset="0.42" stop-color="#0B4F6C"/><stop offset="1" stop-color="#0E3A4E"/></linearGradient>' +
-      '<linearGradient id="fade' + i + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#071F2A" stop-opacity="0"/><stop offset="1" stop-color="#071F2A" stop-opacity="0.96"/></linearGradient>' +
-      '</defs>' +
-      '<rect width="390" height="844" fill="url(#sky' + i + ')"/>' +
-      '<circle cx="275" cy="190" r="46" fill="#F2A33C"/>' +
-      '<path d="M0 380 C100 320 240 310 390 370 L390 844 L0 844Z" fill="#0F4A62"/>' +
-      '<path d="M110 470 C200 400 320 400 390 430 L390 844 L110 844Z" fill="#0A3447"/>' +
-      extra +
-      '<rect x="0" y="560" width="390" height="284" fill="url(#fade' + i + ')"/></svg>';
-  }
-  var SCENES = {
-    bridge: function (i) {
-      return scene(i, 'Illustration of a footbridge over a river at dusk',
-        '<path d="M0 450 C110 430 230 480 390 450 L390 510 C230 540 110 490 0 510Z" fill="#1E88A8" opacity="0.8"/>' +
-        '<polygon points="30,455 318,432 318,446 30,469" fill="#D9B98A"/>' +
-        '<rect x="58" y="462" width="14" height="70" fill="#A8845A"/>' +
-        '<rect x="280" y="440" width="14" height="70" fill="#A8845A"/>');
-    },
-    tower: function (i) {
-      return scene(i, 'Illustration of a water tower and tap at dusk',
-        '<rect x="258" y="330" width="76" height="62" rx="8" fill="#5EC2DE"/>' +
-        '<rect x="266" y="392" width="8" height="100" fill="#A8845A"/>' +
-        '<rect x="318" y="392" width="8" height="100" fill="#A8845A"/>' +
-        '<path d="M296 392 C296 430 276 450 276 500" stroke="#5EC2DE" stroke-width="5" fill="none" stroke-linecap="round"/>' +
-        '<ellipse cx="276" cy="512" rx="40" ry="10" fill="#1E88A8" opacity="0.8"/>');
-    },
-    terraces: function (i) {
-      return scene(i, 'Illustration of terraced hills with a farmhouse at dusk',
-        '<path d="M150 470 C230 440 320 440 390 460" stroke="#1E88A8" stroke-width="5" fill="none" opacity="0.7" stroke-linecap="round"/>' +
-        '<path d="M130 510 C220 478 320 478 390 500" stroke="#1E88A8" stroke-width="5" fill="none" opacity="0.7" stroke-linecap="round"/>' +
-        '<path d="M110 550 C210 518 320 520 390 540" stroke="#1E88A8" stroke-width="5" fill="none" opacity="0.7" stroke-linecap="round"/>' +
-        '<rect x="60" y="420" width="86" height="56" rx="4" fill="#D9B98A"/>' +
-        '<polygon points="50,422 103,388 156,422" fill="#A8845A"/>');
-    }
-  };
-
-  /* ==================================================================
      8. FEED (cursor paged)
      Loads one page at a time and fetches the next when the viewer gets
      near the end. A video only gets its source while it is within one
@@ -1515,8 +997,8 @@ body.nocap .caption,body.nocap .more{display:none}
 
   function slideHtml(s, i) {
     var media = s.video
-      ? '<video data-src="' + esc(s.video) + '" muted loop playsinline preload="metadata"></video>'
-      : (SCENES[s.scene] || SCENES.bridge)(i);
+      ? '<video data-src="' + esc(s.video) + '"' + (s.thumb ? ' poster="' + esc(s.thumb) + '"' : '') + ' muted loop playsinline preload="metadata"></video>'
+      : '';
     var avatar = s.avatar ? '<img class="av" src="' + esc(s.avatar) + '" alt="" width="20" height="20" loading="lazy" decoding="async">' : '';
     return '<article class="slide" aria-label="Story ' + (i + 1) + '">' +
       '<div class="scene">' + media + '</div>' +
@@ -1801,7 +1283,7 @@ body.nocap .caption,body.nocap .more{display:none}
 
   function newFlow(mode, after) {
     return { mode: mode, after: after || null, channel: 'email', rawContact: '', contact: '', step: null, trail: [],
-             demoCode: null, avatar: null, username: '', password: '', verifyToken: null, busy: false, compressing: false };
+             avatar: null, username: '', password: '', verifyToken: null, busy: false, compressing: false };
   }
   function openAuth(first, after, mode) {
     lastFocus = document.activeElement;
@@ -1850,8 +1332,8 @@ body.nocap .caption,body.nocap .more{display:none}
   function channelToggle() {
     var isEmail = flow.channel === 'email';
     return '<div class="seg" role="group" aria-label="Email or phone">' +
-      '<button type="button" data-act="channel" data-ch="email" aria-pressed="' + isEmail + '">Email</button>' +
-      '<button type="button" data-act="channel" data-ch="phone" aria-pressed="' + !isEmail + '">Phone</button></div>';
+      '<button type="button" data-act="channel" data-ch="email" aria-pressed="true">Email</button>' +
+      '<button type="button" data-act="channel" data-ch="phone" aria-pressed="false" aria-disabled="true" title="Coming soon">Phone · soon</button></div>';
   }
   function contactField() {
     var isEmail = flow.channel === 'email';
@@ -1886,7 +1368,7 @@ body.nocap .caption,body.nocap .more{display:none}
     authTitle.textContent = 'Log in';
     authBody.innerHTML =
       '<h1 class="h1">Welcome back</h1>' +
-      '<p class="lede">Log in with your email or phone number and your password.</p>' +
+      '<p class="lede">Log in with your email and your password.</p>' +
       channelToggle() + contactField() + '<div class="gap"></div>' + passwordField('Password', 'current-password') +
       '<p class="err" id="authErr" role="alert"></p>' +
       '<button class="btn" id="authGo" type="button" data-act="login" data-label="Log in">Log in</button>' +
@@ -1901,9 +1383,9 @@ body.nocap .caption,body.nocap .more{display:none}
     var t = { signup: 'Create account', anon: 'Post anonymously', reset: 'Reset password' };
     var h = { signup: 'Confirm it is you', anon: 'Confirm before you post', reset: 'Reset your password' };
     var p = {
-      signup: 'We will send a 6-digit code by email or SMS to confirm your contact.',
+      signup: 'We will send a 6-digit code to your email to confirm it is you.',
       anon: 'We send a 6-digit code to confirm you are real.',
-      reset: 'Enter the email or number you signed up with and we will send a code.'
+      reset: 'Enter the email you signed up with and we will send a code.'
     };
     authTitle.textContent = t[flow.mode];
     authBody.innerHTML =
@@ -1914,7 +1396,7 @@ body.nocap .caption,body.nocap .more{display:none}
       '<p class="err" id="authErr" role="alert"></p>' +
       '<button class="btn" id="authGo" type="button" data-act="send" data-label="Send code">Send code</button>' +
       (flow.mode === 'signup' ? '<div class="center divider"><span class="muted">Already have an account?</span><button class="linkbtn" type="button" data-act="gologin">Log in</button></div>' : '') +
-      (flow.mode === 'anon' ? '<p class="note">By continuing you accept the <button class="linkbtn" type="button" data-act="terms" style="min-height:24px;padding:0">Terms and conditions</button>.</p>' : '<p class="note">Standard SMS rates may apply.</p><p class="note">By continuing you accept the ' + termsLink() + '.</p>');
+      (flow.mode === 'anon' ? '<p class="note">By continuing you accept the <button class="linkbtn" type="button" data-act="terms" style="min-height:24px;padding:0">Terms and conditions</button>.</p>' : '<p class="note">By continuing you accept the ' + termsLink() + '.</p>');
   }
 
   /* --- one-time code --- */
@@ -1923,7 +1405,6 @@ body.nocap .caption,body.nocap .more{display:none}
     authBody.innerHTML =
       '<h1 class="h1">Check your ' + (flow.channel === 'email' ? 'email' : 'messages') + '</h1>' +
       '<p class="lede">We sent a ' + CONFIG.OTP_LENGTH + '-digit code to <b style="color:#fff">' + esc(maskContact(flow.channel, flow.contact)) + '</b>. It works for 5 minutes.</p>' +
-      (CONFIG.DEMO && flow.demoCode ? '<p class="demo">Demo mode: your code is <b>' + esc(flow.demoCode) + '</b>. A real backend sends it to you instead.</p>' : '') +
       '<label class="sr" for="otp">One-time code</label>' +
       '<input class="otp" id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="' + CONFIG.OTP_LENGTH + '" placeholder="······">' +
       '<p class="err" id="authErr" role="alert"></p>' +
@@ -2037,7 +1518,7 @@ body.nocap .caption,body.nocap .more{display:none}
     if (act === 'mode') { flow.mode = el.dataset.mode; flow.rawContact = ''; showStep('contact'); }
     else if (act === 'gologin') { flow.mode = 'login'; flow.rawContact = ''; showStep('login'); }
     else if (act === 'forgot') { flow.mode = 'reset'; showStep('contact'); }
-    else if (act === 'channel') { flow.channel = el.dataset.ch; flow.rawContact = ''; STEPS[flow.step](); hydrateIcons(authBody); var c = $('contact'); if (c) c.focus(); }
+    else if (act === 'channel') { if (el.dataset.ch === 'phone') { toast('Phone sign-up is coming soon. Please use email for now.'); return; } flow.channel = 'email'; flow.rawContact = ''; STEPS[flow.step](); hydrateIcons(authBody); var c = $('contact'); if (c) c.focus(); }
     else if (act === 'send') sendCode(false);
     else if (act === 'resend') sendCode(true);
     else if (act === 'change') showStep('contact', { noPush: true });
@@ -2087,7 +1568,7 @@ body.nocap .caption,body.nocap .more{display:none}
     var c = isResend ? flow.contact : readContact();
     if (!c) { setErr(CONTACT_ERR[flow.channel]); return; }
     flow.contact = c;
-    if (flow.challenge && !isResend) {                                   // Layer 1: check the challenge answer (the server verifies it in production)
+    if (flow.challenge && !isResend) {                                   // Layer 1: quick check before a code is sent
       var ans = ($('chal') || {}).value;
       if (String(ans).trim() !== String(flow.challenge.a)) { setErr('That answer is not right. Try again.'); return; }
       flow.solved = true;
@@ -2095,7 +1576,6 @@ body.nocap .caption,body.nocap .more{display:none}
     if (!isResend) setBusy(true, 'Sending…'); else flow.busy = true;
     api.requestOtp(flow.channel, c, flow.mode, { deviceId: deviceId, solved: flow.solved }).then(function (r) {
       flow.busy = false;
-      flow.demoCode = r.demoCode;
       showStep('otp');
       if (isResend) toast('New code sent');
     }).catch(function (err) {
@@ -2190,14 +1670,8 @@ body.nocap .caption,body.nocap .more{display:none}
     });
   }
 
-  /* Upload the small avatar straight to storage, never through our own servers. */
-  function uploadAvatar(blob) {
-    return api.getUploadTarget('avatar', { type: blob.type, size: blob.size }).then(function (t) {
-      return api.putObject(t, blob, function () {}).then(function () {
-        return CONFIG.DEMO ? blobToDataUrl(blob) : t.publicUrl;
-      });
-    });
-  }
+  /* The avatar is already compressed to about 30 KB, so it is sent with the account request as a small data URL. */
+  function uploadAvatar(blob) { return blobToDataUrl(blob); }
 
   function createAccount() {
     var name = (flow.username || '').toLowerCase();
@@ -2211,7 +1685,7 @@ body.nocap .caption,body.nocap .more{display:none}
     }).then(function (avatarUrl) {
       return api.createAccount({ token: flow.verifyToken, contact: flow.contact, username: name, password: flow.password, avatarUrl: avatarUrl }).then(function (r) {
         flow.busy = false;
-        setSession({ type: 'account', token: r.token, username: name, avatar: avatarUrl, founder: r.profile.founder || 0, contactMask: maskContact(flow.channel, flow.contact) });
+        setSession({ type: 'account', token: r.token, username: name, avatar: r.profile.avatar || null, founder: r.profile.founder || 0, contactMask: maskContact(flow.channel, flow.contact) });
         finishAuth(r.profile.founder ? 'Welcome, @' + name + '! You are one of the first ' + FOUNDER_LIMIT + ' creators, so you get the orange check.' : 'Account created. Welcome, @' + name);
       });
     }).catch(function (err) { flow.busy = false; setBusy(false); setErr(errMsg(err)); });
@@ -2454,7 +1928,7 @@ body.nocap .caption,body.nocap .more{display:none}
        - a face that fills enough of the frame (CONFIG.FACE_FOCUS_RATIO) for CONFIG.FACE_FOCUS_SEC seconds means the camera is
          pointed at a person, so the recording stops and the clip is thrown away.
      Uses the phone's built-in FaceDetector when there is one, otherwise MediaPipe (loaded from a CDN only when needed).
-     The phone check can be bypassed by a modified app, so the server must repeat it on the uploaded video (see scanVideo). */
+     The phone check can be bypassed by a modified app, so the server must repeat it on the uploaded video (video scan hook in syncVideo, server.js). */
   var faceEngine = { det: null, loading: null };
   var MP_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
   var MP_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
@@ -2908,10 +2382,7 @@ body.nocap .caption,body.nocap .more{display:none}
         lat: rep.lat, lng: rep.lng,                             // phone location for the map dot (the server blurs it)
         deviceId: deviceId,                                     // hashed on the server for rate limits, never shown to others
         mood: rep.mood, category: rep.category, caption: rep.caption.trim(),
-        ward: rep.ward, county: rep.county, videoKey: videoKey, durationSec: Math.round(rep.dur), faceCheck: rep.faceChecked ? 'done' : 'none',
-        posterName: isAnon ? null : '@' + session.username,
-        posterAvatar: isAnon ? null : session.avatar,
-        localPreview: rep.url                                   // demo only
+        ward: rep.ward, county: rep.county, videoKey: videoKey, durationSec: Math.round(rep.dur), faceCheck: rep.faceChecked ? 'done' : 'none'
       });
     }).then(function (r) {
       var county = r.story.county;
@@ -2928,7 +2399,7 @@ body.nocap .caption,body.nocap .more{display:none}
       }
       state.scope = 'county'; state.county = county;
       updateHeader(); resetFeed();
-      toast(isAnon ? 'Posted anonymously.' : 'Posted. We will check it before it is marked Verified.', 3400);
+      toast(r.story.videoStatus === 'ready' ? 'Posted. We will check it before it is marked Verified.' : 'Posted. It appears in the feed once your video finishes processing.', 3600);
     }).catch(function (err) {
       rep.uploading = false;
       prog.hidden = true; go.textContent = 'Post'; validateReport();
@@ -3075,7 +2546,7 @@ body.nocap .caption,body.nocap .more{display:none}
   }
   function askDeleteStory(id) {
     askConfirm('Delete this story?', 'It is removed from Mtaa Pulse for everyone, along with its comments. This cannot be undone.', 'Delete story', function () {
-      api.deleteStory(id, session && session.username).then(function (r) {
+      api.deleteStory(id).then(function (r) {
         forgetStories(r.ids); toast('Story deleted');
         if (statusPanel.classList.contains('open')) openStatus(); else resetFeed();
       }).catch(function (err) { toast(errMsg(err)); });
@@ -3092,15 +2563,22 @@ body.nocap .caption,body.nocap .more{display:none}
     else api.appeal(b.dataset.id).then(function () { toast('Appeal sent. A different reviewer will look at it.', 3000); openStatus(); }).catch(function (err) { toast(errMsg(err)); });
   });
 
-  /* ---------- Layer 6: moderator console (DEMO only) ----------
-     Production: a separate, authenticated tool with an audit log, never part of the public app.
+  /* ---------- Layer 6: moderator console (open with #mod in the address) ----------
+     Every call needs the moderator key, which is checked on the server. The key is typed in and kept in memory only.
      It shows what proper moderation needs: oldest-first queue, a response target, an escalation
      route for threats and child safety, and the share of anonymous stories removed. */
   var modPanel = $('modPanel'), modBody = $('modBody');
   function ago(ms) { var m = Math.max(1, Math.round(ms / 60000)); return m < 60 ? m + ' min' : Math.round(m / 60) + ' h'; }
+  function keyCard(msg) {
+    return '<div class="card"><b>Moderator key</b><br>Enter the key to open this tool. It is kept only until you close this page.' +
+      '<div class="field" style="margin-top:8px"><input id="mkKey" type="password" placeholder="Moderator key" autocomplete="off"></div>' +
+      '<p class="err" role="alert">' + esc(msg || '') + '</p>' +
+      '<div class="row"><button class="btn" type="button" data-m="unlock">Open</button></div></div>';
+  }
   function openMod() {
-    if (!CONFIG.DEMO) return;
     modPanel.classList.add('open');
+    if (!modKey) { modBody.innerHTML = keyCard(''); return; }
+    modBody.innerHTML = '<p class="lede">Loading…</p>';
     Promise.all([api.modStats(), api.modQueue()]).then(function (r) {
       var st = r[0], q = r[1], pct = st.anonTotal ? Math.round(st.anonRemoved / st.anonTotal * 100) : 0;
       modBody.innerHTML =
@@ -3108,7 +2586,8 @@ body.nocap .caption,body.nocap .more{display:none}
         'In queue: ' + st.queue + '. Past the ' + CONFIG.REVIEW_TARGET_HOURS + '-hour target: ' + st.overdue + '.<br>' +
         '<span class="muted">If this share climbs, tighten the limits. If it is near zero, check the filters are working.</span></div>' +
         '<div class="card"><b>Take care of yourself.</b> Take a break after each batch of disturbing material. Use Escalate for threats and child-safety content. Do not forward it.</div>' +
-        (CONFIG.ANON_LINK_MODE === 'sealed' ? '<div class="card"><b>Legal request</b><br>Court order or case only. Every use is logged.' +
+        (CONFIG.ANON_LINK_MODE === 'sealed' ? '<div class="card"><b>Legal request</b><br>Court order or case only. Every use is logged. Needs the legal officer\'s key.' +
+          '<div class="field" style="margin-top:8px"><input id="lgKey" type="password" placeholder="Legal officer key" autocomplete="off"></div>' +
           '<div class="field" style="margin-top:8px"><input id="lgId" placeholder="Story id" autocomplete="off"></div>' +
           '<div class="field" style="margin-top:8px"><input id="lgRef" placeholder="Court order or case reference" autocomplete="off"></div>' +
           '<div class="row"><button class="btn ghost" type="button" data-m="hold">Preserve</button><button class="btn" type="button" data-m="unseal">Unseal contact</button></div>' +
@@ -3121,7 +2600,7 @@ body.nocap .caption,body.nocap .more{display:none}
           return '<div class="card' + (it.overdue ? ' late' : '') + '"><span class="badge' + (it.overdue ? ' bad' : '') + '">' + esc(it.status) + '</span>' +
             (it.anon ? '<span class="badge">Anonymous</span>' : '') + '<span class="muted">waiting ' + ago(it.ageMs) + ' · id ' + esc(it.id) + '</span><br>' +
             '<b>' + esc(it.caption) + '</b>' +
-            (it.reasons.length ? '<div>' + it.reasons.map(esc).join('. ') + '</div>' : '') +
+            ((it.reasons || []).length ? '<div>' + it.reasons.map(esc).join('. ') + '</div>' : '') +
             '<div class="row">' +
               ((it.status === 'appeal') ? '<button class="btn" type="button" data-m="restore" data-id="' + esc(it.id) + '">Restore</button><button class="btn ghost" type="button" data-m="uphold" data-id="' + esc(it.id) + '">Uphold removal</button>'
                 : '<button class="btn" type="button" data-m="approve" data-id="' + esc(it.id) + '">Approve</button><button class="btn ghost" type="button" data-m="remove" data-id="' + esc(it.id) + '">Remove</button>') +
@@ -3129,23 +2608,29 @@ body.nocap .caption,body.nocap .more{display:none}
               '<button class="btn ghost" type="button" data-m="escalate" data-id="' + esc(it.id) + '">Escalate</button>' +
             '</div></div>';
         }).join('') : '<p class="lede">The queue is empty.</p>');
+    }).catch(function (err) {
+      if (err.code === 'unauthorized') { modKey = ''; modBody.innerHTML = keyCard('That key is not right.'); return; }
+      modBody.innerHTML = '<p class="lede">' + esc(errMsg(err)) + '</p><div class="row"><button class="btn ghost" type="button" data-m="reload">Try again</button></div>';
     });
   }
   $('modClose').addEventListener('click', function () { modPanel.classList.remove('open'); resetFeed(); });
   modBody.addEventListener('click', function (e) {
     var b = e.target.closest('[data-m]');
     if (!b) return;
+    if (b.dataset.m === 'unlock') { modKey = ($('mkKey') || {}).value ? $('mkKey').value.trim() : ''; if (modKey) openMod(); return; }
+    if (b.dataset.m === 'reload') { openMod(); return; }
     if (b.dataset.m === 'supportdel') {
-      api.supportDelete($('dlId').value.trim(), $('dlRef').value.trim()).then(function () { $('dlOut').textContent = 'Deleted.'; }).catch(function (err) { $('dlOut').textContent = err.message; });
+      api.supportDelete($('dlId').value.trim(), $('dlRef').value.trim()).then(function () { $('dlOut').textContent = 'Deleted.'; }).catch(function (err) { $('dlOut').textContent = errMsg(err); });
       return;
     }
     if (b.dataset.m === 'hold' || b.dataset.m === 'unseal') {            // Layer 5: legal request
-      api.legalAction($('lgId').value.trim(), b.dataset.m, $('lgRef').value.trim()).then(function (r) {
+      api.legalAction($('lgId').value.trim(), b.dataset.m, $('lgRef').value.trim(), $('lgKey').value.trim()).then(function (r) {
         $('lgOut').textContent = r.held ? 'Preserved' + (r.sealed ? '.' : ' (no locked contact on file).') : (r.contact ? 'Contact: ' + r.contact : 'Nothing on file for that story.');
-      }).catch(function (err) { $('lgOut').textContent = err.message; });
+      }).catch(function (err) { $('lgOut').textContent = errMsg(err); });
       return;
     }
-    api.modAction(b.dataset.id, b.dataset.m).then(function (r) { if (r.banned) toast('Removed. Contact blocked.'); openMod(); });
+    api.modAction(b.dataset.id, b.dataset.m).then(function (r) { if (r.banned) toast('Removed. Contact blocked.'); openMod(); })
+      .catch(function (err) { if (err.code === 'unauthorized') { modKey = ''; openMod(); } else toast(errMsg(err)); });
   });
   window.addEventListener('hashchange', function () { if (location.hash === '#mod') openMod(); });
   document.addEventListener('keydown', function (e) {
@@ -3236,7 +2721,7 @@ body.nocap .caption,body.nocap .more{display:none}
     inboxBody.innerHTML = '<h1 class="h1">Messaging coming soon</h1>';
     return;
     if (!inboxBody.firstChild) inboxBody.innerHTML = '<p class="note">Loading…</p>';
-    api.inbox(myHandle()).then(function (r) {
+    api.inbox().then(function (r) {
       var html = '';
       if (r.threads.length) html += '<ul class="inlist">' + r.threads.map(function (t) { return inRow(t.who, (t.mine ? 'You: ' : '') + t.text, ago(Date.now() - t.at), t.founder); }).join('') + '</ul>';
       if (r.friends.length) html += '<p class="lede" style="margin-top:18px">Start a chat</p><ul class="inlist">' + r.friends.map(function (f) { return inRow(f.who, 'You follow each other. Say hello.', '', f.founder); }).join('') + '</ul>';
@@ -3564,25 +3049,32 @@ body.nocap .caption,body.nocap .more{display:none}
       '<div class="card"><b>Stories by mood</b><br>' + countLines(t.byMood) + '</div>' +
       '<button class="btn" id="reportCsv" type="button" style="margin-bottom:6px">Download report (CSV)</button>';
   }
-  // Admin only. Demo: open with #admin in the address. Production: a separate, authenticated admin console (server checks the admin role).
+  // Admin only (open with #admin in the address). The reports need the moderator key, which the server checks.
   function openAdmin() {
-    if (!CONFIG.DEMO) return;
     if (mapObj) { mapObj.remove(); mapObj = null; }
+    mapPanel.classList.add('open');
+    if (!modKey) { mapBody.innerHTML = keyCard(''); return; }
     mapBody.innerHTML = '<div id="adminReport"><p class="note">Loading the report…</p></div>' +
       '<div id="mapBox" style="height:48vh;min-height:260px;margin-top:14px;border-radius:18px;overflow:hidden;background:rgba(232,244,250,.07)"></div>' +
       '<p class="note" id="mapNote">Loading the map…</p><div id="mapList"></div>';
-    mapPanel.classList.add('open');
-    api.adminReport().then(function (t) { adminRows = t.rows; if ($('adminReport')) $('adminReport').innerHTML = reportHtml(t); });
+    api.adminReport().then(function (t) { adminRows = t.rows; if ($('adminReport')) $('adminReport').innerHTML = reportHtml(t); })
+      .catch(function (err) {
+        if (err.code === 'unauthorized') { modKey = ''; mapBody.innerHTML = keyCard('That key is not right.'); return; }
+        if ($('adminReport')) $('adminReport').innerHTML = '<p class="note">' + esc(errMsg(err)) + '</p>';
+      });
     Promise.all([api.countyCounts(), api.mapPoints()]).then(function (r) {
       var c = r[0], names = Object.keys(c).sort(function (x, y) { return c[y] - c[x]; });
+      if (!$('mapList')) return;
       $('mapList').innerHTML = '<p class="lede" style="margin-top:14px">Stories by county.</p>' +
         (names.length ? '<ul class="list">' + names.map(function (n) {
           return '<li><button type="button" data-county="' + esc(n) + '"><span>' + esc(n) + '</span><span class="muted">' + c[n] + ' stories</span></button></li>';
         }).join('') + '</ul>' : '<p class="lede">No stories yet.</p>');
       drawMap(r[1]);
-    }).catch(function () { $('mapNote').textContent = 'Could not load the map. Check your connection.'; });
+    }).catch(function () { if ($('mapNote')) $('mapNote').textContent = 'Could not load the map. Check your connection.'; });
   }
   mapBody.addEventListener('click', function (e) {                    // the county list below the map
+    var u = e.target.closest('[data-m="unlock"]');
+    if (u) { modKey = ($('mkKey') || {}).value ? $('mkKey').value.trim() : ''; if (modKey) openAdmin(); return; }
     var b = e.target.closest('#mapList [data-county]');
     if (b) { mapPanel.classList.remove('open'); pickCounty(b.dataset.county); }
     if (e.target.closest('#reportCsv')) downloadReport();
@@ -3593,8 +3085,8 @@ body.nocap .caption,body.nocap .more{display:none}
      11. START
      ================================================================== */
   hydrateIcons();
-  if (location.hash === '#mod') openMod();       // demo moderator console
-  if (location.hash === '#admin') openAdmin();   // demo admin map and reports
+  if (location.hash === '#mod') openMod();       // moderator console (needs the moderator key)
+  if (location.hash === '#admin') openAdmin();   // admin map and reports (needs the moderator key)
   window.addEventListener('hashchange', function () { if (location.hash === '#admin') openAdmin(); else if (location.hash === '#mod') openMod(); });
   updateHeader();
   updateLoginButton();
