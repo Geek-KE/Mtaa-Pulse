@@ -481,7 +481,7 @@ body.nocap .caption,body.nocap .more{display:none}
      ================================================================== */
   var CONFIG = {
     OTP_LENGTH: 6,
-    OTP_RESEND_SEC: 30,
+    OTP_RESEND_SEC: 300,
     ANON_TOKEN_MS: 15 * 60 * 1000,          // a verified anonymous poster has 15 minutes to post, one story per verification
     PASSWORD_MIN: 8,
     PASSWORD_MAX: 72,
@@ -725,6 +725,7 @@ body.nocap .caption,body.nocap .more{display:none}
     // ---- deleting ----
     // Account stories: the owner can delete them. Anonymous stories: never from the app, only support, with the poster's reference.
     deleteStory: function (id) { return request('DELETE', '/v1/stories/' + encodeURIComponent(id)); },
+    setAvatar: function (avatarUrl) { return request('PUT', '/v1/me/avatar', { avatarUrl: avatarUrl }); },
     deleteAccount: function (username, password) { return request('DELETE', '/v1/me', { password: password }); },
     // Support tool: delete an anonymous story when the poster's reference matches.
     supportDelete: function (id, proof) { return modReq('POST', '/v1/mod/' + encodeURIComponent(id) + '/delete-on-request', { reference: proof }); },
@@ -1419,7 +1420,7 @@ body.nocap .caption,body.nocap .more{display:none}
     function tick() {
       if (!btn) return;
       if (left <= 0) { btn.disabled = false; btn.textContent = 'Send a new code'; clearInterval(resendTimer); return; }
-      btn.disabled = true; btn.textContent = 'Send a new code in ' + left + 's'; left--;
+      btn.disabled = true; btn.textContent = 'Send a new code in ' + fmtClock(left); left--;
     }
     tick();
     resendTimer = setInterval(tick, 1000);
@@ -1466,8 +1467,10 @@ body.nocap .caption,body.nocap .more{display:none}
   function renderAccount() {
     authTitle.textContent = 'You';
     authBody.innerHTML =
-      '<div class="avwrap"><div class="avbtn" style="border-style:solid">' + (session.avatar ? '<img src="' + esc(session.avatar) + '" alt="Your profile photo">' : icon('user', 36)) +
-      '</div><div class="avmeta"><b style="font-size:20px">@' + esc(session.username) + '</b><br>' + esc(session.contactMask || '') + '</div></div>' +
+      '<div class="avwrap"><button class="avbtn" type="button" data-act="pickme" style="border-style:solid" aria-label="Change profile photo">' + (session.avatar ? '<img src="' + esc(session.avatar) + '" alt="Your profile photo">' : icon('user', 36)) +
+      '</button><div class="avmeta"><b style="font-size:20px">@' + esc(session.username) + '</b><br>' + esc(session.contactMask || '') +
+      '<br><button class="linkbtn" type="button" data-act="pickme" style="padding:0">' + (session.avatar ? 'Change photo' : 'Add a photo') + '</button><div id="avMeStatus" class="note" style="margin:2px 0 0"></div></div></div>' +
+      '<input class="sr" id="avMe" type="file" accept="image/*" tabindex="-1">' +
       '<div class="stack"><button class="btn ghost" type="button" data-act="status" data-focus>My story status</button>' +
       '<button class="btn ghost" type="button" data-act="terms">Terms and conditions</button>' +
       '<button class="btn ghost" type="button" data-act="contact">Contact support</button>' +
@@ -1525,6 +1528,7 @@ body.nocap .caption,body.nocap .more{display:none}
     else if (act === 'verify') verifyCode();
     else if (act === 'login') doLogin();
     else if (act === 'pick') $('avFile').click();
+    else if (act === 'pickme') $('avMe').click();
     else if (act === 'create') createAccount();
     else if (act === 'savepw') savePassword();
     else if (act === 'logout') { setSession(null); closeAuth(); toast('You are logged out'); }
@@ -1556,7 +1560,22 @@ body.nocap .caption,body.nocap .more{display:none}
   });
   authBody.addEventListener('change', function (e) {
     if (e.target.id === 'avFile' && e.target.files && e.target.files[0]) pickAvatar(e.target.files[0]);
+    else if (e.target.id === 'avMe' && e.target.files && e.target.files[0]) changeMyAvatar(e.target.files[0]);
   });
+  // Add or change the photo on an existing account (Me screen)
+  function changeMyAvatar(file) {
+    var st = $('avMeStatus');
+    if (st) st.textContent = 'Getting your photo ready…';
+    compressAvatar(file).then(function (res) { return blobToDataUrl(res.blob); })
+      .then(function (url) { return api.setAvatar(url); })
+      .then(function (r) {
+        if (!session || session.type !== 'account') return;
+        session.avatar = r.profile.avatar ? r.profile.avatar + '?v=' + Date.now() : null;
+        saveJSON('mp_session', session); updateLoginButton();
+        if (flow && flow.step === 'account') showStep('account', { noPush: true });
+        toast('Profile photo updated');
+      }).catch(function (err) { var s2 = $('avMeStatus'); if (s2) s2.textContent = errMsg(err); });
+  }
 
   function readContact() {
     var raw = ($('contact') && $('contact').value) || flow.rawContact || '';
