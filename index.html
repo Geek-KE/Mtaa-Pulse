@@ -129,6 +129,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;border-radius:26px;background:var(--accent);color:var(--ink);font-size:16px;font-weight:700}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 .btn.ghost{background:transparent;color:var(--sky);border:1px solid rgba(232,244,250,.28);font-weight:500}
+.btn.danger{background:var(--danger);color:var(--ink)}
+.btn.ghost.warn{color:var(--danger);border-color:rgba(255,155,138,.45)}
+.round.delbtn{color:var(--danger)}
 .linkbtn{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;font-size:14px;font-weight:700;color:var(--accent)}
 .linkbtn[disabled]{color:var(--muted);cursor:default}
 .center{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:4px;margin-top:8px}
@@ -293,6 +296,17 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     </div>
   </div>
 
+  <!-- Confirm sheet (used for deleting a story) -->
+  <div class="sheet-wrap" id="confirmSheet" style="z-index:40">
+    <button class="scrim" id="confirmScrim" type="button" aria-label="Cancel"></button>
+    <div class="sheet" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+      <div class="grab"></div>
+      <h2 id="confirmTitle"></h2>
+      <p class="lede" id="confirmText"></p>
+      <div class="stack"><button class="btn danger" id="confirmYes" type="button">Delete</button><button class="btn ghost" id="confirmNo" type="button">Cancel</button></div>
+    </div>
+  </div>
+
   <!-- Layer 6: status screen, so posters can see under review / approved / removed and appeal -->
   <section class="panel" id="statusPanel" role="dialog" aria-modal="true" aria-labelledby="statusTitle">
     <div class="panel-head">
@@ -427,6 +441,18 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     SEALED_RETENTION_MS: 365 * 86400000,    // how long the locked contact is kept (decide with your lawyer)
     BAN_HASH_MAX_MS: 7 * 86400000,          // layer 4: a ban hash lives only while the story awaits a decision, never longer than this
     // Layer 6 - run moderation properly
+    // Video: Bunny Stream (encoding + delivery), checked by GetStream on the server. Only used when DEMO is false.
+    // These two are public values. The secret keys live in mtaa-pulse-server, never here.
+    API_BASE: '',                                       // e.g. 'https://api.mtaapulse.com' (where mtaa-pulse-server runs)
+    TUS_ENDPOINT: 'https://video.bunnycdn.com/tusupload',
+    TUS_JS: 'https://cdn.jsdelivr.net/npm/tus-js-client@4.1.0/dist/tus.min.js',
+    HLS_JS: 'https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js',   // only loaded on phones that cannot play HLS natively
+    // Map tiles. OpenStreetMap's own server only allows light use from a real website address (https). It blocks apps opened
+    // as a file or inside a preview, which shows an "Access blocked" tile. For launch use a tile provider with a key, for example
+    // MapTiler: 'https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=YOUR_KEY' with attribution '&copy; MapTiler &copy; OpenStreetMap contributors'.
+    TILE_URL: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    TILE_ATTR: '&copy; OpenStreetMap contributors',
+    SUPPORT_EMAIL: 'info@mtaapulse.com',      // where anonymous posters send delete requests
     REVIEW_TARGET_HOURS: 4                  // reported or held stories should get a human decision within this time
   };
 
@@ -459,6 +485,11 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
        POST /v1/stories/status  { ids }                               -> [{ id, status, reason, canAppeal }]
        POST /v1/stories/:id/flag   { reason, deviceId }               -> { ok, hidden }          (layer 3)
        POST /v1/stories/:id/appeal                                    -> { ok }
+       POST /v1/uploads/video                                         -> { videoId, libraryId, expirationTime, signature, endpoint }   (mtaa-pulse-server: creates the Bunny video and signs a TUS upload)
+       POST /webhooks/bunny, GET /v1/videos/:guid                     (Bunny tells the server when encoding is done, GetStream scans it. Any flag sends the story to review)
+       DELETE /v1/stories/:id                                         -> { ok }                  (account stories only, owner taken from the auth token. Anonymous stories: 403, support only)
+       DELETE /v1/me            { password }                          -> { ok, ids }             (deletes the account, its stories and its comments. Anonymous stories are not linked, so they stay)
+       POST /v1/mod/:id/delete-on-request { reference }              -> { ok }                  (support removes an anonymous story when the poster's reference matches the stored hash)
        GET  /v1/mod/queue, GET /v1/mod/stats, POST /v1/mod/:id/:action    (separate, authenticated moderator tool)
 
      Rules the server must follow for 10M users:
@@ -634,6 +665,13 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   function scanVideo(videoKey) { return Promise.resolve({ flags: [] }); }
 
   // Small helpers used by the flag, appeal and moderator functions below.
+  // Removes a story and its comments. Under a legal hold (layer 5) it is hidden now and kept only until the case closes.
+  function removeStory(st) {
+    delete mock.comments[st.id];
+    if (st.hold) { st.status = 'removed'; st.verified = false; st.reason = null; st.deletedByUser = true; }
+    else { mock.stories.splice(mock.stories.indexOf(st), 1); delete mock.sealed[st.id]; }
+    return st.id;
+  }
   function findStory(id) { return mock.stories.filter(function (x) { return String(x.id) === String(id); })[0]; }
   function setStatus(st, status, reason) { st.status = status; st.verified = status === 'approved'; st.reason = reason || null; st.decidedAt = Date.now();
     delete st.banKey; delete st.banKeyExp; }   // decision made: the ban key is no longer needed ('ban' reads it first)
@@ -653,6 +691,27 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     return crypto.subtle.digest('SHA-256', data).then(function (b) {
       return Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
     });
+  }
+  var scripts = {};
+  function loadScript(src) {
+    if (!scripts[src]) scripts[src] = new Promise(function (ok, no) { var t = document.createElement('script'); t.src = src; t.onload = ok; t.onerror = function () { delete scripts[src]; no(new Error('script')); }; document.head.appendChild(t); });
+    return scripts[src];
+  }
+  // Resumable upload straight to Bunny Stream. Small chunks and retries so a dropped connection resumes instead of restarting.
+  function tusUpload(c, blob, onProgress) {
+    return loadScript(CONFIG.TUS_JS).then(function () {
+      return new Promise(function (ok, no) {
+        var up = new window.tus.Upload(blob, {
+          endpoint: c.endpoint || CONFIG.TUS_ENDPOINT, chunkSize: 1024 * 1024, retryDelays: [0, 1500, 4000, 8000, 15000],
+          headers: { AuthorizationSignature: c.signature, AuthorizationExpire: String(c.expirationTime), VideoId: c.videoId, LibraryId: String(c.libraryId) },
+          metadata: { filetype: blob.type || 'video/mp4', title: 'story' },
+          onProgress: function (sent, total) { onProgress(sent / total * 100); },
+          onSuccess: function () { ok(); },
+          onError: function () { no(apiErr('upload_failed', 'The upload did not finish. Please try again.')); }
+        });
+        up.findPreviousUploads().then(function (prev) { if (prev.length) up.resumeFromPreviousUpload(prev[0]); up.start(); });
+      });
+    }, function () { throw apiErr('network', 'No connection. Please try again.'); });
   }
   function xhrPut(url, blob, onProgress, headers) {
     return new Promise(function (res, rej) {
@@ -744,11 +803,17 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       });
     },
     getUploadTarget: function (kind, meta) {
+      if (!CONFIG.DEMO && kind === 'video') {       // Bunny Stream: the server creates the video and signs a resumable upload
+        return fetch(CONFIG.API_BASE + '/v1/uploads/video', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ size: meta.size, duration: meta.duration }) })
+          .then(function (r) { if (!r.ok) throw apiErr(r.status === 429 ? 'rate_limited' : 'upload_failed', 'We could not start the upload. Please try again.', 60); return r.json(); })
+          .then(function (c) { return { tus: c, objectKey: c.videoId }; }, function (e) { throw e.code ? e : apiErr('network', 'No connection. Please try again.'); });
+      }
       return wait(200).then(function () {
         return { uploadUrl: 'https://storage.example.invalid/' + kind + '/' + uuid(), objectKey: kind + '/' + uuid(), publicUrl: null, headers: { 'Content-Type': meta.type } };
       });
     },
     putObject: function (target, blob, onProgress) {
+      if (!CONFIG.DEMO && target.tus) return tusUpload(target.tus, blob, onProgress);
       if (!CONFIG.DEMO) return xhrPut(target.uploadUrl, blob, onProgress, target.headers);
       return new Promise(function (resolve) {
         var pct = 0;
@@ -761,7 +826,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     },
     createStory: function (p) {
       return wait(400).then(function () {
-        var anon = !!p.anonymous, now = Date.now(), info = null, pre = Promise.resolve();
+        var anon = !!p.anonymous, now = Date.now(), info = null, pre = Promise.resolve(), proof = null, proofKey = null;
         var chk = checkCaption(p.caption, anon);                       // Layer 2: server re-checks, never trusts the browser
         if (chk.reject) throw apiErr('caption_rule', chk.reject);
         if (anon) {
@@ -773,6 +838,9 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
             keys.forEach(function (k) { (mock.rate[k] = mock.rate[k] || []).push(now); });   // count this story (layer 1)
           });
         }
+        // Anonymous posters get a reference code, shown only on their phone. The server keeps just a hash of it, so support can
+        // check a delete request really comes from the poster without the story being linked to a person.
+        if (anon) { proof = uuid().replace(/-/g, '').slice(0, 10).toUpperCase(); pre = pre.then(function () { return hmacHex('anon-proof', proof); }).then(function (h) { proofKey = h; }); }
         return pre.then(function () { return scanVideo(p.videoKey); }).then(function (scan) {
           var reasons = chk.hold.concat(scan.flags, p.faceCheck === 'done' ? [] : ['Face check was not done on the phone']);
           var trusted = !anon && (mock.trust[p.posterName] || 0) >= CONFIG.TRUSTED_AFTER;
@@ -789,12 +857,57 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
           if (info) { story.banKey = info.bk; story.banKeyExp = now + CONFIG.BAN_HASH_MAX_MS; }
           // Layer 5: in 'sealed' mode keep the locked contact against the story id, for the retention period only.
           if (info && info.sl) mock.sealed[story.id] = { blob: info.sl, exp: now + CONFIG.SEALED_RETENTION_MS, hold: false };
+          if (anon) story.proofKey = proofKey;
           mock.stories.unshift(story);
           // DEMO only: stand-in for a moderator approving a clean anonymous story.
           if (CONFIG.DEMO && CONFIG.DEMO_AUTO_APPROVE_MS && status === 'review' && !reasons.length) {
             setTimeout(function () { if (story.status === 'review') setStatus(story, 'approved'); }, CONFIG.DEMO_AUTO_APPROVE_MS);
           }
-          return { story: story };
+          return { story: story, proof: proof };
+        });
+      });
+    },
+    // ---- deleting ----
+    // Account stories: the owner can delete them. Anonymous stories: never from the app. The poster agreed to post without an
+    // account, so nothing proves the story is theirs. They ask support and quote the reference kept on their phone.
+    deleteStory: function (id, username) {
+      return wait(350).then(function () {
+        var st = findStory(id);
+        if (!st) throw apiErr('missing', 'That story is already gone.');
+        if (st.anon) throw apiErr('anon_delete', 'Anonymous stories can only be deleted by our support team.');
+        if (!username || st.owner !== '@' + username) throw apiErr('forbidden', 'You can only delete your own stories.');   // real server: the owner comes from the auth token
+        return { ok: true, ids: [removeStory(st)] };
+      });
+    },
+    deleteAccount: function (username, password) {
+      return wait(600).then(function () {
+        var contact = Object.keys(mock.users).filter(function (k) { return mock.users[k].username === username; })[0];
+        if (!contact) throw apiErr('missing', 'This account is already deleted.');
+        if ((mock.fails[contact] || 0) >= 5) throw apiErr('rate_limited', 'Too many tries.', 300);
+        return hashPw(contact, password).then(function (h) {
+          if (mock.users[contact].pw !== h) { mock.fails[contact] = (mock.fails[contact] || 0) + 1; throw apiErr('bad_credentials', 'bad'); }
+          var me = '@' + username;
+          var ids = mock.stories.filter(function (st) { return !st.anon && st.owner === me; }).map(function (st) { return removeStory(st); });
+          Object.keys(mock.comments).forEach(function (sid) {            // their comments on other stories go too
+            var n = mock.comments[sid].length, st = findStory(sid);
+            mock.comments[sid] = mock.comments[sid].filter(function (c) { return c.user !== me; });
+            if (st) st.comments = Math.max(0, st.comments - (n - mock.comments[sid].length));
+          });
+          delete mock.trust[me]; delete mock.fails[contact]; delete mock.users[contact]; saveUsers();
+          return { ok: true, ids: ids };
+        });
+      });
+    },
+    // Support tool: delete an anonymous story when the poster's reference matches.
+    supportDelete: function (id, proof) {
+      return wait(250).then(function () {
+        var st = findStory(id);
+        if (!st) throw apiErr('missing', 'No story with that id.');
+        return hmacHex('anon-proof', String(proof || '').trim().toUpperCase()).then(function (h) {
+          if (!st.anon || !st.proofKey || st.proofKey !== h) throw apiErr('proof', 'That reference does not match this story. Nothing was deleted.');
+          mock.audit.push({ at: Date.now(), id: id, op: 'deleted on poster request', ref: 'reference matched' });
+          removeStory(st);
+          return { ok: true };
         });
       });
     },
@@ -803,7 +916,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       return wait(250).then(function () {
         return ids.map(findStory).filter(Boolean).map(function (st) {
           return { id: st.id, caption: st.caption.slice(0, 70), status: st.status || 'approved', reason: st.reason,
-                   canAppeal: (st.status === 'removed' || st.status === 'hidden') && !st.appealed };
+                   canAppeal: (st.status === 'removed' || st.status === 'hidden') && !st.appealed, anon: !!st.anon, owner: st.owner || null };
         });
       });
     },
@@ -1074,6 +1187,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/>',
     upload: '<path d="M12 16V4m0 0L8 8m4-4 4 4M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/>',
     flag: '<path d="M5 21V4m0 0h11l-2 4 2 4H5"/>',
+    trash: '<path d="M4 7h16M10 11v6m4-6v6M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3"/>',
     flip: '<path d="M20 11V9a3 3 0 0 0-3-3H7"/><path d="m10 3-3 3 3 3"/><path d="M4 13v2a3 3 0 0 0 3 3h10"/><path d="m14 21 3-3-3-3"/>'
   };
   function icon(name, size, stroke) {
@@ -1108,7 +1222,10 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     session = s;
     if (s && s.type === 'account') saveJSON('mp_session', s); else removeKey('mp_session');
     updateLoginButton();
+    if (fs && fs.items.length) resetFeed();                      // swap Report / Delete buttons to match who is logged in
   }
+  // Real server: return mine:true on each story when the request carries the poster's account token.
+  function isMine(s) { return !!(s && s.owner && session && session.type === 'account' && s.owner === '@' + session.username); }
   function hasValidSession() {
     if (!session) return false;
     if (session.exp && Date.now() > session.exp) { session = null; return false; }
@@ -1194,7 +1311,9 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
           '<div class="rail-item"><button class="round sharebtn" type="button" data-id="' + esc(s.id) + '" aria-label="Share">' + icon('share', 22) + '</button><span>Share</span></div>' +
           '<div class="rail-item"><button class="round savebtn" type="button" data-id="' + esc(s.id) + '" aria-pressed="' + isSaved(s.id) + '" aria-label="Save">' + icon('bookmark', 22) + '</button><span>Save</span></div>' +
           // Layer 3: every story can be reported
-          '<div class="rail-item"><button class="round flagbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Report this story">' + icon('flag', 22) + '</button><span>Report</span></div>' +
+          (isMine(s)    // your own story: Delete instead of Report
+            ? '<div class="rail-item"><button class="round delbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Delete your story">' + icon('trash', 22) + '</button><span>Delete</span></div>'
+            : '<div class="rail-item"><button class="round flagbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Report this story">' + icon('flag', 22) + '</button><span>Report</span></div>') +
         '</div>' +
       '</div>' +
     '</article>';
@@ -1228,6 +1347,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       entries.forEach(function (e) {
         var v = e.target.querySelector('video');
         if (!v) return;
+        v._vis = e.isIntersecting;
         if (e.isIntersecting) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
         else { v.pause(); v.currentTime = 0; }
       });
@@ -1236,10 +1356,30 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       entries.forEach(function (e) {
         var v = e.target.querySelector('video');
         if (!v) return;
-        if (e.isIntersecting) { if (!v.getAttribute('src')) v.setAttribute('src', v.dataset.src); }
-        else if (v.getAttribute('src')) { v.pause(); v.removeAttribute('src'); v.load(); }
+        if (e.isIntersecting) loadVideo(v);
+        else unloadVideo(v);
       });
     }, { root: feed, rootMargin: '100% 0px 100% 0px' });
+  }
+  // Bunny serves HLS (adaptive: starts on the lowest quality, so it begins fast on weak networks). Most Android browsers need hls.js for it.
+  function loadVideo(v) {
+    var url = v.dataset.src;
+    if (v._on || !url) return;
+    v._on = true;
+    v.addEventListener('loadedmetadata', function f() { v.removeEventListener('loadedmetadata', f); if (v._vis) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } });
+    if (/\.m3u8/.test(url) && !v.canPlayType('application/vnd.apple.mpegurl')) {
+      loadScript(CONFIG.HLS_JS).then(function () {
+        if (!v._on || !window.Hls || !window.Hls.isSupported()) return;
+        var h = new window.Hls({ startLevel: 0, capLevelToPlayerSize: true, maxBufferLength: 10 });
+        h.loadSource(url); h.attachMedia(v); v._hls = h;
+      }).catch(function () {});
+    } else v.setAttribute('src', url);
+  }
+  function unloadVideo(v) {
+    if (!v._on) return;
+    v._on = false; v.pause();
+    if (v._hls) { v._hls.destroy(); v._hls = null; }
+    v.removeAttribute('src'); v.load();
   }
   function observeSlides(nodes) {
     ensureObservers();
@@ -1247,7 +1387,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       var v = n.querySelector('video');
       if (!v) return;
       if (playObs) { playObs.observe(n); loadObs.observe(n); }
-      else v.setAttribute('src', v.dataset.src);
+      else loadVideo(v);
     });
   }
 
@@ -1299,6 +1439,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
 
   feed.addEventListener('click', function (e) {
     if (e.target.closest('.retry')) { feed.innerHTML = loadingHtml(); loadPage(); return; }
+    var dbtn = e.target.closest('.delbtn');
+    if (dbtn) { askDeleteStory(dbtn.dataset.id); return; }
     var fb = e.target.closest('.flagbtn');
     if (fb) { openFlag(fb.dataset.id); return; }
     var rb = e.target.closest('.likebtn,.savebtn,.sharebtn,.cmtbtn');
@@ -1394,7 +1536,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   }, { passive: false });
 
   function anyPanelOpen() {
-    return sheet.classList.contains('open') || $('authPanel').classList.contains('open') || $('reportPanel').classList.contains('open') || $('statusPanel').classList.contains('open') || $('modPanel').classList.contains('open') || $('flagSheet').classList.contains('open') || $('termsPanel').classList.contains('open') || overlayOpen();
+    return sheet.classList.contains('open') || $('authPanel').classList.contains('open') || $('reportPanel').classList.contains('open') || $('statusPanel').classList.contains('open') || $('modPanel').classList.contains('open') || $('flagSheet').classList.contains('open') || $('confirmSheet').classList.contains('open') || $('termsPanel').classList.contains('open') || overlayOpen();
   }
   document.addEventListener('keydown', function (e) {
     if (anyPanelOpen()) return;
@@ -1446,7 +1588,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
 
-  var STEPS = { choose: renderChoose, login: renderLogin, contact: renderContact, otp: renderOtp, profile: renderProfile, newpass: renderNewPass, account: renderAccount };
+  var STEPS = { choose: renderChoose, login: renderLogin, contact: renderContact, otp: renderOtp, profile: renderProfile, newpass: renderNewPass, account: renderAccount, delacct: renderDelAcct };
   function showStep(step, opts) {
     opts = opts || {};
     if (flow.step && flow.step !== step && !opts.noPush) flow.trail.push(flow.step);
@@ -1618,7 +1760,36 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       '<div class="stack"><button class="btn" type="button" data-act="report-now" data-focus>Report a story</button>' +
       '<button class="btn ghost" type="button" data-act="status">My story status</button>' +
       '<button class="btn ghost" type="button" data-act="terms">Terms and conditions</button>' +
-      '<button class="btn ghost" type="button" data-act="logout">Log out</button></div>';
+      '<button class="btn ghost" type="button" data-act="contact">Contact support</button>' +
+      '<button class="btn ghost" type="button" data-act="logout">Log out</button>' +
+      '<button class="btn ghost warn" type="button" data-act="delacct">Delete account</button></div>' +
+      '<p class="note center">Need help? Email <b>' + esc(CONFIG.SUPPORT_EMAIL) + '</b></p>';
+  }
+
+  /* --- delete account (asks for the password again) --- */
+  function renderDelAcct() {
+    authTitle.textContent = 'Delete account';
+    authBody.innerHTML =
+      '<h1 class="h1">Delete your account?</h1><p class="lede">This cannot be undone. When you confirm:</p>' +
+      '<div class="card"><p style="margin:0 0 8px">Your profile, photo, username and login are deleted.</p>' +
+      '<p style="margin:0 0 8px">Every story you posted as @' + esc(session.username) + ' is deleted, along with your comments on other stories.</p>' +
+      '<p style="margin:0">Stories you posted anonymously are not linked to your account, so they stay. To remove one, ask support from My story status.</p></div>' +
+      passwordField('Enter your password to confirm', 'current-password') +
+      '<p class="err" id="authErr" role="alert"></p>' +
+      '<button class="btn danger" id="authGo" type="button" data-act="delnow" data-label="Delete my account">Delete my account</button>' +
+      '<div class="center"><button class="linkbtn" type="button" data-act="delcancel">Cancel</button></div>';
+  }
+  function deleteAccountNow() {
+    var pw = $('pw').value;
+    if (!pw) { setErr('Enter your password to confirm.'); return; }
+    setBusy(true, 'Deleting…');
+    api.deleteAccount(session.username, pw).then(function (r) {
+      forgetStories(r.ids); setSession(null); closeAuth(); toast('Your account has been deleted.', 3400);
+    }).catch(function (err) {
+      if (!flow) return;
+      setBusy(false);
+      setErr(err.code === 'bad_credentials' ? 'That password is not right.' : errMsg(err));
+    });
   }
 
   /* --- one delegated click handler for the whole panel --- */
@@ -1650,6 +1821,10 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     else if (act === 'report-now') { closeAuth(); openReport(); }
     else if (act === 'status') { closeAuth(); openStatus(); }
     else if (act === 'terms') openTerms();
+    else if (act === 'contact') location.href = 'mailto:' + CONFIG.SUPPORT_EMAIL + '?subject=' + encodeURIComponent('Mtaa Pulse support') + '&body=' + encodeURIComponent('Hi Mtaa Pulse team,\n\n\n\nMy username: @' + session.username);
+    else if (act === 'delacct') showStep('delacct');
+    else if (act === 'delcancel') showStep('account', { clearTrail: true });
+    else if (act === 'delnow') deleteAccountNow();
   });
   authBody.addEventListener('input', function (e) {
     var t = e.target;
@@ -2511,6 +2686,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
       });
     }).then(function (r) {
       var county = r.story.county;
+      if (isAnon && r.proof) { var pm = loadJSON('mp_anon_proofs', {}); pm[r.story.id] = r.proof; saveJSON('mp_anon_proofs', pm); }   // reference for support, kept only on this phone
       rememberStory(r.story.id);                                // ids live only on this phone, so the poster can check status later
       rep.uploading = false;
       rep.url = null;                                           // the feed now owns the preview
@@ -2566,6 +2742,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     $('termsTitle').textContent = 'Terms and conditions';
     $('termsBody').innerHTML = '<h2 class="sec">Videos and faces</h2><div class="policy"><p>Mtaa Pulse is for nature, wildlife, and the things built around you. Faces in the background are blurred automatically, and a clip with a person up close is not kept.</p></div>' +
       '<h2 class="sec">Location data</h2><div class="policy"><p>Your ward is found from your phone\'s location. This uses map data &copy; OpenStreetMap contributors, available under the Open Database Licence (openstreetmap.org/copyright).</p></div>' +
+      '<h2 class="sec">Deleting your posts and account</h2><div class="policy"><p>With an account, you can delete any story you posted, from the story itself or from My story status. You can delete your account from Me. Deleting your account also deletes your stories and your comments.</p><p>Anonymous stories cannot be deleted in the app. You chose to post without an account, so nothing proves a story is yours. To remove one, ask our support team from My story status and quote the reference saved on your phone.</p></div>' +
       '<h2 class="sec">How anonymity works</h2>' + policyHtml();
     termsPanel.classList.add('open');
   }
@@ -2574,7 +2751,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     $('termsTitle').textContent = 'Consent';
     $('termsBody').innerHTML = '<p class="lede">No account is created, and ' + (CONFIG.ANON_LINK_MODE === 'none' ? 'nothing that links this post to you is kept after you post.' : 'your post will not show your name.') +
       ' The Mtaa Pulse team checks anonymous posts before they go public. You can post up to ' + CONFIG.ANON_DAILY_LIMIT + ' anonymous stories a day.</p>' +
-      '<p class="lede">I confirm that I am posting anonymously. I understand that the Mtaa Pulse team must approve this post before it goes public.</p>' +
+      '<p class="lede">I confirm that I am posting anonymously. I understand that the Mtaa Pulse team must approve this post before it goes public. I understand that I cannot delete this post myself, and that I must ask the Mtaa Pulse support team to remove it.</p>' +
       '<p class="lede" style="color:#fff;font-weight:700">I\'m ticking the consent box to agree to the above.</p>';
     termsPanel.classList.add('open');
   }
@@ -2626,10 +2803,54 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
         list.map(function (it) {
           var st = STATUS[it.status] || STATUS.approved;
           return '<div class="card"><span class="badge ' + st.cls + '">' + st.label + '</span><br><b>' + esc(it.caption) + '</b><div>' + esc(st.text) + (it.reason ? ' ' + esc(it.reason) : '') + '</div>' +
-            (it.canAppeal ? '<div class="row"><button class="btn ghost" type="button" data-s="appeal" data-id="' + esc(it.id) + '">Appeal this decision</button></div>' : '') + '</div>';
+            (it.canAppeal ? '<div class="row"><button class="btn ghost" type="button" data-s="appeal" data-id="' + esc(it.id) + '">Appeal this decision</button></div>' : '') + deleteRow(it) + '</div>';
         }).join('') +
         '<button class="btn ghost" type="button" data-s="refresh">Refresh</button>';
     }).catch(function () { statusBody.innerHTML = '<p class="lede">Could not load. Check your connection.</p>'; });
+  }
+  function proofFor(id) { return loadJSON('mp_anon_proofs', {})[String(id)] || ''; }
+  function deleteRow(it) {
+    if (it.anon) {                                   // anonymous: no self-serve delete, support only
+      return '<p class="note">Posted anonymously, so only our support team can delete it. Quote this reference: <b>' + esc(proofFor(it.id) || 'not saved on this phone') + '</b></p>' +
+        '<div class="row"><button class="btn ghost" type="button" data-s="support" data-id="' + esc(it.id) + '">Ask support to delete</button></div>';
+    }
+    if (session && session.type === 'account' && it.owner === '@' + session.username)
+      return '<div class="row"><button class="btn ghost warn" type="button" data-s="delete" data-id="' + esc(it.id) + '">Delete story</button></div>';
+    return it.owner ? '<p class="note">Log in as ' + esc(it.owner) + ' to delete this story.</p>' : '';
+  }
+  function askSupport(id) {
+    var ref = proofFor(id), text = 'Please delete my anonymous story.\n\nStory id: ' + id + '\nReference: ' + ref + '\n\nI understand this cannot be undone.';
+    try { navigator.clipboard.writeText(text); } catch (e) {}
+    toast('Opening your email. The story id and reference are in the message.', 3600);
+    location.href = 'mailto:' + CONFIG.SUPPORT_EMAIL + '?subject=' + encodeURIComponent('Delete my anonymous story') + '&body=' + encodeURIComponent(text);
+  }
+  /* ---------- deleting stories ---------- */
+  var confirmSheet = $('confirmSheet'), confirmCb = null;
+  function askConfirm(title, text, yesLabel, cb) {
+    lastFocus = document.activeElement; confirmCb = cb;
+    $('confirmTitle').textContent = title; $('confirmText').textContent = text; $('confirmYes').textContent = yesLabel;
+    confirmSheet.classList.add('open'); $('confirmNo').focus();
+  }
+  function closeConfirm() { confirmSheet.classList.remove('open'); confirmCb = null; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+  $('confirmNo').addEventListener('click', closeConfirm);
+  $('confirmScrim').addEventListener('click', closeConfirm);
+  $('confirmYes').addEventListener('click', function () { var cb = confirmCb; closeConfirm(); if (cb) cb(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && confirmSheet.classList.contains('open')) { e.stopImmediatePropagation(); closeConfirm(); } }, true);
+  // Forget deleted stories on this phone (status list, saved, likes, references)
+  function forgetStories(ids) {
+    var gone = {}; ids.forEach(function (i) { gone[String(i)] = 1; });
+    saveJSON('mp_my_stories', myStoryIds().filter(function (i) { return !gone[String(i)]; }));
+    saveJSON('mp_saved', loadJSON('mp_saved', []).filter(function (x) { return !gone[String(x.id)]; }));
+    saveJSON('mp_likes', loadJSON('mp_likes', []).filter(function (i) { return !gone[String(i)]; }));
+    var pm = loadJSON('mp_anon_proofs', {}); ids.forEach(function (i) { delete pm[String(i)]; }); saveJSON('mp_anon_proofs', pm);
+  }
+  function askDeleteStory(id) {
+    askConfirm('Delete this story?', 'It is removed from Mtaa Pulse for everyone, along with its comments. This cannot be undone.', 'Delete story', function () {
+      api.deleteStory(id, session && session.username).then(function (r) {
+        forgetStories(r.ids); toast('Story deleted');
+        if (statusPanel.classList.contains('open')) openStatus(); else resetFeed();
+      }).catch(function (err) { toast(errMsg(err)); });
+    });
   }
   function closeStatus() { statusPanel.classList.remove('open'); if (lastFocus && lastFocus.focus) lastFocus.focus(); }
   $('statusClose').addEventListener('click', closeStatus);
@@ -2637,6 +2858,8 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     var b = e.target.closest('[data-s]');
     if (!b) return;
     if (b.dataset.s === 'refresh') openStatus();
+    else if (b.dataset.s === 'delete') askDeleteStory(b.dataset.id);
+    else if (b.dataset.s === 'support') askSupport(b.dataset.id);
     else api.appeal(b.dataset.id).then(function () { toast('Appeal sent. A different reviewer will look at it.', 3000); openStatus(); }).catch(function (err) { toast(errMsg(err)); });
   });
 
@@ -2661,6 +2884,10 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
           '<div class="field" style="margin-top:8px"><input id="lgRef" placeholder="Court order or case reference" autocomplete="off"></div>' +
           '<div class="row"><button class="btn ghost" type="button" data-m="hold">Preserve</button><button class="btn" type="button" data-m="unseal">Unseal contact</button></div>' +
           '<p class="note" id="lgOut"></p></div>' : '') +
+        '<div class="card"><b>Delete on request</b><br>For anonymous posters. Delete only if the reference they quote matches.' +
+          '<div class="field" style="margin-top:8px"><input id="dlId" placeholder="Story id" autocomplete="off"></div>' +
+          '<div class="field" style="margin-top:8px"><input id="dlRef" placeholder="Reference from the poster" autocomplete="off"></div>' +
+          '<div class="row"><button class="btn" type="button" data-m="supportdel">Delete story</button></div><p class="note" id="dlOut"></p></div>' +
         (q.length ? q.map(function (it) {
           return '<div class="card' + (it.overdue ? ' late' : '') + '"><span class="badge' + (it.overdue ? ' bad' : '') + '">' + esc(it.status) + '</span>' +
             (it.anon ? '<span class="badge">Anonymous</span>' : '') + '<span class="muted">waiting ' + ago(it.ageMs) + ' · id ' + esc(it.id) + '</span><br>' +
@@ -2679,6 +2906,10 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
   modBody.addEventListener('click', function (e) {
     var b = e.target.closest('[data-m]');
     if (!b) return;
+    if (b.dataset.m === 'supportdel') {
+      api.supportDelete($('dlId').value.trim(), $('dlRef').value.trim()).then(function () { $('dlOut').textContent = 'Deleted.'; }).catch(function (err) { $('dlOut').textContent = err.message; });
+      return;
+    }
     if (b.dataset.m === 'hold' || b.dataset.m === 'unseal') {            // Layer 5: legal request
       api.legalAction($('lgId').value.trim(), b.dataset.m, $('lgRef').value.trim()).then(function (r) {
         $('lgOut').textContent = r.held ? 'Preserved' + (r.sealed ? '.' : ' (no locked contact on file).') : (r.contact ? 'Contact: ' + r.contact : 'Nothing on file for that story.');
@@ -2845,7 +3076,7 @@ details.policy summary{cursor:pointer;min-height:32px;font-weight:700;color:var(
     loadLeaflet().then(function (L) {
       if (!$('mapBox')) return;                                        // panel was closed while loading
       mapObj = L.map('mapBox').fitBounds(KENYA_BOUNDS);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; OpenStreetMap contributors' }).addTo(mapObj);
+      L.tileLayer(CONFIG.TILE_URL, { maxZoom: 18, attribution: CONFIG.TILE_ATTR, referrerPolicy: 'origin' }).addTo(mapObj);   // OSM needs a Referer, so send the site origin
       var pts = [];
       points.forEach(function (pt) {
         L.circleMarker([pt.lat, pt.lng], { radius: 7, color: '#071F2A', weight: 2, fillColor: '#34D17A', fillOpacity: 0.95 }).addTo(mapObj).bindPopup(popupHtml(pt));
