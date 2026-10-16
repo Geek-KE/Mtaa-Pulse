@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#071F2A">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mtaa Pulse">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="description" content="Mtaa Pulse: stories from your neighbourhood, verified at the source.">
 <title>Mtaa Pulse</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -97,7 +106,8 @@ button.pfp{padding:0;cursor:pointer}
 
 /* ---------- top ---------- */
 .top{position:absolute;left:0;right:0;top:0;z-index:5;height:var(--top-h);padding-top:env(safe-area-inset-top);background:transparent;border-bottom:0}
-.brand{padding:5px 16px 0;font-size:17px;line-height:1.2;font-weight:700;letter-spacing:-.01em;color:#fff}
+.brand{display:flex;align-items:center;gap:8px;padding:5px 16px 0;font-size:17px;line-height:1.2;font-weight:700;letter-spacing:-.01em;color:#fff}
+.brandlogo{display:block;width:24px;height:24px}
 .brand span{color:var(--accent)}
 .bar{display:flex;align-items:center;gap:6px;padding:3px 16px 0}
 .pill,.tab,.iconbtn{position:relative}
@@ -261,6 +271,11 @@ body.nocap .caption,body.nocap .more{display:none}
 .cmt{padding:8px 0;font-size:14px;line-height:1.4;color:var(--body)}
 .cmt b{color:#fff}
 
+.photoview{position:absolute;inset:0;z-index:70;display:none;align-items:center;justify-content:center;background:rgba(2,8,12,.94)}
+.photoview.open{display:flex}
+.photoview img{width:min(88vw,380px);height:min(88vw,380px);object-fit:cover;border-radius:20px;background:rgba(232,244,250,.08)}
+.photoview .pvclose{position:absolute;top:calc(env(safe-area-inset-top) + 10px);right:12px;color:#fff}
+
 @media (prefers-reduced-motion:reduce){
   .toast,.prog i{transition:none}
 }
@@ -272,7 +287,7 @@ body.nocap .caption,body.nocap .more{display:none}
   <main class="feed" id="feed" aria-label="Stories"></main>
 
   <header class="top">
-    <div class="brand">Mtaa <span>Pulse</span></div>
+    <div class="brand"><img class="brandlogo" src="/icons/logo.png" alt="" width="24" height="24" onerror="this.style.display='none'"><div>Mtaa <span>Pulse</span></div></div>
     <div class="bar">
       <button class="pill" id="countyBtn" type="button" aria-haspopup="dialog" aria-label="Choose county">
         <span data-icon="pin" data-size="14"></span><span id="countyName"></span>
@@ -294,6 +309,12 @@ body.nocap .caption,body.nocap .more{display:none}
   </nav>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- profile photo viewer (opened by tapping your photo on the Me screen) -->
+  <div class="photoview" id="photoView" role="dialog" aria-modal="true" aria-label="Profile photo">
+    <button class="hbtn pvclose" id="photoClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
+    <img id="photoImg" alt="Your profile photo">
+  </div>
 
   <!-- county picker -->
   <div class="sheet-wrap" id="sheet">
@@ -1301,6 +1322,13 @@ body.nocap .caption,body.nocap .more{display:none}
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
 
+  // Install as an app: Chrome and Edge offer a prompt; iPhone needs Share > Add to Home Screen.
+  var deferredInstall = null;
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferredInstall = e; });
+  window.addEventListener('appinstalled', function () { deferredInstall = null; });
+  function isStandalone() { return !!((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone); }
+  function installBtnHtml() { return deferredInstall && !isStandalone() ? '<button class="btn" type="button" data-act="install">Install app</button>' : ''; }
+  function installNoteHtml() { return /iphone|ipad|ipod/i.test(navigator.userAgent) && !isStandalone() ? '<p class="note center">To install on iPhone: tap Share, then Add to Home Screen.</p>' : ''; }
   var STEPS = { choose: renderChoose, login: renderLogin, contact: renderContact, otp: renderOtp, profile: renderProfile, newpass: renderNewPass, account: renderAccount, delacct: renderDelAcct };
   function showStep(step, opts) {
     opts = opts || {};
@@ -1467,16 +1495,16 @@ body.nocap .caption,body.nocap .more{display:none}
   function renderAccount() {
     authTitle.textContent = 'You';
     authBody.innerHTML =
-      '<div class="avwrap"><button class="avbtn" type="button" data-act="pickme" style="border-style:solid" aria-label="Change profile photo">' + (session.avatar ? '<img src="' + esc(session.avatar) + '" alt="Your profile photo">' : icon('user', 36)) +
+      '<div class="avwrap"><button class="avbtn" type="button" data-act="' + (session.avatar ? 'viewme' : 'pickme') + '" style="border-style:solid" aria-label="' + (session.avatar ? 'View profile photo' : 'Add a profile photo') + '">' + (session.avatar ? '<img src="' + esc(session.avatar) + '" alt="Your profile photo">' : icon('user', 36)) +
       '</button><div class="avmeta"><b style="font-size:20px">@' + esc(session.username) + '</b><br>' + esc(session.contactMask || '') +
       '<br><button class="linkbtn" type="button" data-act="pickme" style="padding:0">' + (session.avatar ? 'Change photo' : 'Add a photo') + '</button><div id="avMeStatus" class="note" style="margin:2px 0 0"></div></div></div>' +
       '<input class="sr" id="avMe" type="file" accept="image/*" tabindex="-1">' +
-      '<div class="stack"><button class="btn ghost" type="button" data-act="status" data-focus>My story status</button>' +
+      '<div class="stack">' + installBtnHtml() + '<button class="btn ghost" type="button" data-act="status" data-focus>My story status</button>' +
       '<button class="btn ghost" type="button" data-act="terms">Terms and conditions</button>' +
       '<button class="btn ghost" type="button" data-act="contact">Contact support</button>' +
       '<button class="btn ghost" type="button" data-act="logout">Log out</button>' +
       '<button class="btn ghost warn" type="button" data-act="delacct">Delete account</button></div>' +
-      '<p class="note center">Need help? Email <b>' + esc(CONFIG.SUPPORT_EMAIL) + '</b></p>';
+      installNoteHtml() + '<p class="note center">Need help? Email <b>' + esc(CONFIG.SUPPORT_EMAIL) + '</b></p>';
   }
 
   /* --- delete account (asks for the password again) --- */
@@ -1529,6 +1557,8 @@ body.nocap .caption,body.nocap .more{display:none}
     else if (act === 'login') doLogin();
     else if (act === 'pick') $('avFile').click();
     else if (act === 'pickme') $('avMe').click();
+    else if (act === 'viewme') openPhoto(session.avatar);
+    else if (act === 'install') { if (deferredInstall) { deferredInstall.prompt(); deferredInstall.userChoice.then(function () { deferredInstall = null; if (flow && flow.step === 'account') showStep('account', { noPush: true }); }); } }
     else if (act === 'create') createAccount();
     else if (act === 'savepw') savePassword();
     else if (act === 'logout') { setSession(null); closeAuth(); toast('You are logged out'); }
@@ -1562,6 +1592,12 @@ body.nocap .caption,body.nocap .more{display:none}
     if (e.target.id === 'avFile' && e.target.files && e.target.files[0]) pickAvatar(e.target.files[0]);
     else if (e.target.id === 'avMe' && e.target.files && e.target.files[0]) changeMyAvatar(e.target.files[0]);
   });
+  // View your profile photo full size
+  var photoView = $('photoView');
+  function openPhoto(url) { if (!url) return; $('photoImg').src = url; photoView.classList.add('open'); $('photoClose').focus(); }
+  function closePhoto() { photoView.classList.remove('open'); $('photoImg').removeAttribute('src'); }
+  photoView.addEventListener('click', function (e) { if (e.target === photoView || e.target.closest('#photoClose')) closePhoto(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && photoView.classList.contains('open')) { e.stopImmediatePropagation(); closePhoto(); } }, true);
   // Add or change the photo on an existing account (Me screen)
   function changeMyAvatar(file) {
     var st = $('avMeStatus');
@@ -3103,6 +3139,7 @@ body.nocap .caption,body.nocap .more{display:none}
   /* ==================================================================
      11. START
      ================================================================== */
+  if ('serviceWorker' in navigator && location.protocol === 'https:') window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
   hydrateIcons();
   if (location.hash === '#mod') openMod();       // moderator console (needs the moderator key)
   if (location.hash === '#admin') openAdmin();   // admin map and reports (needs the moderator key)
