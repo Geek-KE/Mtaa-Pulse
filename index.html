@@ -856,7 +856,8 @@ body.nocap .caption,body.nocap .more{display:none}
     if (e && e.code === 'daily_limit') return "You have reached today's limit of " + CONFIG.ANON_DAILY_LIMIT + ' anonymous stories. Try again tomorrow, or create an account to post under your name.';
     if (e && e.code === 'banned') return 'This email or number cannot be used to post anonymously. If you think this is a mistake, contact support.';
     if (e && e.code === 'network') return e.message;
-    return (e && e.message) || 'Something went wrong. Please try again.';
+    if (e && e.message) return e.message;
+    return 'Something went wrong' + (e && e.code ? ' (' + e.code + ')' : '') + '. Please try again.';   // the code in brackets tells you what the server answered
   }
 
   /* ==================================================================
@@ -2689,7 +2690,7 @@ body.nocap .caption,body.nocap .more{display:none}
       return;
     }
     api.modAction(b.dataset.id, b.dataset.m).then(function (r) { if (r.banned) toast('Removed. Contact blocked.'); openMod(); })
-      .catch(function (err) { if (err.code === 'unauthorized') { modKey = ''; openMod(); } else toast(errMsg(err)); });
+      .catch(function (err) { if (err.code === 'unauthorized') { modKey = ''; openMod(); } else toast(errMsg(err), 7000); });
   });
   window.addEventListener('hashchange', function () { if (location.hash === '#mod') openMod(); });
   document.addEventListener('keydown', function (e) {
