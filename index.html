@@ -287,6 +287,16 @@ body.nocap .caption,body.nocap .more{display:none}
 .installbar .ibtn[hidden]{display:none}
 .installbar .iclose{flex:none;display:flex;align-items:center;justify-content:center;width:36px;height:40px;color:var(--muted)}
 
+/* welcome / about screen */
+#welcomePanel{z-index:56}
+.wel{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:24px}
+.wel .wico{display:flex;align-items:center;justify-content:center;width:112px;height:112px;margin-bottom:24px;border-radius:50%;background:rgba(242,163,60,.12);border:1px solid rgba(242,163,60,.4);color:var(--accent)}
+.wel .h1{font-size:28px}
+.wel .lede{font-size:16px;max-width:340px}
+.dots{display:flex;gap:8px;justify-content:center;margin:18px 0 26px}
+.dots i{width:8px;height:8px;border-radius:50%;background:rgba(232,244,250,.25)}
+.dots i.on{width:22px;border-radius:4px;background:var(--accent)}
+
 @media (prefers-reduced-motion:reduce){
   .toast,.prog i{transition:none}
 }
@@ -496,6 +506,16 @@ body.nocap .caption,body.nocap .more{display:none}
       <button class="hbtn" id="termsClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
     </div>
     <div class="panel-body" id="termsBody"></div>
+  </section>
+
+  <!-- Welcome / about screen: shown once to new visitors, and from "What is Mtaa Pulse?" -->
+  <section class="panel" id="welcomePanel" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+    <div class="panel-head">
+      <span class="hbtn" aria-hidden="true"></span>
+      <h2 id="welcomeTitle">About Mtaa Pulse</h2>
+      <button class="hbtn" id="welcomeClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
+    </div>
+    <div class="panel-body" id="welcomeBody"></div>
   </section>
 
   <!-- Layer 6: moderator console (open with #mod in the address; needs the moderator key) -->
@@ -1443,6 +1463,7 @@ body.nocap .caption,body.nocap .more{display:none}
       '<button class="btn" id="authGo" type="button" data-act="login" data-label="Log in">Log in</button>' +
       '<div class="center"><button class="linkbtn" type="button" data-act="forgot">Forgot password?</button></div>' +
       '<p class="note">By continuing you accept the ' + termsLink() + '.</p>' +
+      '<div class="center"><button class="linkbtn" type="button" data-act="about">What is Mtaa Pulse?</button></div>' +
       '<div class="center divider"><span class="muted">New here?</span><button class="linkbtn" type="button" data-act="mode" data-mode="signup">Create an account</button></div>' +
       '<div class="center"><button class="linkbtn" type="button" data-act="soon" aria-disabled="true">Post anonymously (coming soon)</button></div>';
   }
@@ -1540,6 +1561,7 @@ body.nocap .caption,body.nocap .more{display:none}
       '<br><button class="linkbtn" type="button" data-act="pickme" style="padding:0">' + (session.avatar ? 'Change photo' : 'Add a photo') + '</button><div id="avMeStatus" class="note" style="margin:2px 0 0"></div></div></div>' +
       '<input class="sr" id="avMe" type="file" accept="image/*" tabindex="-1">' +
       '<div class="stack">' + installBtnHtml() + '<button class="btn ghost" type="button" data-act="status" data-focus>My story status</button>' +
+      '<button class="btn ghost" type="button" data-act="about">What is Mtaa Pulse?</button>' +
       '<button class="btn ghost" type="button" data-act="terms">Terms and conditions</button>' +
       '<button class="btn ghost" type="button" data-act="contact">Contact support</button>' +
       '<button class="btn ghost" type="button" data-act="logout">Log out</button>' +
@@ -1586,8 +1608,14 @@ body.nocap .caption,body.nocap .more{display:none}
       return;
     }
     if (flow.busy) return;
+    if (act === 'about') { openWelcome(); return; }
     if (act === 'soon') { toast('Anonymous posting is coming soon. Please create an account for now.', 3000); return; }
-    if (act === 'mode') { flow.mode = el.dataset.mode; flow.rawContact = ''; showStep('contact'); }
+    if (act === 'mode') {
+      var wantMode = el.dataset.mode;
+      function startMode() { if (!flow) return; flow.mode = wantMode; flow.rawContact = ''; showStep('contact'); }
+      if (wantMode === 'signup' && !loadJSON('mp_welcome_read', 0)) openWelcome(true, startMode);   // signing up: read what the site is for first
+      else startMode();
+    }
     else if (act === 'gologin') { flow.mode = 'login'; flow.rawContact = ''; showStep('login'); }
     else if (act === 'forgot') { flow.mode = 'reset'; showStep('contact'); }
     else if (act === 'channel') { if (el.dataset.ch === 'phone') { toast('Phone sign-up is coming soon. Please use email for now.'); return; } flow.channel = 'email'; flow.rawContact = ''; STEPS[flow.step](); hydrateIcons(authBody); var c = $('contact'); if (c) c.focus(); }
@@ -3177,6 +3205,43 @@ body.nocap .caption,body.nocap .more{display:none}
   });
   $('mapClose').addEventListener('click', function () { mapPanel.classList.remove('open'); });
 
+  /* ---------- welcome / about: tells new people what the app is for ---------- */
+  var welcomePanel = $('welcomePanel'), welcomeBody = $('welcomeBody'), welcomeAt = 0, welcomeRequired = false, welcomeAfter = null;
+  var WELCOME = [
+    { ic: 'pin', h: 'Your neighbourhood, live', p: 'Mtaa Pulse is a place for short videos about the nature and the things around you in Kenya. See what is happening near you, in your county, or across the country.' },
+    { ic: 'video', h: 'Record things, not people', p: 'Record up to 60 seconds of nature, animals, farms, rivers, roads, markets or buildings. It can be good or bad: a green farm or a flooded road, a clean river or a pile of rubbish. This app is about places and things, not people. If you point the camera at a person, the face is blurred, or the recording is stopped.' },
+    { ic: 'shield', h: 'Join the community', p: 'Like, comment, save and follow other people. Create an account to post under your name. Every story is checked before it gets the Verified badge.' }
+  ];
+  function renderWelcome() {
+    var s = WELCOME[welcomeAt], last = welcomeAt === WELCOME.length - 1;
+    welcomeBody.innerHTML = '<div class="wel"><div class="wico">' + icon(s.ic, 54, 1.6) + '</div><h1 class="h1">' + esc(s.h) + '</h1><p class="lede">' + esc(s.p) + '</p>' +
+      '<div class="dots" aria-hidden="true">' + WELCOME.map(function (x, k) { return '<i' + (k === welcomeAt ? ' class="on"' : '') + '></i>'; }).join('') + '</div></div>' +
+      '<div class="stack"><button class="btn" type="button" data-w="' + (last ? 'finish' : 'next') + '" data-focus>' + (last ? (welcomeRequired ? 'I understand, continue' : 'Get started') : 'Next') + '</button>' +
+      (welcomeAt > 0 ? '<button class="btn ghost" type="button" data-w="back">Back</button>' : (last || welcomeRequired ? '' : '<button class="btn ghost" type="button" data-w="done">Skip</button>')) + '</div>';
+    welcomeBody.scrollTop = 0;
+  }
+  // required = true is used when signing up: no Skip and no close button, so the person reads all the steps first.
+  function openWelcome(required, after) {
+    welcomeRequired = !!required; welcomeAfter = after || null; welcomeAt = 0;
+    $('welcomeClose').hidden = welcomeRequired;
+    renderWelcome(); hydrateIcons(welcomePanel); welcomePanel.classList.add('open');
+  }
+  function closeWelcome(finished) {
+    saveJSON('mp_welcome_seen', 1);
+    if (finished) saveJSON('mp_welcome_read', 1);          // set only after the last step, so signup does not ask again
+    welcomePanel.classList.remove('open');
+    var cb = welcomeAfter; welcomeAfter = null; welcomeRequired = false;
+    if (finished && cb) cb();
+  }
+  welcomeBody.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-w]'); if (!b) return;
+    if (b.dataset.w === 'next') { welcomeAt++; renderWelcome(); }
+    else if (b.dataset.w === 'back') { welcomeAt--; renderWelcome(); }
+    else if (b.dataset.w === 'finish') closeWelcome(true);
+    else closeWelcome(false);
+  });
+  $('welcomeClose').addEventListener('click', function () { closeWelcome(false); });
+
   /* ==================================================================
      11. START
      ================================================================== */
@@ -3184,6 +3249,7 @@ body.nocap .caption,body.nocap .more{display:none}
   hydrateIcons();
   if (location.hash === '#mod') openMod();       // moderator console (needs the moderator key)
   if (location.hash === '#admin') openAdmin();   // admin map and reports (needs the moderator key)
+  if (!loadJSON('mp_welcome_seen', 0) && location.hash !== '#mod' && location.hash !== '#admin') openWelcome();   // first visit only
   window.addEventListener('hashchange', function () { if (location.hash === '#admin') openAdmin(); else if (location.hash === '#mod') openMod(); });
   updateLoginButton();
 
