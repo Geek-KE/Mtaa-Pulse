@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HJCX112SYW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HJCX112SYW');
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#071F2A">
@@ -2567,6 +2576,7 @@ body.nocap .caption,body.nocap .more{display:none}
     $('termsBody').innerHTML = '<h2 class="sec">Videos and faces</h2><div class="policy"><p>Mtaa Pulse is for nature, wildlife, and the things built around you. Faces in the background are blurred automatically, and a clip with a person up close is not kept.</p></div>' +
       '<h2 class="sec">Location data</h2><div class="policy"><p>Your ward is found from your phone\'s location. This uses map data &copy; OpenStreetMap contributors, available under the Open Database Licence (openstreetmap.org/copyright).</p></div>' +
       '<h2 class="sec">Deleting your posts and account</h2><div class="policy"><p>With an account, you can delete any story you posted, from the story itself or from My story status. You can delete your account from Me. Deleting your account also deletes your stories and your comments.</p><p>Anonymous stories cannot be deleted in the app. You chose to post without an account, so nothing proves a story is yours. To remove one, ask our support team from My story status and quote the reference saved on your phone.</p></div>' +
+      '<h2 class="sec">Visitor statistics</h2><div class="policy"><p>We use Google Analytics to count visits and see which pages and areas are used. It does not tell us your name, email or number.</p></div>' +
       '<h2 class="sec">How anonymity works</h2>' + policyHtml();
     termsPanel.classList.add('open');
   }
