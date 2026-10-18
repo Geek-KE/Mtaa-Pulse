@@ -434,34 +434,12 @@ body.cmtopen .scene video{object-fit:contain}
 .capmeta{margin-top:10px;font-size:13px;font-weight:500;color:var(--muted)}
 .ownbadge{position:absolute;left:50%;bottom:-11px;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#fff;color:var(--ink);filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
 .ownbadge::after{content:'';position:absolute;inset:-8px}
-/* plain words instead of pills (ward, feeling, category) and no shadow behind the header */
-.top::before{display:none}
+/* plain words instead of pills (ward, feeling, category) */
 .slide .whererow .chip{padding:0;background:none;border:0;border-radius:0;font-size:14px;font-weight:700;color:#fff;text-shadow:var(--ts)}
 .tags{gap:4px 12px}
-.tag,.tag-mood,.tag-cat{padding:0;background:none;border:0;border-radius:0;font-size:15px;font-weight:500;color:#fff;text-shadow:var(--ts)}
-.slide-body::before{display:none}
-/* readable in bright sun without a dark fade: pure white text, a tight dark edge plus a soft halo (like TikTok) */
-:root{--ts:0 0 1px rgba(0,0,0,.95),0 0 2px rgba(0,0,0,.85),0 1px 3px rgba(0,0,0,.8),0 0 7px rgba(0,0,0,.6),0 2px 14px rgba(0,0,0,.5);
-  --is:drop-shadow(0 0 1px rgba(0,0,0,.9)) drop-shadow(0 1px 3px rgba(0,0,0,.75)) drop-shadow(0 2px 10px rgba(0,0,0,.5))}
-.slide .whererow .chip,.slide .muted,.tag,.tag-mood,.tag-cat{font-weight:700;color:#fff}
-.slide .chip svg{stroke:#fff;filter:var(--is)}
-.more{color:#fff;font-weight:700}
-.round,.iconbtn,.pfp,.fbadge,.ownbadge,.vplay{filter:var(--is)}
-.round[aria-pressed="true"],.round.clicked{color:var(--lite)}
-/* v2: a thin solid dark edge around every letter and icon (works on white sky and bright water), then a soft halo */
-:root{--ts:1px 0 0 rgba(0,0,0,.78),-1px 0 0 rgba(0,0,0,.78),0 1px 0 rgba(0,0,0,.78),0 -1px 0 rgba(0,0,0,.78),1px 1px 0 rgba(0,0,0,.78),-1px -1px 0 rgba(0,0,0,.78),1px -1px 0 rgba(0,0,0,.78),-1px 1px 0 rgba(0,0,0,.78),0 0 4px rgba(0,0,0,.9),0 1px 9px rgba(0,0,0,.65),0 2px 18px rgba(0,0,0,.45);
-  --is:drop-shadow(1px 1px 0 rgba(0,0,0,.85)) drop-shadow(-1px -1px 0 rgba(0,0,0,.85)) drop-shadow(0 0 4px rgba(0,0,0,.8)) drop-shadow(0 2px 10px rgba(0,0,0,.45))}
-.tab{color:rgba(255,255,255,.92)}
-.tab[aria-pressed="true"]{color:#fff;border-bottom-color:#fff}
-.brand,.pill,.tab{text-shadow:var(--ts)}
-/* caption: words and lines closer together, whole block lower */
-.caption{line-height:1.2;letter-spacing:-.02em;word-spacing:-.1em}
-.slide-body{padding-bottom:4px}
-.namerow{margin-bottom:2px}
-.more{min-height:26px;margin-top:-2px}
-.whererow{margin-top:2px}
-.tags{margin-top:3px}
-.slide .chip svg{width:15px;height:15px}
+.tag,.tag-mood,.tag-cat{padding:0;background:none;border:0;border-radius:0;font-size:15px;font-weight:700;color:#fff;text-shadow:var(--ts)}
+.tag-mood{padding:5px 12px;background:var(--lite);color:#1B1100;border-radius:999px;font-size:14px;font-weight:700;text-shadow:none}
+.slide .whererow .chip svg{stroke:var(--accent)}
 </style>
 </head>
 <body>
@@ -1290,7 +1268,7 @@ body.cmtopen .scene video{object-fit:contain}
             '<span class="poster">' + esc(s.poster || 'Anonymous') + '</span>' + (s.founder ? founderBadge() : '') +
           '</div>' +
           '<p class="caption" id="cap-' + s.id + '">' + captionHtml(s.caption) + '</p>' +
-          '<button class="more" type="button" aria-expanded="false" aria-controls="cap-' + s.id + '">Read caption</button>' +
+          '<button class="more" type="button" aria-expanded="false" aria-controls="cap-' + s.id + '">Show more</button>' +
           '<div class="chiprow whererow"><span class="chip">' + icon('pin', 14, 2.2) + esc(s.ward) + '</span><span class="muted">' + esc(s.when) + '</span></div>' +
           '<div class="tags"><span class="tag tag-mood">' + esc(moodText(s.mood)) + '</span><span class="tag tag-cat">' + esc(s.category) + '</span></div>' +
         '</div>' +
@@ -1537,7 +1515,10 @@ body.cmtopen .scene video{object-fit:contain}
     if (rb) { railAction(rb); return; }
     var btn = e.target.closest('.more');
     if (!btn) return;
-    openCaption(String(btn.getAttribute('aria-controls')).slice(4));
+    var cap = $(btn.getAttribute('aria-controls'));
+    var open = cap.classList.toggle('open');
+    btn.textContent = open ? 'Show less' : 'Show more';
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   });
 
   /* ---------- header: county and scope ---------- */
