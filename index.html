@@ -37,8 +37,10 @@
   --body:#CFE4EE;
   --accent:#F2A33C;
   --danger:#FF9B8A;
-  --nav-h:58px;
-  --top-h:calc(env(safe-area-inset-top) + 66px);
+  --nav-h:64px;
+  --top-h:calc(env(safe-area-inset-top) + 92px);
+  --lite:#FFC766;   /* a lighter orange that stays readable on bright pictures */
+  --ts:0 0 3px rgba(0,0,0,.95),0 1px 4px rgba(0,0,0,.85),0 2px 12px rgba(0,0,0,.7);   /* text shadow used on every word that sits on a video */
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:#02080C}
@@ -49,7 +51,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .app{position:relative;width:100%;max-width:430px;height:100vh;height:100dvh;margin:0 auto;overflow:hidden;background:var(--ink)}
 
 /* ---------- feed ---------- */
-.feed{position:absolute;left:0;right:0;top:var(--top-h);bottom:calc(var(--nav-h) + env(safe-area-inset-bottom));overflow-y:auto;overflow-x:hidden;scroll-snap-type:y mandatory;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;will-change:scroll-position;scrollbar-width:none}
+.feed{position:absolute;left:0;right:0;top:0;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom));overflow-y:auto;overflow-x:hidden;scroll-snap-type:y mandatory;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;will-change:scroll-position;scrollbar-width:none}
 .feed::-webkit-scrollbar{display:none}
 .slide{position:relative;height:100%;overflow:hidden;contain:layout paint style;scroll-snap-align:start;scroll-snap-stop:always}
 .scene{position:absolute;inset:0}
@@ -149,8 +151,10 @@ button.pfp{padding:0;cursor:pointer}
 .sheet{position:absolute;left:0;right:0;bottom:0;max-height:85%;display:flex;flex-direction:column;padding:12px 20px calc(24px + env(safe-area-inset-bottom));background:#0B2F40;border-radius:24px 24px 0 0;border-top:1px solid rgba(232,244,250,.18)}
 .grab{align-self:center;width:40px;height:4px;border-radius:2px;background:#3F6A7E}
 .sheet h2{margin:16px 0 12px;font-size:22px;font-weight:700;color:#fff}
-.search{height:48px;padding:0 18px;border-radius:24px;border:1px solid rgba(232,244,250,.28);background:rgba(232,244,250,.08);color:#fff;font:inherit;font-size:16px}
-.search::placeholder{color:var(--muted)}
+.search{-webkit-appearance:none;appearance:none;height:48px;padding:0 2px;border:0;border-bottom:1px solid rgba(255,255,255,.35);border-radius:0;background:none;color:#fff;font:inherit;font-size:18px;font-weight:500}
+.search:focus,.search:focus-visible{outline:none;border-bottom-color:#fff}
+.search::placeholder{color:#B9D3DF;opacity:1}
+.search::-webkit-search-cancel-button{-webkit-appearance:none}
 .hint{margin:12px 0 8px;font-size:14px;line-height:1.4;color:var(--muted)}
 .list{margin:0;padding:0;list-style:none;overflow-y:auto}
 .list button{display:flex;align-items:center;justify-content:space-between;width:100%;height:52px;border-top:1px solid rgba(232,244,250,.12);font-size:17px;font-weight:500;text-align:left;color:var(--sky)}
@@ -306,6 +310,70 @@ body.nocap .caption,body.nocap .more{display:none}
 .dots i{width:8px;height:8px;border-radius:50%;background:rgba(232,244,250,.25)}
 .dots i.on{width:22px;border-radius:4px;background:var(--accent)}
 
+/* ==================================================================
+   SUNLIGHT READABILITY (TikTok style)
+   Rules used everywhere text or an icon sits on a video:
+   1. big, bold, pure white   2. strong dark shadow   3. a dark gradient behind the text   4. big icons
+   ================================================================== */
+/* header floats over the video, on a dark gradient */
+.top::before{content:'';position:absolute;left:0;right:0;top:0;height:calc(100% + 40px);z-index:-1;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,.78) 0,rgba(0,0,0,.55) 55%,rgba(0,0,0,0) 100%)}
+.brand{padding:6px 16px 0;font-size:21px;text-shadow:var(--ts)}
+.brandlogo{width:30px;height:30px}
+.brand .iconbtn{margin-left:auto}
+.bar{padding:6px 16px 0;gap:10px}
+.iconbtn{background:none;border:0;color:#fff;filter:drop-shadow(0 0 2px rgba(0,0,0,.9)) drop-shadow(0 2px 6px rgba(0,0,0,.7))}
+.pill{background:none;border:0;color:#fff;height:40px;padding:0 6px 0 0;border-radius:20px;font-size:15px;font-weight:700;max-width:58%;text-shadow:var(--ts)}
+.pill svg{width:18px;height:18px}
+.pill.on svg{stroke:var(--lite)}
+.iconbtn{width:42px;height:42px;border-radius:21px}
+.iconbtn svg{width:26px;height:26px;stroke-width:2.6}
+.pill{flex:1 1 auto}
+.pill [data-icon]{flex:none;display:flex}
+.tabs{flex:0 0 auto;justify-content:flex-end;gap:16px}
+.tab{white-space:nowrap;height:40px;font-size:17px;font-weight:700;color:rgba(255,255,255,.85);text-shadow:var(--ts);border-bottom:3px solid transparent}
+.tab[aria-pressed="true"]{color:#fff;border-bottom-color:#fff}
+
+/* words and icons on each story */
+.scene{z-index:0}
+.slide-body{z-index:2;gap:8px;padding:0 10px 12px 14px;pointer-events:none}   /* empty space lets taps through to the video (tap = pause / play) */
+.slide-body button{pointer-events:auto}
+.slide-body::before{content:'';position:absolute;left:0;right:0;bottom:0;height:calc(100% + 120px);z-index:-1;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.88) 0,rgba(0,0,0,.68) 40%,rgba(0,0,0,.38) 75%,rgba(0,0,0,0) 100%)}
+.namerow .poster{font-size:19px;color:#fff;text-shadow:var(--ts)}
+.caption{font-size:17px;line-height:1.32;text-shadow:var(--ts)}
+.more{min-height:36px;font-size:15px;color:var(--lite);text-shadow:var(--ts)}
+@media (max-width:350px){.tab{font-size:15px}.tabs{gap:12px}.bar{padding:6px 12px 0;gap:8px}.brand{padding-left:12px;padding-right:12px}}
+.whererow{flex-wrap:wrap;row-gap:4px}
+.slide .chip,.slide .muted{white-space:nowrap}
+.slide .chip{padding:5px 12px 5px 8px;font-size:14px;font-weight:700;color:#fff;background:rgba(0,0,0,.62);border:1.5px solid rgba(255,255,255,.6)}
+.slide .chip svg{width:16px;height:16px;stroke:var(--lite)}
+.slide .muted{font-size:14px;font-weight:700;color:#fff;text-shadow:var(--ts)}
+.tag{padding:5px 12px;font-size:14px;font-weight:700}
+.tag-mood{background:var(--lite);color:#1B1100}
+.tag-cat{background:rgba(0,0,0,.62);color:#fff;border:1.5px solid rgba(255,255,255,.6)}
+.rail{width:56px;gap:12px;font-size:14px;text-shadow:var(--ts)}
+.round{width:52px;height:52px;filter:drop-shadow(0 0 1.5px rgba(0,0,0,.9)) drop-shadow(0 2px 6px rgba(0,0,0,.7))}
+.round[aria-pressed="true"],.round.clicked{color:var(--lite)}
+.pfp{width:48px;height:48px;border-width:2.5px}
+.pfpwrap{width:48px;height:48px;margin-bottom:12px}
+.fbadge{width:24px;height:24px;bottom:-11px}
+
+/* bottom bar: solid, big icons, bold labels */
+.nav{background:#03121A;border-top:1px solid rgba(255,255,255,.2)}
+.nav-item{min-width:68px;height:56px;gap:2px;font-size:12px;font-weight:700;color:#C9DDE7}
+.nav-item[aria-current="page"]{color:#fff}
+.nav-item svg{width:26px;height:26px;stroke-width:2.3}
+.nav-av{width:26px;height:26px}
+.report{width:56px;height:38px;border-radius:12px;box-shadow:-3px 0 0 var(--accent),3px 0 0 var(--signal)}
+.report svg{width:26px;height:26px}
+
+/* video messages and play button */
+.vstate,.vplay{position:absolute;left:50%;top:42%;z-index:1;transform:translate(-50%,-50%);color:#fff;pointer-events:none}
+.vstate{max-width:80%;padding:10px 18px;border-radius:999px;background:rgba(0,0,0,.72);border:1.5px solid rgba(255,255,255,.65);font-size:15px;font-weight:700;text-align:center}
+.vplay{display:flex;align-items:center;justify-content:center;width:88px;height:88px;border-radius:50%;background:rgba(0,0,0,.5);border:2px solid rgba(255,255,255,.8)}
+.vsound{position:absolute;left:50%;top:calc(var(--top-h) + 14px);z-index:1;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:8px 16px 8px 12px;border-radius:999px;background:rgba(0,0,0,.72);border:1.5px solid rgba(255,255,255,.7);color:#fff;font-size:15px;font-weight:700;white-space:nowrap;pointer-events:none}
+.vstate[hidden],.vplay[hidden],.vsound[hidden]{display:none}
+.vplay svg{margin-left:4px}
+
 @media (prefers-reduced-motion:reduce){
   .toast,.prog i{transition:none}
 }
@@ -317,7 +385,7 @@ body.nocap .caption,body.nocap .more{display:none}
   <main class="feed" id="feed" aria-label="Stories"></main>
 
   <header class="top">
-    <div class="brand"><img class="brandlogo" src="/icons/logo.png" alt="" width="24" height="24" onerror="this.style.display='none'"><div>Mtaa <span>Pulse</span></div></div>
+    <div class="brand"><img class="brandlogo" src="/icons/logo.png" alt="" width="24" height="24" onerror="this.style.display='none'"><div>Mtaa <span>Pulse</span></div><button class="iconbtn" id="searchBtn" type="button" aria-label="Search" data-icon="search" data-size="22"></button></div>
     <div class="bar">
       <button class="pill" id="countyBtn" type="button" aria-haspopup="dialog" aria-label="Choose county">
         <span data-icon="pin" data-size="14"></span><span id="countyName"></span>
@@ -326,7 +394,6 @@ body.nocap .caption,body.nocap .more{display:none}
         <button class="tab" id="tabNearby" type="button" aria-pressed="true">Nearby</button>
         <button class="tab" id="tabKenya" type="button" aria-pressed="false">All Kenya</button>
       </div>
-      <button class="iconbtn" id="searchBtn" type="button" aria-label="Search" data-icon="search" data-size="16"></button>
     </div>
   </header>
 
@@ -470,10 +537,7 @@ body.nocap .caption,body.nocap .more{display:none}
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="searchTitle">
       <div class="grab"></div>
       <h2 id="searchTitle">Search stories</h2>
-      <input class="search" id="searchInput" type="search" placeholder="Place, topic or word" aria-label="Search stories" autocomplete="off">
-      <div class="gap"></div>
-      <button class="btn" id="searchGo" type="button">Search</button>
-      <div class="center"><button class="linkbtn" id="searchClear" type="button">Clear search</button></div>
+      <input class="search" id="searchInput" type="search" enterkeyhint="search" inputmode="search" placeholder="Place, topic or word" aria-label="Search stories" autocomplete="off" autocapitalize="off" spellcheck="false">
     </div>
   </div>
 
@@ -1010,6 +1074,8 @@ body.nocap .caption,body.nocap .more{display:none}
     link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
     mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
     chat: '<path d="M21 12a8 8 0 0 1-11.7 7.1L4 20l1-4.3A8 8 0 1 1 21 12z"/>',
+    play: '<path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/>',
+    speaker: '<path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/>',
     flip: '<path d="M20 11V9a3 3 0 0 0-3-3H7"/><path d="m10 3-3 3 3 3"/><path d="M4 13v2a3 3 0 0 0 3 3h10"/><path d="m14 21 3-3-3-3"/>'
   };
   function icon(name, size, stroke) {
@@ -1076,6 +1142,7 @@ body.nocap .caption,body.nocap .more{display:none}
     var avatar = s.avatar ? '<img class="av" src="' + esc(s.avatar) + '" alt="" width="20" height="20" loading="lazy" decoding="async">' : '';
     return '<article class="slide" aria-label="Story ' + (i + 1) + '">' +
       '<div class="scene">' + media + '</div>' +
+      (s.video ? '<div class="vstate" role="status" aria-live="polite" hidden></div><div class="vplay" aria-hidden="true" hidden>' + icon('play', 44, 0) + '</div><div class="vsound" aria-hidden="true" hidden>' + icon('speaker', 20, 2) + 'Tap for sound</div>' : '') +
       '<div class="slide-body">' +
         '<div class="info">' +
           '<div class="chiprow namerow">' +
@@ -1088,13 +1155,13 @@ body.nocap .caption,body.nocap .more{display:none}
           '<div class="tags"><span class="tag tag-mood">' + esc(moodText(s.mood)) + '</span><span class="tag tag-cat">' + esc(s.category) + '</span></div>' +
         '</div>' +
         '<div class="rail">' +
-          '<div class="rail-item"><button class="round likebtn" type="button" data-id="' + esc(s.id) + '" aria-pressed="' + isLiked(s.id) + '" aria-label="Like">' + icon('thumb', 30, 1.5) + '</button><span>' + s.likes + '</span></div>' +
-          '<div class="rail-item"><button class="round cmtbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Comments">' + icon('commentD', 30, 0.01) + '</button><span>' + s.comments + '</span></div>' +
-          '<div class="rail-item"><button class="round sharebtn" type="button" data-id="' + esc(s.id) + '" aria-label="Share">' + icon('shareT', 30, 1.5) + '</button><span>' + (s.shares || 0) + '</span></div>' +
-          '<div class="rail-item"><button class="round savebtn" type="button" data-id="' + esc(s.id) + '" aria-pressed="' + isSaved(s.id) + '" aria-label="Save">' + icon('bookmark', 30, 1.5) + '</button></div>' +
+          '<div class="rail-item"><button class="round likebtn" type="button" data-id="' + esc(s.id) + '" aria-pressed="' + isLiked(s.id) + '" aria-label="Like">' + icon('thumb', 36, 1.5) + '</button><span>' + s.likes + '</span></div>' +
+          '<div class="rail-item"><button class="round cmtbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Comments">' + icon('commentD', 36, 0.01) + '</button><span>' + s.comments + '</span></div>' +
+          '<div class="rail-item"><button class="round sharebtn" type="button" data-id="' + esc(s.id) + '" aria-label="Share">' + icon('shareT', 36, 1.5) + '</button><span>' + (s.shares || 0) + '</span></div>' +
+          '<div class="rail-item"><button class="round savebtn" type="button" data-id="' + esc(s.id) + '" aria-pressed="' + isSaved(s.id) + '" aria-label="Save">' + icon('bookmark', 36, 1.5) + '</button></div>' +
           // Layer 3: every story can be reported
           (isMine(s)    // your own story: Delete instead of Report
-            ? '<div class="rail-item"><button class="round delbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Delete your story">' + icon('trashS', 30, 1.5) + '</button></div>'
+            ? '<div class="rail-item"><button class="round delbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Delete your story">' + icon('trashS', 36, 1.5) + '</button></div>'
             : posterHtml(s)) +
         '</div>' +
       '</div>' +
@@ -1130,8 +1197,8 @@ body.nocap .caption,body.nocap .more{display:none}
         var v = e.target.querySelector('video');
         if (!v) return;
         v._vis = e.isIntersecting;
-        if (e.isIntersecting) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
-        else { v.pause(); v.currentTime = 0; }
+        if (e.isIntersecting) tryPlay(v);
+        else { v.pause(); try { v.currentTime = 0; } catch (x) {} v._userPaused = false; vPlayIcon(v, false); vSound(v, false); }
       });
     }, { root: feed, threshold: 0.6 });
     loadObs = new IntersectionObserver(function (entries) {
@@ -1143,25 +1210,121 @@ body.nocap .caption,body.nocap .more{display:none}
       });
     }, { root: feed, rootMargin: '100% 0px 100% 0px' });
   }
-  // Bunny serves HLS (adaptive: starts on the lowest quality, so it begins fast on weak networks). Most Android browsers need hls.js for it.
-  function loadVideo(v) {
+
+  /* ---------- video playback ----------
+     Bunny gives an HLS stream (.m3u8). Rules:
+     - hls.js plays it on every phone that can (Chrome, Android, desktop). Only Apple devices use their own HLS player.
+     - A new video may still be encoding on Bunny, so the first loads can fail. We retry for a few minutes and say so on screen.
+     - Tap the video to pause or play. If the phone blocks autoplay, a play button shows. */
+  var IS_APPLE = /Apple/i.test(navigator.vendor || '');
+  var VIDEO_RETRY_MS = [3000, 5000, 8000, 12000, 15000, 20000, 30000, 30000];
+  function isHls(url) { return /\.m3u8(\?|$)/i.test(url); }
+  function vSlide(v) { return v.closest('.slide'); }
+  function vMsg(v, text) { var s = vSlide(v), m = s && s.querySelector('.vstate'); if (m) { m.textContent = text || ''; m.hidden = !text; } }
+  function vPlayIcon(v, on) { var s = vSlide(v), m = s && s.querySelector('.vplay'); if (m) m.hidden = !on; }
+  /* Sound: the video's own sound plays. A phone only allows sound after the person has tapped the page, so if it refuses,
+     the video plays silently with a "Tap for sound" label. The next tap anywhere turns the sound on, and every video after it plays with sound. */
+  function vSound(v, on) { var s = vSlide(v), m = s && s.querySelector('.vsound'); if (m) m.hidden = !on; }
+  function unlockSound() {
+    Array.prototype.forEach.call(document.querySelectorAll('video'), function (v) {
+      if (!v._needSound) return;
+      v._needSound = false; vSound(v, false);
+      if (!v.paused) { v.muted = false; v._justUnlocked = true; setTimeout(function () { v._justUnlocked = false; }, 500); }
+    });
+  }
+  ['pointerdown', 'touchend', 'click', 'keydown'].forEach(function (ev) { document.addEventListener(ev, unlockSound, true); });
+  function tryPlay(v) {
+    if (!v._on || !v._vis || v._userPaused || !v.paused) return;      // already playing: leave it alone
+    v.muted = false; v._needSound = false; vSound(v, false);          // ask for sound first
+    var p = v.play();
+    if (p && p.catch) p.catch(function () {
+      if (!(v._on && v._vis && !v._userPaused && v.paused)) return;
+      v.muted = true; v._needSound = true; vSound(v, true);           // sound refused: play silently and ask for a tap
+      var q = v.play();
+      if (q && q.catch) q.catch(function () { v._needSound = false; vSound(v, false); vPlayIcon(v, true); });   // even silent autoplay refused: show a play button
+    });
+  }
+  function wireVideo(v) {
+    if (v._wired) return;
+    v._wired = true;
+    v.addEventListener('loadedmetadata', function () { tryPlay(v); });
+    v.addEventListener('canplay', function () { tryPlay(v); });
+    v.addEventListener('playing', function () { v._tries = 0; vMsg(v, ''); vPlayIcon(v, false); });
+    v.addEventListener('error', function () { if (v._on && v.getAttribute('src')) videoFailed(v, 'media'); });
+  }
+  function freeVideo(v) {
+    if (v._retryT) { clearTimeout(v._retryT); v._retryT = 0; }
+    if (v._hls) { try { v._hls.destroy(); } catch (x) {} v._hls = null; }
+    v.pause(); v.removeAttribute('src'); v.load();
+  }
+  function videoFailed(v, why) {
+    if (!v._on) return;
+    freeVideo(v);
+    var n = v._tries = (v._tries || 0) + 1;
+    if (n > VIDEO_RETRY_MS.length) {
+      v._on = false; v._failed = true;
+      vMsg(v, 'Video could not load. Tap to try again.' + (why ? ' (' + why + ')' : ''));
+      try { console.warn('Mtaa Pulse video failed:', v.dataset.src, why); } catch (x) {}
+      return;
+    }
+    vMsg(v, n === 1 ? 'Getting the video ready…' : 'The video is still being prepared…');
+    v._retryT = setTimeout(function () { v._retryT = 0; startVideo(v); }, VIDEO_RETRY_MS[n - 1]);
+  }
+  function startVideo(v) {
     var url = v.dataset.src;
-    if (v._on || !url) return;
-    v._on = true;
-    v.addEventListener('loadedmetadata', function f() { v.removeEventListener('loadedmetadata', f); if (v._vis) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } });
-    if (/\.m3u8/.test(url) && !v.canPlayType('application/vnd.apple.mpegurl')) {
-      loadScript(CONFIG.HLS_JS).then(function () {
-        if (!v._on || !window.Hls || !window.Hls.isSupported()) return;
-        var h = new window.Hls({ startLevel: 0, capLevelToPlayerSize: true, maxBufferLength: 10 });
-        h.loadSource(url); h.attachMedia(v); v._hls = h;
-      }).catch(function () {});
-    } else v.setAttribute('src', url);
+    if (!v._on || !url) return;
+    var gen = v._gen = (v._gen || 0) + 1;                                  // answers that arrive after an unload or a retry are ignored
+    if (v._tries && url.indexOf('?') === -1) url += '?r=' + v._tries;      // a retry must not be served a cached "not found"
+    if (!isHls(url.split('?')[0])) { v.setAttribute('src', url); return; }
+    var nativeHls = !!v.canPlayType('application/vnd.apple.mpegurl');
+    if (nativeHls && IS_APPLE) { v.setAttribute('src', url); return; }
+    loadScript(CONFIG.HLS_JS).then(function () {
+      if (!v._on || gen !== v._gen) return;
+      if (window.Hls && window.Hls.isSupported()) useHlsJs(v, url, gen, nativeHls);
+      else if (nativeHls) v.setAttribute('src', url);
+      else videoFailed(v, 'no player');
+    }, function () {
+      if (!v._on || gen !== v._gen) return;
+      if (nativeHls) v.setAttribute('src', url); else videoFailed(v, 'player');
+    });
+  }
+  function useHlsJs(v, url, gen, nativeHls) {
+    var H = window.Hls, h = new H({ startLevel: 0, capLevelToPlayerSize: true, maxBufferLength: 10, manifestLoadingMaxRetry: 1, levelLoadingMaxRetry: 1, fragLoadingMaxRetry: 2 });
+    v._hls = h;
+    h.on(H.Events.MANIFEST_PARSED, function () { if (gen === v._gen) tryPlay(v); });
+    h.on(H.Events.ERROR, function (ev, d) {
+      if (!d || !d.fatal || gen !== v._gen || !v._on) return;
+      var code = d.response && d.response.code;
+      if (d.type === H.ErrorTypes.MEDIA_ERROR && !v._recovered) { v._recovered = true; h.recoverMediaError(); return; }
+      // code 0 = the browser blocked the request (for example CORS). Try the phone's own HLS player once, if it has one.
+      if (d.type === H.ErrorTypes.NETWORK_ERROR && !code && nativeHls && !v._triedNative) {
+        v._triedNative = true; try { h.destroy(); } catch (x) {} v._hls = null; v.setAttribute('src', url); return;
+      }
+      videoFailed(v, code || d.details);
+    });
+    h.attachMedia(v);
+    h.loadSource(url);
+  }
+  function loadVideo(v) {
+    if (v._on || !v.dataset.src) return;
+    v._on = true; v._failed = false; v._tries = 0; v._recovered = false; v._triedNative = false;
+    wireVideo(v);
+    startVideo(v);
   }
   function unloadVideo(v) {
-    if (!v._on) return;
-    v._on = false; v.pause();
-    if (v._hls) { v._hls.destroy(); v._hls = null; }
-    v.removeAttribute('src'); v.load();
+    if (!v._on && !v._failed) return;
+    v._on = false; v._failed = false; v._gen = (v._gen || 0) + 1; v._userPaused = false; v._tries = 0;
+    freeVideo(v); vMsg(v, ''); vPlayIcon(v, false); vSound(v, false);
+  }
+  // Tap a story: pause or play. If the video failed or is waiting to retry, tap tries again now.
+  function toggleVideo(slide) {
+    var v = slide.querySelector('video');
+    if (!v) return;
+    if (v._justUnlocked) return;                                            // this tap only turned the sound on
+    if (v._failed) { v._userPaused = false; loadVideo(v); vMsg(v, 'Getting the video ready…'); return; }
+    if (v._retryT) { clearTimeout(v._retryT); v._retryT = 0; startVideo(v); return; }
+    if (v.paused) { v._userPaused = false; vPlayIcon(v, false); var p = v.play(); if (p && p.catch) p.catch(function () { vPlayIcon(v, true); }); }
+    else { v._userPaused = true; v.pause(); vPlayIcon(v, true); vSound(v, false); }
   }
   function observeSlides(nodes) {
     ensureObservers();
@@ -1169,7 +1332,7 @@ body.nocap .caption,body.nocap .more{display:none}
       var v = n.querySelector('video');
       if (!v) return;
       if (playObs) { playObs.observe(n); loadObs.observe(n); }
-      else loadVideo(v);
+      else { v._vis = true; loadVideo(v); }
     });
   }
 
@@ -1221,6 +1384,8 @@ body.nocap .caption,body.nocap .more{display:none}
 
   feed.addEventListener('click', function (e) {
     if (e.target.closest('.retry')) { feed.innerHTML = loadingHtml(); loadPage(); return; }
+    var tapSlide = e.target.closest('.slide');
+    if (tapSlide && !e.target.closest('.slide-body') && tapSlide.querySelector('video')) { toggleVideo(tapSlide); return; }   // tap the picture: pause / play
     var dbtn = e.target.closest('.delbtn');
     if (dbtn) { askDeleteStory(dbtn.dataset.id); return; }
     var fb = e.target.closest('.flagbtn');
@@ -3108,9 +3273,7 @@ body.nocap .caption,body.nocap .more{display:none}
   }
   $('searchBtn').addEventListener('click', function () { searchInput.value = state.query; searchSheet.classList.add('open'); searchInput.focus(); });
   $('searchScrim').addEventListener('click', function () { searchSheet.classList.remove('open'); });
-  $('searchGo').addEventListener('click', runSearch);
   searchInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); runSearch(); } });
-  $('searchClear').addEventListener('click', function () { searchInput.value = ''; searchSheet.classList.remove('open'); if (state.query) { setScope('nearby'); } });
 
   /* ---------- map tab: a real map with a green dot for every public story ----------
      Leaflet is loaded only when someone opens the Map tab, to save data. Tiles come from OpenStreetMap,
