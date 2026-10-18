@@ -369,7 +369,7 @@ body.nocap .caption,body.nocap .more{display:none}
 /* video messages and play button */
 .vstate,.vplay{position:absolute;left:50%;top:42%;z-index:1;transform:translate(-50%,-50%);color:#fff;pointer-events:none}
 .vstate{max-width:80%;padding:10px 18px;border-radius:999px;background:rgba(0,0,0,.72);border:1.5px solid rgba(255,255,255,.65);font-size:15px;font-weight:700;text-align:center}
-.vplay{display:flex;align-items:center;justify-content:center;width:88px;height:88px;border-radius:50%;background:rgba(0,0,0,.5);border:2px solid rgba(255,255,255,.8)}
+.vplay{display:flex;align-items:center;justify-content:center;width:88px;height:88px;background:none;border:0;border-radius:0;opacity:.92;filter:drop-shadow(0 0 3px rgba(0,0,0,.7)) drop-shadow(0 2px 12px rgba(0,0,0,.6))}
 .vsound{position:absolute;left:50%;top:calc(var(--top-h) + 14px);z-index:1;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:8px 16px 8px 12px;border-radius:999px;background:rgba(0,0,0,.72);border:1.5px solid rgba(255,255,255,.7);color:#fff;font-size:15px;font-weight:700;white-space:nowrap;pointer-events:none}
 .vstate[hidden],.vplay[hidden],.vsound[hidden]{display:none}
 .vplay svg{margin-left:4px}
@@ -377,6 +377,77 @@ body.nocap .caption,body.nocap .more{display:none}
 @media (prefers-reduced-motion:reduce){
   .toast,.prog i{transition:none}
 }
+
+/* ---------- comments, TikTok style ---------- */
+.scene{transition:top .25s ease,bottom .25s ease}
+.scene video{transform:translateZ(0);backface-visibility:hidden;background:#000}
+body.cmtopen .feed,body.cmtopen .slide{background:#000}
+body.cmtopen .top,body.cmtopen .slide-body,body.cmtopen .vstate,body.cmtopen .vsound,body.cmtopen .vplay{opacity:0;pointer-events:none}
+body.cmtopen .scene{top:calc(env(safe-area-inset-top) + 10px);bottom:68%}
+body.cmtopen .scene video{object-fit:contain}
+#cmtSheet .scrim{background:transparent}
+#cmtSheet .sheet{height:70%;max-height:70%;padding:0;background:#fff;border-radius:16px 16px 0 0;border-top:0;color:#161823}
+#cmtSheet .grab{display:none}
+.cmthead{position:relative;flex:none;display:flex;align-items:center;justify-content:center;height:52px}
+.cmthead h2{margin:0;font-size:15px;font-weight:700;color:#161823}
+.cmthead button{position:absolute;right:6px;top:4px;display:flex;align-items:center;justify-content:center;width:44px;height:44px;color:#161823}
+#cmtList{flex:1;overflow-y:auto;padding:0 16px;overscroll-behavior:contain}
+#cmtList .note{color:#8a8b91}
+.cm{display:flex;gap:12px;padding:10px 0}
+.cm .cav{flex:none;width:40px;height:40px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#e9e9ea;color:#a3a4aa}
+.cm .cav img{width:100%;height:100%;object-fit:cover;display:block}
+.cm .cav svg{fill:currentColor;stroke:none}
+.cm .cb{flex:1;min-width:0}
+.cm .cn{font-size:14px;font-weight:700;color:#7d7e85}
+.cm .ct{margin:2px 0 4px;font-size:16px;line-height:1.35;font-weight:500;color:#161823;overflow-wrap:anywhere}
+.cm .cmeta{display:flex;align-items:center;gap:18px;font-size:13px;font-weight:600;color:#9b9ca2}
+.cm .crep{min-height:28px;font-size:13px;font-weight:700;color:#7d7e85}
+.cm .cx{flex:none;align-self:flex-end;display:flex;align-items:center;gap:16px;padding-bottom:2px}
+.cxb{display:flex;align-items:center;gap:5px;min-height:32px;font-size:14px;font-weight:500;color:#8a8b91}
+.cxb svg{width:24px;height:24px}
+.cxb.down svg{transform:rotate(180deg)}
+.cxb[aria-pressed="true"]{color:#161823}
+.cxb.up[aria-pressed="true"]{color:#fe2c55}
+.cxb.up[aria-pressed="true"] svg{fill:#fe2c55}
+.cxb.down[aria-pressed="true"] svg{fill:#161823}
+.cmtbar{flex:none;padding:8px 12px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #efefef}
+#cmtErr{margin:0 0 6px;min-height:0;color:#d33a2c}
+#cmtErr:empty{display:none}
+.cmtfield{display:flex;align-items:center;gap:12px;height:52px;padding:0 10px 0 18px;border-radius:26px;background:#f1f1f2}
+.cmtfield input{flex:1;min-width:0;height:100%;padding:0;border:0;background:transparent;color:#161823;font:inherit;font-size:17px}
+.cmtfield input::placeholder{color:#9b9ca2;opacity:1}
+.cmtfield input:focus-visible{outline:none}
+.cmticons{display:flex;align-items:center;gap:6px}
+.cmticons button,.cmtfield .csend{flex:none;display:flex;align-items:center;justify-content:center;width:38px;height:38px;color:#161823}
+.cmtfield .csend{color:var(--accent)}
+.cmtfield [hidden]{display:none!important}
+/* text weight order on the feed: poster name (boldest) > caption > #hashtags */
+.namerow .poster{font-weight:700}
+.caption{font-weight:500}
+.caption .hash{font-weight:400}
+/* caption reader, own-post badge, drafts */
+#capSheet .scrim{background:transparent}
+#capSheet .sheet{max-height:48%;background:rgba(7,31,42,.97);padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+#capTitle{display:flex;align-items:center;gap:6px;margin:12px 0 8px;font-size:17px}
+.capfull{overflow-y:auto;font-size:16px;line-height:1.45;font-weight:500;color:#fff;white-space:pre-wrap;overflow-wrap:anywhere}
+.capfull .hash{font-weight:400}
+.capmeta{margin-top:10px;font-size:13px;font-weight:500;color:var(--muted)}
+.ownbadge{position:absolute;left:50%;bottom:-11px;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#fff;color:var(--ink);filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.ownbadge::after{content:'';position:absolute;inset:-8px}
+/* plain words instead of pills (ward, feeling, category) and no shadow behind the header */
+.top::before{display:none}
+.slide .whererow .chip{padding:0;background:none;border:0;border-radius:0;font-size:14px;font-weight:700;color:#fff;text-shadow:var(--ts)}
+.tags{gap:4px 12px}
+.tag,.tag-mood,.tag-cat{padding:0;background:none;border:0;border-radius:0;font-size:15px;font-weight:500;color:#fff;text-shadow:var(--ts)}
+.slide-body::before{display:none}
+/* readable in bright sun without a dark fade: pure white text, a tight dark edge plus a soft halo (like TikTok) */
+:root{--ts:0 0 1px rgba(0,0,0,.95),0 0 2px rgba(0,0,0,.85),0 1px 3px rgba(0,0,0,.8),0 0 7px rgba(0,0,0,.6),0 2px 14px rgba(0,0,0,.5);
+  --is:drop-shadow(0 0 1px rgba(0,0,0,.9)) drop-shadow(0 1px 3px rgba(0,0,0,.75)) drop-shadow(0 2px 10px rgba(0,0,0,.5))}
+.slide .whererow .chip,.slide .muted,.tag,.tag-mood,.tag-cat{font-weight:700;color:#fff}
+.slide .chip svg{stroke:#fff;filter:var(--is)}
+.more{color:#fff;font-weight:700}
+.round,.iconbtn,.pfp,.fbadge,.ownbadge,.vplay{filter:var(--is)}
+.round[aria-pressed="true"],.round.clicked{color:var(--lite)}
 </style>
 </head>
 <body>
@@ -523,11 +594,20 @@ body.nocap .caption,body.nocap .more{display:none}
   <div class="sheet-wrap" id="cmtSheet">
     <button class="scrim" id="cmtScrim" type="button" aria-label="Close comments"></button>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cmtTitle">
-      <div class="grab"></div>
-      <h2 id="cmtTitle">Comments</h2>
-      <div id="cmtList" style="flex:1;overflow-y:auto"></div>
-      <div class="field cmt-in"><input id="cmtInput" type="text" maxlength="200" placeholder="Add a comment" autocomplete="off" aria-label="Add a comment"><button class="tgl" id="cmtPost" type="button">Post</button></div>
-      <p class="err" id="cmtErr" role="alert" style="margin:6px 0 0"></p>
+      <div class="cmthead"><h2 id="cmtTitle">Comments</h2><button id="cmtX" type="button" aria-label="Close comments" data-icon="close" data-size="22"></button></div>
+      <div id="cmtList"></div>
+      <div class="cmtbar">
+        <p class="err" id="cmtErr" role="alert"></p>
+        <div class="cmtfield">
+          <input id="cmtInput" type="text" maxlength="200" placeholder="Add comment..." autocomplete="off" aria-label="Add comment">
+          <div class="cmticons" id="cmtIcons">
+            <button type="button" data-k="image" aria-label="Add photo" data-icon="image" data-size="26"></button>
+            <button type="button" data-k="sticker" aria-label="Add sticker" data-icon="sticker" data-size="26"></button>
+            <button type="button" data-k="at" aria-label="Mention someone" data-icon="at" data-size="26"></button>
+          </div>
+          <button class="csend" id="cmtPost" type="button" aria-label="Post comment" data-icon="send" data-size="26" hidden></button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -569,6 +649,38 @@ body.nocap .caption,body.nocap .more{display:none}
       <button class="hbtn" id="savedClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
     </div>
     <div class="panel-body" id="savedBody"></div>
+  </section>
+
+  <!-- Caption reader: opens from "Read caption" so the story stays compact -->
+  <div class="sheet-wrap" id="capSheet">
+    <button class="scrim" id="capScrim" type="button" aria-label="Close caption"></button>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="capTitle">
+      <div class="grab"></div>
+      <h2 id="capTitle"></h2>
+      <div class="capfull" id="capFull"></div>
+      <div class="capmeta" id="capMeta"></div>
+    </div>
+  </div>
+
+  <!-- Options for your own post (hide or delete) -->
+  <div class="sheet-wrap" id="ownSheet">
+    <button class="scrim" id="ownScrim" type="button" aria-label="Close menu"></button>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="ownTitle">
+      <div class="grab"></div>
+      <h2 id="ownTitle">Your post</h2>
+      <p class="hint">Hide keeps the story but only you can see it. Delete removes it for everyone.</p>
+      <div class="stack"><button class="btn ghost" id="ownHide" type="button">Hide from public</button><button class="btn ghost warn" id="ownDel" type="button">Delete post</button><button class="btn ghost" id="ownCancel" type="button">Cancel</button></div>
+    </div>
+  </div>
+
+  <!-- Drafts: videos saved on this phone to finish later -->
+  <section class="panel" id="draftsPanel" role="dialog" aria-modal="true" aria-labelledby="draftsTitle">
+    <div class="panel-head">
+      <span class="hbtn" aria-hidden="true"></span>
+      <h2 id="draftsTitle">Drafts</h2>
+      <button class="hbtn" id="draftsClose" type="button" aria-label="Close" data-icon="close" data-size="24"></button>
+    </div>
+    <div class="panel-body" id="draftsBody"></div>
   </section>
 
   <!-- Terms and conditions (holds the "How anonymity works" text). Opened from the footer and from Me > Terms and conditions -->
@@ -857,6 +969,8 @@ body.nocap .caption,body.nocap .more{display:none}
     // ---- deleting ----
     // Account stories: the owner can delete them. Anonymous stories: never from the app, only support, with the poster's reference.
     deleteStory: function (id) { return request('DELETE', '/v1/stories/' + encodeURIComponent(id)); },
+    // Hide / show your own story. Server: PUT /v1/stories/:id/visibility { hidden } (owner only), status becomes 'unlisted'.
+    hideStory: function (id, hide) { return request('PUT', '/v1/stories/' + encodeURIComponent(id) + '/visibility', { hidden: !!hide }); },
     setAvatar: function (avatarUrl) { return request('PUT', '/v1/me/avatar', { avatarUrl: avatarUrl }); },
     deleteAccount: function (username, password) { return request('DELETE', '/v1/me', { password: password }); },
     // Support tool: delete an anonymous story when the poster's reference matches.
@@ -1038,6 +1152,12 @@ body.nocap .caption,body.nocap .more{display:none}
      5. ICONS
      ================================================================== */
   var ICONS = {
+    dots: '<circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/>',
+    heart: '<path d="M12 20.5s-8-4.9-8-10.6A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8 2.9c0 5.7-8 10.6-8 10.6z"/>',
+    image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m4 18 5-5 4 4 3-3 4 4"/>',
+    sticker: '<path d="M21 12a9 9 0 1 1-9-9h4a5 5 0 0 1 5 5z"/><path d="M8.5 14a4.5 4.5 0 0 0 7 0M9 10h.01M15 10h.01"/>',
+    at: '<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>',
+    send: '<path d="M21 3 10 14M21 3l-7 18-4-7-7-4z"/>',
     pin: '<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
     search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
     thumb: '<path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3zm0 0 4-7a2 2 0 0 1 3.7 1.2L14 9h5.3a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 18.1 20H7"/>',
@@ -1135,6 +1255,12 @@ body.nocap .caption,body.nocap .more{display:none}
   var fs = { items: [], seen: {}, cursor: null, done: false, loading: false, gen: 0 };
   var playObs = null, loadObs = null;
 
+  // Caption text with #hashtags wrapped so they can be styled lighter than the rest of the caption
+  function captionHtml(t) {
+    t = String(t); var out = '', last = 0, re = /#[A-Za-z0-9_\u00C0-\uFFFF]+/g, m;
+    while ((m = re.exec(t))) { out += esc(t.slice(last, m.index)) + '<span class="hash">' + esc(m[0]) + '</span>'; last = m.index + m[0].length; }
+    return out + esc(t.slice(last));
+  }
   function slideHtml(s, i) {
     var media = s.video
       ? '<video data-src="' + esc(s.video) + '"' + (s.thumb ? ' poster="' + esc(s.thumb) + '"' : '') + ' muted loop playsinline preload="metadata"></video>'
@@ -1142,15 +1268,15 @@ body.nocap .caption,body.nocap .more{display:none}
     var avatar = s.avatar ? '<img class="av" src="' + esc(s.avatar) + '" alt="" width="20" height="20" loading="lazy" decoding="async">' : '';
     return '<article class="slide" aria-label="Story ' + (i + 1) + '">' +
       '<div class="scene">' + media + '</div>' +
-      (s.video ? '<div class="vstate" role="status" aria-live="polite" hidden></div><div class="vplay" aria-hidden="true" hidden>' + icon('play', 44, 0) + '</div><div class="vsound" aria-hidden="true" hidden>' + icon('speaker', 20, 2) + 'Tap for sound</div>' : '') +
+      (s.video ? '<div class="vstate" role="status" aria-live="polite" hidden></div><div class="vplay" aria-hidden="true" hidden>' + icon('play', 72, 0) + '</div><div class="vsound" aria-hidden="true" hidden>' + icon('speaker', 20, 2) + 'Tap for sound</div>' : '') +
       '<div class="slide-body">' +
         '<div class="info">' +
           '<div class="chiprow namerow">' +
             (s.poster ? '' : (s.verified ? '<span class="chip verified">' + icon('shield', 14, 2.2) + 'Verified</span>' : '<span class="chip">Being checked</span>')) +   // only anonymous stories show a check status
             '<span class="poster">' + esc(s.poster || 'Anonymous') + '</span>' + (s.founder ? founderBadge() : '') +
           '</div>' +
-          '<p class="caption" id="cap-' + s.id + '">' + esc(s.caption) + '</p>' +
-          '<button class="more" type="button" aria-expanded="false" aria-controls="cap-' + s.id + '">Show more</button>' +
+          '<p class="caption" id="cap-' + s.id + '">' + captionHtml(s.caption) + '</p>' +
+          '<button class="more" type="button" aria-expanded="false" aria-controls="cap-' + s.id + '">Read caption</button>' +
           '<div class="chiprow whererow"><span class="chip">' + icon('pin', 14, 2.2) + esc(s.ward) + '</span><span class="muted">' + esc(s.when) + '</span></div>' +
           '<div class="tags"><span class="tag tag-mood">' + esc(moodText(s.mood)) + '</span><span class="tag tag-cat">' + esc(s.category) + '</span></div>' +
         '</div>' +
@@ -1160,9 +1286,7 @@ body.nocap .caption,body.nocap .more{display:none}
           '<div class="rail-item"><button class="round sharebtn" type="button" data-id="' + esc(s.id) + '" aria-label="Share">' + icon('shareT', 36, 1.5) + '</button><span>' + (s.shares || 0) + '</span></div>' +
           '<div class="rail-item"><button class="round savebtn" type="button" data-id="' + esc(s.id) + '" aria-pressed="' + isSaved(s.id) + '" aria-label="Save">' + icon('bookmark', 36, 1.5) + '</button></div>' +
           // Layer 3: every story can be reported
-          (isMine(s)    // your own story: Delete instead of Report
-            ? '<div class="rail-item"><button class="round delbtn" type="button" data-id="' + esc(s.id) + '" aria-label="Delete your story">' + icon('trashS', 36, 1.5) + '</button></div>'
-            : posterHtml(s)) +
+          posterHtml(s) +
         '</div>' +
       '</div>' +
     '</article>';
@@ -1198,7 +1322,7 @@ body.nocap .caption,body.nocap .more{display:none}
         if (!v) return;
         v._vis = e.isIntersecting;
         if (e.isIntersecting) tryPlay(v);
-        else { v.pause(); try { v.currentTime = 0; } catch (x) {} v._userPaused = false; vPlayIcon(v, false); vSound(v, false); }
+        else { if (v._hls) v._hls.config.maxBufferLength = 6; v.pause(); try { v.currentTime = 0; } catch (x) {} v._userPaused = false; vPlayIcon(v, false); vSound(v, false); }
       });
     }, { root: feed, threshold: 0.6 });
     loadObs = new IntersectionObserver(function (entries) {
@@ -1234,6 +1358,7 @@ body.nocap .caption,body.nocap .more{display:none}
   }
   ['pointerdown', 'touchend', 'click', 'keydown'].forEach(function (ev) { document.addEventListener(ev, unlockSound, true); });
   function tryPlay(v) {
+    if (v._hls && v._vis) v._hls.config.maxBufferLength = 30;     // the video on screen buffers far ahead; neighbours only a little, so they do not steal bandwidth
     if (!v._on || !v._vis || v._userPaused || !v.paused) return;      // already playing: leave it alone
     v.muted = false; v._needSound = false; vSound(v, false);          // ask for sound first
     var p = v.play();
@@ -1289,7 +1414,7 @@ body.nocap .caption,body.nocap .more{display:none}
     });
   }
   function useHlsJs(v, url, gen, nativeHls) {
-    var H = window.Hls, h = new H({ startLevel: 0, capLevelToPlayerSize: true, maxBufferLength: 10, manifestLoadingMaxRetry: 1, levelLoadingMaxRetry: 1, fragLoadingMaxRetry: 2 });
+    var H = window.Hls, h = new H({ startLevel: 0, capLevelToPlayerSize: true, maxBufferLength: 6, maxMaxBufferLength: 30, maxBufferSize: 30 * 1000 * 1000, backBufferLength: 8, maxBufferHole: 0.5, startFragPrefetch: true, lowLatencyMode: false, abrBandWidthFactor: 0.8, abrBandWidthUpFactor: 0.6, manifestLoadingMaxRetry: 1, levelLoadingMaxRetry: 2, fragLoadingMaxRetry: 4 });
     v._hls = h;
     h.on(H.Events.MANIFEST_PARSED, function () { if (gen === v._gen) tryPlay(v); });
     h.on(H.Events.ERROR, function (ev, d) {
@@ -1386,22 +1511,19 @@ body.nocap .caption,body.nocap .more{display:none}
     if (e.target.closest('.retry')) { feed.innerHTML = loadingHtml(); loadPage(); return; }
     var tapSlide = e.target.closest('.slide');
     if (tapSlide && !e.target.closest('.slide-body') && tapSlide.querySelector('video')) { toggleVideo(tapSlide); return; }   // tap the picture: pause / play
-    var dbtn = e.target.closest('.delbtn');
-    if (dbtn) { askDeleteStory(dbtn.dataset.id); return; }
+    var ob = e.target.closest('.ownbadge');
+    if (ob) { openOwnPost(ob.dataset.id); return; }
     var fb = e.target.closest('.flagbtn');
     if (fb) { fb.classList.add('clicked'); openFlag(fb.dataset.id); return; }
     var po = e.target.closest('.pfpopen');
-    if (po) { openProfile(po.dataset.poster, po.dataset.id); return; }
+    if (po) { if (po.classList.contains('mine')) openOwnPost(po.dataset.id); else openProfile(po.dataset.poster, po.dataset.id); return; }
     var fbd = e.target.closest('.fbadge');
     if (fbd) { toggleFollow(fbd.dataset.poster); return; }
     var rb = e.target.closest('.likebtn,.savebtn,.sharebtn,.cmtbtn');
     if (rb) { railAction(rb); return; }
     var btn = e.target.closest('.more');
     if (!btn) return;
-    var cap = $(btn.getAttribute('aria-controls'));
-    var open = cap.classList.toggle('open');
-    btn.textContent = open ? 'Show less' : 'Show more';
-    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    openCaption(String(btn.getAttribute('aria-controls')).slice(4));
   });
 
   /* ---------- header: county and scope ---------- */
@@ -1734,7 +1856,7 @@ body.nocap .caption,body.nocap .more{display:none}
       '</button><div class="avmeta"><b style="font-size:20px">@' + esc(session.username) + '</b><br>' + esc(session.contactMask || '') +
       '<br><button class="linkbtn" type="button" data-act="pickme" style="padding:0">' + (session.avatar ? 'Change photo' : 'Add a photo') + '</button><div id="avMeStatus" class="note" style="margin:2px 0 0"></div></div></div>' +
       '<input class="sr" id="avMe" type="file" accept="image/*" tabindex="-1">' +
-      '<div class="stack">' + installBtnHtml() + '<button class="btn ghost" type="button" data-act="status" data-focus>My story status</button>' +
+      '<div class="stack">' + installBtnHtml() + '<button class="btn ghost" type="button" data-act="drafts" data-focus>My drafts</button><button class="btn ghost" type="button" data-act="status">My story status</button>' +
       '<button class="btn ghost" type="button" data-act="about">What is Mtaa Pulse?</button>' +
       '<button class="btn ghost" type="button" data-act="terms">Terms and conditions</button>' +
       '<button class="btn ghost" type="button" data-act="contact">Contact support</button>' +
@@ -1807,6 +1929,7 @@ body.nocap .caption,body.nocap .more{display:none}
     else if (act === 'logout') { setSession(null); closeAuth(); toast('You are logged out'); }
     else if (act === 'report-now') { closeAuth(); openReport(); }
     else if (act === 'status') { closeAuth(); openStatus(); }
+    else if (act === 'drafts') { closeAuth(); openDrafts(); }
     else if (act === 'terms') openTerms();
     else if (act === 'contact') location.href = 'mailto:' + CONFIG.SUPPORT_EMAIL + '?subject=' + encodeURIComponent('Mtaa Pulse support') + '&body=' + encodeURIComponent('Hi Mtaa Pulse team,\n\n\n\nMy username: @' + session.username);
     else if (act === 'delacct') showStep('delacct');
@@ -2073,7 +2196,7 @@ body.nocap .caption,body.nocap .more{display:none}
   function renderReport() {
     var anon = session.type !== 'account';
     reportBody.innerHTML =
-      '<div class="vidbox" id="vidBox">' + videoBoxHtml() + '</div>' +
+      '<div id="draftLink" style="min-height:0"></div>' + '<div class="vidbox" id="vidBox">' + videoBoxHtml() + '</div>' +
       '<div class="vidrow"><button class="btn" id="recBtn" type="button" data-r="record">' + recBtnHtml() + '</button></div>' +
       '<div class="sec">Sound</div>' + soundHtml() +
       wheelHtml('mood', 'Current Feeling', MOODS) +
@@ -2089,8 +2212,9 @@ body.nocap .caption,body.nocap .more{display:none}
       '<p class="err" id="repErr" role="alert" style="margin-top:14px"></p>' +
       '<div class="prog" id="prog" hidden role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="progBar"></i></div>' +
       '<button class="btn" id="repGo" type="button" data-r="post" disabled>Post</button>' +
+      '<button class="btn ghost" id="draftBtn" type="button" data-r="draft" style="margin-top:10px" disabled>Save as draft</button>' +
       '<p class="note">New stories are processed and checked before they show a Verified badge.</p>';
-    renderWhere();
+    renderWhere(); updateDraftLink();
   }
   function soundHtml() {
     return '<div class="label" style="margin:0 0 6px">Nature sound</div>' +
@@ -2596,6 +2720,7 @@ body.nocap .caption,body.nocap .more{display:none}
   }
 
   function validateReport() {
+    var db = $('draftBtn'); if (db && rep) db.disabled = !(rep.file && rep.locState === 'ok') || rep.uploading || rep.recording || rep.opening || rep.counting;
     var b = $('repGo');
     if (!b || !rep) return;
     b.disabled = !(rep.file && rep.mood && rep.category && rep.caption.trim().length >= CONFIG.CAPTION_MIN && rep.locState === 'ok') || rep.uploading || rep.recording || rep.opening || rep.counting;
@@ -2620,6 +2745,8 @@ body.nocap .caption,body.nocap .more{display:none}
     }
     else if (a === 'consent') openConsent();
     else if (a === 'post') submitReport();
+    else if (a === 'draft') saveDraft();
+    else if (a === 'drafts') openDrafts();
   });
   reportBody.addEventListener('change', function (e) {
     if (!rep) return;
@@ -2685,7 +2812,7 @@ body.nocap .caption,body.nocap .more{display:none}
     }).then(function (r) {
       var county = r.story.county;
       if (isAnon && r.proof) { var pm = loadJSON('mp_anon_proofs', {}); pm[r.story.id] = r.proof; saveJSON('mp_anon_proofs', pm); }   // reference for support, kept only on this phone
-      rememberStory(r.story.id);                                // ids live only on this phone, so the poster can check status later
+      rememberStory(r.story.id); if (rep && rep.draftId) draftDel(rep.draftId).catch(function () {});                                // ids live only on this phone, so the poster can check status later
       rep.uploading = false;
       rep.url = null;                                           // the feed now owns the preview
       if (isAnon) { session = null; updateLoginButton(); }      // anonymous: nothing remembered
@@ -2783,6 +2910,7 @@ body.nocap .caption,body.nocap .more{display:none}
   function myStoryIds() { return loadJSON('mp_my_stories', []); }
   function rememberStory(id) { var l = myStoryIds(); l.unshift(id); saveJSON('mp_my_stories', l.slice(0, 30)); }
   var STATUS = {
+    unlisted:  { label: 'Hidden by you', cls: '', text: 'Only you can see this story. Tap Show again to make it public.' },
     review:    { label: 'Under review', cls: '',    text: 'Not public yet. We aim to finish checking within ' + CONFIG.REVIEW_TARGET_HOURS + ' hours.' },
     escalated: { label: 'Under review', cls: '',    text: 'Passed to a senior reviewer.' },
     live:      { label: 'Live',         cls: 'ok',  text: 'Public, and still being checked before it gets the Verified badge.' },
@@ -2814,7 +2942,7 @@ body.nocap .caption,body.nocap .more{display:none}
         '<div class="row"><button class="btn ghost" type="button" data-s="support" data-id="' + esc(it.id) + '">Ask support to delete</button></div>';
     }
     if (session && session.type === 'account' && it.owner === '@' + session.username)
-      return '<div class="row"><button class="btn ghost warn" type="button" data-s="delete" data-id="' + esc(it.id) + '">Delete story</button></div>';
+      return '<div class="row"><button class="btn ghost" type="button" data-s="hide" data-on="' + (it.status === 'unlisted' ? '0' : '1') + '" data-id="' + esc(it.id) + '">' + (it.status === 'unlisted' ? 'Show again' : 'Hide from public') + '</button><button class="btn ghost warn" type="button" data-s="delete" data-id="' + esc(it.id) + '">Delete story</button></div>';
     return it.owner ? '<p class="note">Log in as ' + esc(it.owner) + ' to delete this story.</p>' : '';
   }
   function askSupport(id) {
@@ -2859,6 +2987,7 @@ body.nocap .caption,body.nocap .more{display:none}
     if (b.dataset.s === 'refresh') openStatus();
     else if (b.dataset.s === 'delete') askDeleteStory(b.dataset.id);
     else if (b.dataset.s === 'support') askSupport(b.dataset.id);
+    else if (b.dataset.s === 'hide') toggleHide(b.dataset.id, b.dataset.on === '1');
     else api.appeal(b.dataset.id).then(function () { toast('Appeal sent. A different reviewer will look at it.', 3000); openStatus(); }).catch(function (err) { toast(errMsg(err)); });
   });
 
@@ -2934,7 +3063,10 @@ body.nocap .caption,body.nocap .more{display:none}
   window.addEventListener('hashchange', function () { if (location.hash === '#mod') openMod(); });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
-    if (cmtSheet.classList.contains('open')) closeComments();
+    if (capSheet.classList.contains('open')) closeCaption();
+    else if (ownSheet.classList.contains('open')) closeOwn();
+    else if (draftsPanel.classList.contains('open')) draftsPanel.classList.remove('open');
+    else if (cmtSheet.classList.contains('open')) closeComments();
     else if (searchSheet.classList.contains('open')) searchSheet.classList.remove('open');
     else if (inboxPanel.classList.contains('open')) inboxPanel.classList.remove('open');
     else if (mapPanel.classList.contains('open')) mapPanel.classList.remove('open');
@@ -2957,7 +3089,7 @@ body.nocap .caption,body.nocap .more{display:none}
   function isLiked(id) { return loadJSON('mp_likes', []).indexOf(String(id)) !== -1; }
   function isSaved(id) { return loadJSON('mp_saved', []).some(function (x) { return String(x.id) === String(id); }); }
   function findItem(id) { return fs.items.filter(function (x) { return String(x.id) === String(id); })[0]; }
-  function overlayOpen() { return cmtSheet.classList.contains('open') || searchSheet.classList.contains('open') || mapPanel.classList.contains('open') || inboxPanel.classList.contains('open') || savedPanel.classList.contains('open'); }
+  function overlayOpen() { return cmtSheet.classList.contains('open') || searchSheet.classList.contains('open') || mapPanel.classList.contains('open') || inboxPanel.classList.contains('open') || savedPanel.classList.contains('open') || capSheet.classList.contains('open') || ownSheet.classList.contains('open') || draftsPanel.classList.contains('open'); }
 
   function railAction(b) {
     var id = b.dataset.id;
@@ -3039,6 +3171,8 @@ body.nocap .caption,body.nocap .more{display:none}
   function isFollowing(p) { var me = myHandle(); return !!(me && p && (loadJSON('mp_follows', {})[me] || []).indexOf(p) !== -1); }
   function faceHtml(s) { return s.avatar ? '<img src="' + esc(s.avatar) + '" alt="" width="44" height="44" loading="lazy" decoding="async">' : icon('face', 30, 0); }
   function posterHtml(s) {
+    if (isMine(s)) return '<div class="rail-item"><div class="pfpwrap"><button class="pfp pfpopen mine" type="button" data-poster="' + esc(s.poster) + '" data-id="' + esc(s.id) + '" aria-label="Your post options">' + faceHtml(s) + '</button>' +
+      '<button class="ownbadge" type="button" data-id="' + esc(s.id) + '" aria-label="Your post options">' + icon('dots', 14, 0) + '</button></div></div>';
     if (!s.poster) return '<div class="rail-item"><div class="pfp" aria-label="Anonymous">' + faceHtml(s) + '</div></div>';   // anonymous posters cannot be followed
     var on = isFollowing(s.poster);
     return '<div class="rail-item"><div class="pfpwrap">' +
@@ -3234,17 +3368,24 @@ body.nocap .caption,body.nocap .more{display:none}
   /* ---------- comments (accounts only) ---------- */
   var cmtSheet = $('cmtSheet'), cmtId = null;
   function renderComments(list) {
+    $('cmtTitle').textContent = list.length ? list.length + (list.length === 1 ? ' comment' : ' comments') : 'Comments';
     $('cmtList').innerHTML = list.length ? list.map(function (c) {
-      return '<div class="cmt"><b>' + esc(c.user) + '</b> <span class="muted">' + esc(c.when) + '</span><div>' + esc(c.text) + '</div></div>';
+      var av = c.avatar ? '<img src="' + esc(c.avatar) + '" alt="" loading="lazy">' : icon('face', 26, 0);
+      var n = c.likes ? '<span>' + c.likes + '</span>' : '';
+      return '<div class="cm"><div class="cav">' + av + '</div><div class="cb"><div class="cn">' + esc(c.user) + '</div><div class="ct">' + esc(c.text) + '</div>' +
+        '<div class="cmeta"><span>' + esc(c.when) + '</span><button class="crep" type="button" data-u="@' + esc(String(c.user).replace(/^@/, '')) + '">Reply</button></div></div>' +
+        '<div class="cx"><button class="cxb up" type="button" aria-pressed="false" aria-label="Like comment">' + icon('heart', 24, 1.8) + n + '</button>' +
+        '<button class="cxb down" type="button" aria-pressed="false" aria-label="Dislike comment">' + icon('thumb', 24, 1.8) + '</button></div></div>';
     }).join('') : '<p class="note cmt-empty">No comments yet. Be the first.</p>';
   }
   function openComments(id) {
     cmtId = id; $('cmtErr').textContent = ''; $('cmtInput').value = '';
     $('cmtList').innerHTML = '<p class="note">Loading…</p>';
-    cmtSheet.classList.add('open');
+    cmtSheet.classList.add('open'); document.body.classList.add('cmtopen'); syncCmtBar();
+    var _it = findItem(id); $('cmtTitle').textContent = (_it && _it.comments ? _it.comments + ' comments' : 'Comments');
     api.listComments(id).then(renderComments).catch(function () { $('cmtList').innerHTML = '<p class="note">Could not load comments.</p>'; });
   }
-  function closeComments() { cmtSheet.classList.remove('open'); cmtId = null; }
+  function closeComments() { cmtSheet.classList.remove('open'); document.body.classList.remove('cmtopen'); cmtId = null; }
   $('cmtScrim').addEventListener('click', closeComments);
   function postComment() {
     var text = $('cmtInput').value.trim(), err = $('cmtErr');
@@ -3254,13 +3395,136 @@ body.nocap .caption,body.nocap .more{display:none}
     var id = cmtId, btn = $('cmtPost');
     btn.disabled = true; err.textContent = '';
     api.addComment(id, text, '@' + session.username).then(function (r) {
-      btn.disabled = false; $('cmtInput').value = '';
+      btn.disabled = false; $('cmtInput').value = ''; syncCmtBar();
       api.listComments(id).then(renderComments);
       document.querySelectorAll('.cmtbtn').forEach(function (n) { if (n.dataset.id === String(id)) n.parentNode.querySelector('span').textContent = r.count; });
     }).catch(function (e) { btn.disabled = false; err.textContent = errMsg(e); });
   }
   $('cmtPost').addEventListener('click', postComment);
+  $('cmtX').addEventListener('click', closeComments);
+  function syncCmtBar() {
+    var has = $('cmtInput').value.trim().length > 0;
+    $('cmtIcons').hidden = has; $('cmtPost').hidden = !has;
+  }
+  $('cmtInput').addEventListener('input', syncCmtBar);
+  $('cmtIcons').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-k]'); if (!b) return;
+    if (b.dataset.k === 'at') { var i = $('cmtInput'); i.value += '@'; syncCmtBar(); i.focus(); }
+    else toast('Coming soon');
+  });
+  $('cmtList').addEventListener('click', function (e) {
+    var r = e.target.closest('.crep');
+    if (r) { var i = $('cmtInput'); i.value = r.dataset.u + ' '; syncCmtBar(); i.focus(); return; }
+    var b = e.target.closest('.cxb'); if (!b) return;
+    var on = b.getAttribute('aria-pressed') !== 'true';
+    Array.prototype.forEach.call(b.parentNode.querySelectorAll('.cxb'), function (n) { n.setAttribute('aria-pressed', 'false'); });
+    b.setAttribute('aria-pressed', String(on));
+  });
   $('cmtInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); postComment(); } });
+
+  /* ---------- caption reader ---------- */
+  var capSheet = $('capSheet');
+  function openCaption(id) {
+    var st = findItem(id); if (!st) return;
+    $('capTitle').innerHTML = esc(st.poster || 'Anonymous') + (st.founder ? ' ' + founderBadge() : '');
+    $('capFull').innerHTML = captionHtml(st.caption);
+    $('capMeta').textContent = st.ward + ' · ' + st.when;
+    capSheet.classList.add('open');
+  }
+  function closeCaption() { capSheet.classList.remove('open'); }
+  $('capScrim').addEventListener('click', closeCaption);
+
+  /* ---------- options for your own post ---------- */
+  var ownSheet = $('ownSheet'), ownId = null;
+  function openOwnPost(id) { ownId = id; ownSheet.classList.add('open'); }
+  function closeOwn() { ownSheet.classList.remove('open'); }
+  function toggleHide(id, hide) {
+    api.hideStory(id, hide).then(function () {
+      toast(hide ? 'Hidden. Only you can see it now.' : 'Your story is public again.', 3000);
+      if (statusPanel.classList.contains('open')) openStatus(); else resetFeed();
+    }).catch(function (err) { toast(err.code === 'http_404' || err.code === 'http_405' ? 'Hiding stories is not available on the server yet.' : errMsg(err), 3600); });
+  }
+  $('ownScrim').addEventListener('click', closeOwn);
+  $('ownCancel').addEventListener('click', closeOwn);
+  $('ownHide').addEventListener('click', function () { var id = ownId; closeOwn(); toggleHide(id, true); });
+  $('ownDel').addEventListener('click', function () { var id = ownId; closeOwn(); askDeleteStory(id); });
+
+  /* ---------- drafts (kept on this phone in IndexedDB, because a video is too big for localStorage) ---------- */
+  function draftDb() {
+    return new Promise(function (ok, no) {
+      if (!window.indexedDB) { no(new Error('idb')); return; }
+      var q = indexedDB.open('mtaa_pulse', 1);
+      q.onupgradeneeded = function () { q.result.createObjectStore('drafts', { keyPath: 'id' }); };
+      q.onsuccess = function () { ok(q.result); };
+      q.onerror = function () { no(q.error); };
+    });
+  }
+  function draftTx(mode, fn) {
+    return draftDb().then(function (db) {
+      return new Promise(function (ok, no) {
+        var tx = db.transaction('drafts', mode), res = fn(tx.objectStore('drafts'));
+        tx.oncomplete = function () { db.close(); ok(res && res.result); };
+        tx.onerror = tx.onabort = function () { db.close(); no(tx.error); };
+      });
+    });
+  }
+  function draftPut(d) { return draftTx('readwrite', function (st) { return st.put(d); }); }
+  function draftDel(id) { return draftTx('readwrite', function (st) { return st.delete(id); }); }
+  function draftAll() { return draftTx('readonly', function (st) { return st.getAll(); }).then(function (l) { return l || []; }); }
+  function updateDraftLink() {
+    draftAll().then(function (l) {
+      var el = $('draftLink');
+      if (el && l.length) el.innerHTML = '<button class="linkbtn" type="button" data-r="drafts" style="padding:0">Drafts (' + l.length + ')</button>';
+    }).catch(function () {});
+  }
+  function saveDraft() {
+    if (!rep || rep.uploading || rep.recording || rep.opening || rep.counting) return;
+    if (!rep.file) { repErr('Record a video first, then you can save it as a draft.'); return; }
+    if (rep.locState !== 'ok') { repErr('Wait for your ward to show under Where, then save the draft.'); return; }
+    var d = { id: rep.draftId || uuid(), at: Date.now(), blob: rep.file, dur: rep.dur, mood: rep.mood, category: rep.category, caption: rep.caption,
+      ward: rep.ward, county: rep.county, lat: rep.lat, lng: rep.lng, bg: rep.bg, bgVol: rep.bgVol, micVol: rep.micVol, key: rep.key, faceChecked: !!rep.faceChecked };
+    draftPut(d).then(function () { rep.draftId = d.id; closeReport(); toast('Saved to Drafts. Find it under Me, or in the Drafts link when you post.', 3600); })
+      .catch(function () { repErr('This browser could not save the draft on your phone.'); });
+  }
+  var draftsPanel = $('draftsPanel'), draftsBody = $('draftsBody'), draftList = [];
+  function openDrafts() {
+    draftsPanel.classList.add('open');
+    draftsBody.innerHTML = '<p class="note">Loading…</p>';
+    draftAll().then(function (l) { draftList = l.sort(function (a, b) { return b.at - a.at; }); renderDrafts(); })
+      .catch(function () { draftsBody.innerHTML = '<h1 class="h1">Drafts not available</h1><p class="lede">This browser cannot keep drafts on your phone.</p>'; });
+  }
+  function renderDrafts() {
+    draftsBody.innerHTML = draftList.length
+      ? '<p class="lede">Drafts stay on this phone only. Nothing is uploaded until you post.</p>' + draftList.map(function (d) {
+          return '<div class="card">' + (d.mood ? '<span class="badge">' + esc(moodText(d.mood)) + '</span>' : '') + (d.category ? '<span class="badge">' + esc(d.category) + '</span>' : '') +
+            '<br><b>' + esc(d.caption && d.caption.trim() ? d.caption : 'No caption yet') + '</b><div class="muted">Saved ' + ago(Date.now() - d.at) + ' ago · ' + fmtClock(d.dur || 0) + ' · ' + esc(d.ward || '') + '</div>' +
+            '<div class="row"><button class="btn" type="button" data-d="open" data-id="' + esc(d.id) + '">Continue</button><button class="btn ghost warn" type="button" data-d="del" data-id="' + esc(d.id) + '">Delete</button></div></div>';
+        }).join('')
+      : '<h1 class="h1">No drafts</h1><p class="lede">After you record a video, tap Save as draft to finish it later.</p>';
+  }
+  function resumeDraft(d) {
+    var r = newReport();
+    r.file = d.blob; r.url = URL.createObjectURL(d.blob); r.dur = d.dur; r.mood = d.mood; r.category = d.category; r.caption = d.caption || '';
+    r.ward = d.ward; r.county = d.county; r.lat = d.lat; r.lng = d.lng; r.locState = d.ward ? 'ok' : 'idle';
+    r.bg = d.bg || 'none'; r.bgVol = d.bgVol == null ? 60 : d.bgVol; r.micVol = d.micVol == null ? 100 : d.micVol; r.key = d.key || r.key; r.faceChecked = !!d.faceChecked; r.draftId = d.id;
+    draftsPanel.classList.remove('open');
+    if (reportPanel.classList.contains('open')) {
+      stopPreview(); stopCamera(rep); if (rep && rep.url) URL.revokeObjectURL(rep.url);
+      rep = r; renderReport(); restoreReport();
+    } else { stashRep = r; rep = null; openReport(); }
+  }
+  draftsBody.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-d]'); if (!b) return;
+    var d = draftList.filter(function (x) { return x.id === b.dataset.id; })[0]; if (!d) return;
+    if (b.dataset.d === 'del') {
+      askConfirm('Delete this draft?', 'The recorded video is removed from this phone.', 'Delete draft', function () {
+        draftDel(d.id).then(function () { draftList = draftList.filter(function (x) { return x.id !== d.id; }); renderDrafts(); toast('Draft deleted'); });
+      });
+    } else if (rep && rep.file && !rep.draftId) {
+      askConfirm('Replace your current video?', 'Opening this draft discards the video you are working on now. Save it as a draft first if you want to keep it.', 'Open draft', function () { resumeDraft(d); });
+    } else resumeDraft(d);
+  });
+  $('draftsClose').addEventListener('click', function () { draftsPanel.classList.remove('open'); });
 
   /* ---------- search ---------- */
   var searchSheet = $('searchSheet'), searchInput = $('searchInput');
