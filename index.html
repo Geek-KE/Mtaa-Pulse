@@ -446,6 +446,8 @@ body.cmtopen .scene video{object-fit:contain}
 .whererow{margin-top:2px}
 .tags{margin-top:4px}
 .slide .whererow .muted{color:#B9BFC3;font-weight:500}
+.slide .whererow .chip{font-weight:500}
+.tag-cat{padding:5px 12px;background:var(--lite);color:#1B1100;border:0;border-radius:999px;font-size:14px;font-weight:700;text-shadow:none}
 </style>
 </head>
 <body>
@@ -744,7 +746,7 @@ body.cmtopen .scene video{object-fit:contain}
     // Face check (nature and surroundings only, no people in focus)
     FACE_FOCUS_RATIO: 0.035,                // a face covering this share of the frame counts as "in focus" (3.5%)
     FACE_FOCUS_SEC: 2,                      // seconds with a face in focus before the recording is stopped and thrown away
-    FACE_DETECT_MS: 150,                    // how often a frame is scanned
+    FACE_DETECT_MS: 200,                    // how often a frame is scanned
     FACE_HOLD_MS: 600,                      // keep blurring a spot this long after the face was last seen
     FACE_LOAD_MS: 12000,                    // how long to wait for the face model on slow networks before recording without it
     BG_FILE_MAX: 8 * 1024 * 1024,           // largest sound file a person can attach
@@ -1320,7 +1322,7 @@ body.cmtopen .scene video{object-fit:contain}
         if (!v) return;
         v._vis = e.isIntersecting;
         if (e.isIntersecting) tryPlay(v);
-        else { if (v._hls) v._hls.config.maxBufferLength = 6; v.pause(); try { v.currentTime = 0; } catch (x) {} v._userPaused = false; vPlayIcon(v, false); vSound(v, false); }
+        else { if (v._hls) v._hls.config.maxBufferLength = 3; v.pause(); try { v.currentTime = 0; } catch (x) {} v._userPaused = false; vPlayIcon(v, false); vSound(v, false); }
       });
     }, { root: feed, threshold: 0.6 });
     loadObs = new IntersectionObserver(function (entries) {
@@ -1412,7 +1414,7 @@ body.cmtopen .scene video{object-fit:contain}
     });
   }
   function useHlsJs(v, url, gen, nativeHls) {
-    var H = window.Hls, h = new H({ startLevel: 0, capLevelToPlayerSize: true, maxBufferLength: 6, maxMaxBufferLength: 30, maxBufferSize: 30 * 1000 * 1000, backBufferLength: 8, maxBufferHole: 0.5, startFragPrefetch: true, lowLatencyMode: false, abrBandWidthFactor: 0.8, abrBandWidthUpFactor: 0.6, manifestLoadingMaxRetry: 1, levelLoadingMaxRetry: 2, fragLoadingMaxRetry: 4 });
+    var H = window.Hls, h = new H({ startLevel: 0, capLevelToPlayerSize: true, maxBufferLength: 3, maxMaxBufferLength: 30, maxBufferSize: 30 * 1000 * 1000, backBufferLength: 8, maxBufferHole: 0.5, startFragPrefetch: true, lowLatencyMode: false, abrBandWidthFactor: 0.8, abrBandWidthUpFactor: 0.6, manifestLoadingMaxRetry: 1, levelLoadingMaxRetry: 2, fragLoadingMaxRetry: 4 });
     v._hls = h;
     h.on(H.Events.MANIFEST_PARSED, function () { if (gen === v._gen) tryPlay(v); });
     h.on(H.Events.ERROR, function (ev, d) {
@@ -2537,12 +2539,19 @@ body.cmtopen .scene video{object-fit:contain}
     r.raf = requestAnimationFrame(function () { drawLoop(r); });
     var now = performance.now(), sv = r.src;
     if (!sv || sv.readyState < 2) return;
+    var ft = sv.currentTime;
+    if (ft === r.lastT && now - (r.lastDraw || 0) < 100) return;     // no new camera frame yet: do not redraw the same picture
+    r.lastT = ft; r.lastDraw = now;
     r.cx.drawImage(sv, 0, 0, r.cv.width, r.cv.height);
     if (r.det && !r.detBusy && now - r.lastDet >= CONFIG.FACE_DETECT_MS) {
       var dt = Math.min(0.6, (now - r.lastDet) / 1000);
       r.lastDet = now; r.detBusy = true;
-      Promise.resolve(r.det(sv, now)).then(function (list) {
+      if (!r.dcv) { var dw = Math.min(320, sv.videoWidth || 320); r.dcv = makeCanvas(dw, Math.max(1, Math.round(dw * (sv.videoHeight || 1) / (sv.videoWidth || 1)))); r.dcx = r.dcv.getContext('2d'); }
+      var dcv = r.dcv; r.dcx.drawImage(sv, 0, 0, dcv.width, dcv.height);     // the face scan looks at a small copy, so it does not stall the recording
+      Promise.resolve(r.det(dcv, now)).then(function (list) {
         r.detBusy = false;
+        var kk = (sv.videoWidth || 1) / dcv.width;
+        list = list.map(function (f) { return { x: f.x * kk, y: f.y * kk, w: f.w * kk, h: f.h * kk }; });
         var vw = sv.videoWidth || 1, vh = sv.videoHeight || 1, sc = r.cv.width / vw, focus = false;
         r.faces = list.map(function (f) {
           if ((f.w * f.h) / (vw * vh) >= CONFIG.FACE_FOCUS_RATIO) focus = true;
@@ -2674,7 +2683,7 @@ body.cmtopen .scene video{object-fit:contain}
       r.stream.addTrack(nt);                                   // teardown() stops everything in r.stream
       r.src.srcObject = new MediaStream([nt]);
       var p = r.src.play(); if (p && p.catch) p.catch(function () {});
-      r.facing = next;
+      r.facing = next; r.dcv = null;
     }).catch(function () { r.flipping = false; toast('Could not switch the camera'); });
   }
   function runCountdown(r, cb) {
